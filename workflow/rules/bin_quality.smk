@@ -1,4 +1,5 @@
 bin_quality_input_folder = "{sample}/binning/{binner}/bins"
+busco_lineages = ["archaea_odb10", "bacteria_odb10", "eukaryota_odb10"]
 
 
 rule calculate_stats:
@@ -44,9 +45,7 @@ rule combine_bin_stats:
             raise e
 
 
-### Checkm2 ###
-
-
+#### Checkm2 ####
 rule run_checkm2:
     input:
         fasta_dir=bin_quality_input_folder,
@@ -57,36 +56,39 @@ rule run_checkm2:
     params:
         lowmem=" --lowmem " if config["mem"] < 10 else "",
         dir=lambda wc, output: Path(output.table).parent / "checkm2",
+        tmpdir=lambda wc: f"{config['tmpdir']}/checkm/{wc.sample}_{wc.binner}",
     conda:
         "../envs/checkm2.yaml"
     threads: config["threads"]
     log:
         "{sample}/logs/binning/{binner}/checkm2.log",
-        "{sample}/binning/{binner}/checkm2/checkm2.log",
     benchmark:
         "logs/benchmarks/checkm2/{sample}_{binner}.tsv"
     resources:
         time=int(config["runtime"]["default"]),
         mem_mb=config["mem"] * 1000,
     shell:
-        " checkm2 predict "
-        " --threads {threads} "
-        " {params.lowmem} "
-        " --force "
-        " --allmodels "
-        " -x .fasta "
-        " --tmpdir {resources.tmpdir} "
-        " --input {input.fasta_dir} "
-        " --output-directory {params.dir} "
-        " &> {log[0]} "
-        ";\n"
-        " cp {params.dir}/quality_report.tsv {output.table} 2>> {log[0]} ; "
-        " mv {params.dir}/protein_files {output.faa} 2>> {log[0]} ; "
+        "("
+        "rm -fr {params.tmpdir}; "
+        "cp {CHECKM2_PSEUDO_DATA} {input.fasta_dir}/*.fasta {params.tmpdir}/; "
+        "checkm2 predict"
+        " --threads {threads}"
+        " {params.lowmem}"
+        " --force"
+        " --allmodels"
+        " -x .fasta"
+        " --tmpdir {resources.tmpdir}"
+        " --input {params.tmpdir}"
+        " --output-directory {params.dir}; "
+        "rm -fr {params.tmpdir}; "
+        "sed -i -e '/CHECKM2_PSEUDO_DATA/d' {params.dir}/quality_report.tsv; "
+        "cp {params.dir}/quality_report.tsv {output.table}; "
+        "rm {params.dir}/protein_files/CHECKM2_PSEUDO_DATA.faa; "
+        "mv {params.dir}/protein_files {output.faa}"
+        ") 1> {log} 2>&1"
 
 
-## GUNC ###
-
-
+#### GUNC ####
 rule run_gunc:
     input:
         db=rules.download_gunc.output[0].format(**config),
@@ -120,48 +122,119 @@ rule run_gunc:
 
 
 ##### BUSCO  #########
-"""
-
-
-
 rule run_busco:
     input:
         fasta_dir=bin_quality_input_folder,
         db=BUSCODIR,
     output:
-        "{sample}/binning/{binner}/bin_quality/busco.tsv",
+        "{sample}/binning/{binner}/busco_{lineage}.tsv",
     params:
-        tmpdir=lambda wc: f"{config['tmpdir']}/busco/{wc.sample}_{wc.binner}",
+        tmpdir=lambda wc: f"{config['tmpdir']}/busco/{wc.sample}_{wc.binner}_{wc.lineage}",
     conda:
         "../envs/busco.yaml"
     threads: config["threads"]
     log:
-        "{sample}/logs/binning/{binner}/busco.log",
+        "{sample}/logs/binning/{binner}/busco_{lineage}.log",
     benchmark:
-        "logs/benchmarks/busco/{sample}_{binner}.tsv"
+        "logs/benchmarks/busco/{sample}_{binner}_{lineage}.tsv"
     resources:
         time=int(config["runtime"]["default"]),
         mem_mb=config["mem"] * 1000,
     shell:
-        " busco -i {input.fasta_dir} "
-        " --auto-lineage-prok "
-        " -m genome "
-        " --out_path {params.tmpdir} "
-        " -o output "
-        " --download_path {input.db} "
-        " -c {threads} "
-        " --offline &> {log} "
-        " ; "
-        " mv {params.tmpdir}/output/batch_summary.txt {output} 2>> {log}"
+        """
+        export PATH="$CONDA_PREFIX/bin:$PATH"
+        export PYTHONPATH="$CONDA_PREFIX/lib/python3.7/site-packages"
+        rm -fr {params.tmpdir}
+        busco -i {input.fasta_dir} \
+          --lineage {wildcards.lineage} \
+          -m genome \
+          --out_path {params.tmpdir} \
+          -o output \
+          --download_path {input.db} \
+          -c {threads} \
+          --offline &>{log}
+        awk -F'\\t' '{{ if(NR==1){{print "Bin Id\\t{wildcards.lineage}_Complete\\t{wildcards.lineage}_Single\\t{wildcards.lineage}_Duplicated\\t{wildcards.lineage}_Fragmented\\t{wildcards.lineage}_Missing"}}else{{gsub(".fasta","",$1); print $1"\\t"$3"\\t"$4"\\t"$5"\\t"$6"\\t"$7}} }}' {params.tmpdir}/output/batch_summary.txt 1>{output} 2>>{log}
+        rm -fr {params.tmpdir}
+        """
 
-"""
-# fetch also output/logs/busco.log
+
+
+##### CheckV  #########
+rule run_checkv:
+    input:
+        fasta_dir=bin_quality_input_folder,
+        db=CHECKVDIR,
+    output:
+        "{sample}/binning/{binner}/checkv.tsv",
+    params:
+        tmpdir=lambda wc: f"{config['tmpdir']}/checkv/{wc.sample}_{wc.binner}",
+    conda:
+        "../envs/checkv.yaml"
+    threads: config["threads"]
+    log:
+        "{sample}/logs/binning/{binner}/checkv.log",
+    benchmark:
+        "logs/benchmarks/checkv/{sample}_{binner}.tsv"
+    resources:
+        time=int(config["runtime"]["default"]),
+        mem_mb=config["mem"] * 1000,
+    shell:
+        """
+        mkdir -p $(dirname {params.tmpdir})
+        rm -fr {params.tmpdir}*
+        find {input.fasta_dir} -maxdepth 1 -name "*.fasta" -exec basename {{}} \; \
+          | while read FILE; do
+              echo ">${{FILE%*.fasta}}"        >> {params.tmpdir}.fna
+              grep -v '>' {input.fasta_dir}/${{FILE}} >> {params.tmpdir}.fna
+            done &> {log}
+            checkv end_to_end -t {threads} -d {input.db}/checkv-db-v1.5 {params.tmpdir}.fna {params.tmpdir}.checkv &>> {log}
+            awk -F'\\t' 'BEGIN{{print "bin_id\\tcheckv_completeness\\tcheckv_contamination\\tcheckv_quality\\tcheckv_miuvig_quality"}} NR>1 {{print $1"\\t"$10"\\t"$12"\\t"$8"\\t"$9}}' \
+              {params.tmpdir}.checkv/quality_summary.tsv 1>{output} 2>>{log}
+        rm -fr {params.tmpdir}*
+        """
+
+
+##### PLASME  #########
+rule run_plasme:
+    input:
+        fasta_dir=bin_quality_input_folder,
+        db=PLASMEDONE,
+    output:
+        "{sample}/binning/{binner}/plasme.tsv",
+    params:
+        tmpdir=lambda wc: f"{config['tmpdir']}/plasme/{wc.sample}_{wc.binner}",
+    conda:
+        "../envs/plasme.yaml"
+    threads: config["threads"]
+    log:
+        "{sample}/logs/binning/{binner}/plasme.log",
+    benchmark:
+        "logs/benchmarks/plasme/{sample}_{binner}.tsv"
+    resources:
+        time=int(config["runtime"]["default"]),
+        mem_mb=config["mem"] * 1000,
+    shell:
+        """
+        mkdir -p $(dirname {params.tmpdir})
+        rm -fr {params.tmpdir}*
+        find {input.fasta_dir} -maxdepth 1 -name "*.fasta" -exec basename {{}} \; \
+          | while read FILE; do
+              echo ">${{FILE%*.fasta}}"        >> {params.tmpdir}.fna
+              grep -v '>' {input.fasta_dir}/${{FILE}} >> {params.tmpdir}.fna
+            done &> {log}
+            PLASMe=$(which PLASMe.py)
+            python $PLASMe --thread {threads} --database $CONDA_PREFIX/PLASMe/DB --temp {params.tmpdir}.plasme_tmp {params.tmpdir}.fna {params.tmpdir}.plasme &>> {log}
+            awk -F'\\t' 'BEGIN{{print "bin_id\\tplasme_reference\\tplasme_order\\tplasme_evidence\\tplasme_score"}} NR>1 {{print $1"\\t"$3"\\t"$4"\\t"$5"\\t"$6}}' \
+              {params.tmpdir}.plasme_report.csv 1>{output} 2>>{log}
+        rm -fr {params.tmpdir}*
+        """
 
 
 ## Combine bin stats
 localrules:
     build_bin_report,
     combine_checkm2,
+    combine_busco,
     combine_gunc,
 
 
@@ -203,9 +276,55 @@ rule combine_checkm2:
     params:
         samples=SAMPLES,
     log:
-        "logs/binning/combine_stats_{binner}.log",
+        "logs/binning/combine_stats_{binner}_checkm2.log",
     script:
         "../scripts/combine_checkm2.py"
+
+
+rule combine_busco:
+    input:
+        completeness_files=[ f"{x}/binning/{{binner}}/busco_{y}.tsv" for x in SAMPLES for y in busco_lineages ],
+    output:
+        bin_table="Binning/{binner}/raw_bins/busco_quality_report.tsv",
+    params:
+        samples=SAMPLES,
+        lineages=busco_lineages,
+    log:
+        "logs/binning/combine_stats_{binner}_busco.log",
+    script:
+        "../scripts/combine_busco.py"
+
+
+rule combine_checkv:
+    input:
+        completeness_files=expand(
+            "{sample}/binning/{{binner}}/checkv.tsv",
+            sample=SAMPLES,
+        ),
+    output:
+        bin_table="Binning/{binner}/raw_bins/checkv_quality_report.tsv",
+    params:
+        samples=SAMPLES,
+    log:
+        "logs/binning/combine_stats_{binner}_checkv.log",
+    script:
+        "../scripts/combine_checkv.py"
+
+
+rule combine_plasme:
+    input:
+        completeness_files=expand(
+            "{sample}/binning/{{binner}}/plasme.tsv",
+            sample=SAMPLES,
+        ),
+    output:
+        bin_table="Binning/{binner}/raw_bins/plasme_quality_report.tsv",
+    params:
+        samples=SAMPLES,
+    log:
+        "logs/binning/combine_stats_{binner}_plasme.log",
+    script:
+        "../scripts/combine_plasme.py"
 
 
 localrules:
@@ -286,6 +405,9 @@ def quality_filter_bins_input(wildcards):
         paths=rules.get_bin_filenames.output.filenames,
         stats="Binning/{binner}/raw_bins/genome_stats.tsv",
         quality="Binning/{binner}/raw_bins/checkm2_quality_report.tsv",
+        busco="Binning/{binner}/raw_bins/busco_quality_report.tsv",
+        checkv="Binning/{binner}/raw_bins/checkv_quality_report.tsv",
+        plasme="Binning/{binner}/raw_bins/plasme_quality_report.tsv",
         gunc="Binning/{binner}/raw_bins/gunc_report.tsv",
     )
 
@@ -308,8 +430,8 @@ rule quality_filter_bins:
     input:
         unpack(quality_filter_bins_input),
     output:
-        info=temp("Binning/{binner}/filtered_bin_info.tsv"),
-        paths=temp("Binning/{binner}/filtered_bins_paths.txt"),
+        info="Binning/{binner}/filtered_bin_info.tsv",
+        paths="Binning/{binner}/filtered_bins_paths.txt",
     threads: 1
     log:
         "logs/Binning/{binner}/filter_bins.log",

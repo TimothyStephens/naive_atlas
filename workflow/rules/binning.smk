@@ -167,6 +167,7 @@ rule metabat:
     params:
         sensitivity=get_metabat_sensitivity(),
         min_contig_len=config["metabat"]["min_contig_length"],
+        min_bin_len=config["metabat"]["min_bin_length"],
         output_prefix="{sample}/binning/bins/bin",
     benchmark:
         "logs/benchmarks/binning/metabat/{sample}.txt"
@@ -182,6 +183,7 @@ rule metabat:
         metabat2 -i {input.contigs} \
             --abdFile {input.depth_file} \
             --minContig {params.min_contig_len} \
+            --minClsSize {params.min_bin_len} \
             --numThreads {threads} \
             --maxEdges {params.sensitivity} \
             --saveCls --noBinOut \
@@ -231,6 +233,7 @@ rule maxbin:
 
 localrules:
     get_bins,
+    get_unbinned,
 
 
 localrules:
@@ -243,6 +246,7 @@ rule get_unique_cluster_attribution:
         "{sample}/binning/{binner}/cluster_attribution.tmp",
     output:
         "{sample}/binning/{binner}/cluster_attribution.tsv",
+        "{sample}/binning/{binner}/cluster_attribution_unbinned.tsv",
     run:
         import pandas as pd
         import numpy as np
@@ -253,7 +257,8 @@ rule get_unique_cluster_attribution:
         assert (
             type(d) == pd.Series
         ), "expect the input to be a two column file: {}".format(input[0])
-
+        
+        # Get binned contigs
         old_cluster_ids = list(d.unique())
         if 0 in old_cluster_ids:
             old_cluster_ids.remove(0)
@@ -280,6 +285,13 @@ rule get_unique_cluster_attribution:
 
         new_d.to_csv(output[0], sep="\t", header=False)
 
+        # Get unbinned contigs
+        map_cluster_ids = {0:"{sample}_{binner}_unbinned".format(**wildcards)}
+
+        new_d = d.map(map_cluster_ids)
+        new_d.dropna(inplace=True)
+        
+        new_d.to_csv(output[1], sep="\t", header=False)
 
 #
 
@@ -316,6 +328,20 @@ rule get_bins:
         "../envs/sequence_utils.yaml"
     log:
         "{sample}/logs/binning/get_bins_{binner}.log",
+    script:
+        "../scripts/get_fasta_of_bins.py"
+
+
+rule get_unbinned:
+    input:
+        cluster_attribution="{sample}/binning/{binner}/cluster_attribution_unbinned.tsv",
+        contigs=get_assembly,
+    output:
+        directory("{sample}/binning/{binner}/unbinned"),
+    conda:
+        "../envs/sequence_utils.yaml"
+    log:
+        "{sample}/logs/binning/get_unbinned_{binner}.log",
     script:
         "../scripts/get_fasta_of_bins.py"
 

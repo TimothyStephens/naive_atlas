@@ -34,30 +34,26 @@ sys.excepthook = handle_exception
 import pandas as pd
 
 
-def main(samples, lineages, completeness_files, bin_table):
+def main(samples, completeness_files, bin_table):
     sample_data = {}
+    div = {}
 
-    sample_groups = { x:[] for x in samples}
-    for i, sample_lineage in enumerate([ [x, y] for x in samples for y in lineages ]):
-        sample, lineage = sample_lineage
-        sample_data = pd.read_table(completeness_files[i], index_col=0)
-        sample_groups[sample].append(sample_data)
-    
     df_list = []
-    for sample in samples:
-        sample_data = pd.concat(sample_groups[sample], axis=1)
+
+    for i, sample in enumerate(samples):
+        sample_data = pd.read_table(completeness_files[i], index_col=0)
         sample_data["Sample"] = sample
+
         df_list.append(sample_data)
-    
+
     df = pd.concat(df_list, axis=0)
-    
+
     df.to_csv(bin_table, sep="\t")
 
 
 if __name__ == "__main__":
     main(
         samples=snakemake.params.samples,
-        lineages=snakemake.params.lineages,
         completeness_files=snakemake.input.completeness_files,
         bin_table=snakemake.output.bin_table,
     )

@@ -10,6 +10,8 @@ CAT_DIR = os.path.join(DBDIR, "CAT")
 CAT_flag_downloaded = os.path.join(CAT_DIR, "downloaded")
 GUNCDIR = os.path.join(DBDIR, "gunc_database")
 BUSCODIR = os.path.join(DBDIR, "busco_lineages")
+CHECKVDIR = os.path.join(DBDIR, "checkv")
+PLASMEDONE = os.path.join(DBDIR, "plasme.done")
 
 ZENODO_ARCHIVE = "1134890"
 EGGNOG_VERSION = "5"
@@ -17,8 +19,8 @@ EGGNOG_DIR = os.path.join(DBDIR, "EggNOG_V" + EGGNOG_VERSION)
 
 CONDAENV = "../envs"
 
-GTDB_VERSION = "V08_R214"
-GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release214/214.0/auxillary_files/gtdbtk_r214_data.tar.gz"
+GTDB_VERSION = "R220"
+GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
 GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_" + GTDB_VERSION)
 
 
@@ -189,7 +191,7 @@ rule download_gtdb:
     log:
         "logs/download/gtdbtk.log",
     shell:
-        " wget --no-check-certificate {GTDB_DATA_URL} -O {output} &> {log} "
+        "wget --no-check-certificate {GTDB_DATA_URL} -O {output} &> {log} "
 
 
 rule extract_gtdb:
@@ -234,7 +236,7 @@ rule download_gunc:
         mem_mb=config.get("simplejob_mem", 1) * 1000,
         tmpdir=config.get("tmpdir", "."),  # you can store the file in the main working folder if you want
     log:
-        "logs/downloads/gunc_download_{gunc_database}.log",
+        "logs/download/gunc_download_{gunc_database}.log",
     shell:
         "gunc download_db {resources.tmpdir} -db {wildcards.gunc_database} &> {log} ;"
         "mv {resources.tmpdir}/gunc_db_{wildcards.gunc_database}*.dmnd {output} 2>> {log}"
@@ -250,9 +252,52 @@ rule download_busco:
         time=int(config.get("runtime", {"default": 5})["default"]),
         mem_mb=config.get("simplejob_mem", 1) * 1000,
     log:
-        "logs/busco_lineages.log",
+        "logs/download/busco_lineages.log",
     shell:
-        "busco -q --download_path {output} --download prokaryota &> {log}"
+        """
+        export PATH="$CONDA_PREFIX/bin:$PATH"
+        export PYTHONPATH="$CONDA_PREFIX/lib/python3.7/site-packages"
+        busco -q --download_path {output} --download all &> {log}
+        """
+
+
+rule download_checkv:
+    output:
+        directory(CHECKVDIR),
+    conda:
+        "../envs/checkv.yaml"
+    threads: 1
+    resources:
+        time=int(config.get("runtime", {"default": 5})["default"]),
+        mem_mb=config.get("simplejob_mem", 1) * 1000,
+    log:
+        "logs/download/checkv_download.log",
+    shell:
+        "checkv download_database {output} &> {log}"
+
+
+rule download_plasme:
+    output:
+        touch(PLASMEDONE),
+    conda:
+        "../envs/plasme.yaml"
+    threads: 1
+    resources:
+        time=int(config.get("runtime", {"default": 5})["default"]),
+        mem_mb=config.get("simplejob_mem", 1) * 1000,
+    log:
+        "logs/download/plasme_download.log",
+    shell:
+        "("
+        "cd $CONDA_PREFIX; "
+        "rm -fr PLASMe; "
+        "git clone https://github.com/HubertTang/PLASMe; "
+        "chmod +x PLASMe/PLASMe_db.py PLASMe/PLASMe.py; "
+        "cd bin; ln -fs ../PLASMe/PLASMe_db.py; ln -fs ../PLASMe/PLASMe.py; "
+        "cd ../PLASMe/; "
+        "wget https://zenodo.org/record/8046934/files/DB.zip?download=1 -O DB.zip; "
+        "python PLASMe_db.py --threads {threads}"
+        ") &> {log}"
 
 
 onsuccess:

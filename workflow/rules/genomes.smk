@@ -28,6 +28,24 @@ checkpoint rename_genomes:
     script:
         "../scripts/rename_genomes.py"
 
+checkpoint rename_unbinned:
+    input:
+        unbinned=expand("{sample}/binning/{binner}/unbinned/{sample}_{binner}_unbinned.fasta",
+            sample=SAMPLES,
+            binner=config["final_binner"],
+        ),
+    output:
+        dir=directory("genomes/genomes/unbinned"),
+    params:
+        rename_contigs=config["rename_mags_contigs"],
+    shadow:
+        "shallow"
+    log:
+        "logs/genomes/rename_unbinned.log",
+    script:
+        "../scripts/rename_unbinned.py"
+
+
 
 def get_genome_dir():
     if ("genome_dir" in config) and (config["genome_dir"] is not None):
@@ -60,10 +78,29 @@ def get_all_genomes(wildcards):
 
     # check if genomes are present
     genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fasta")).genome
+    genomes = [l for l in genomes if not 'unbinned/' in l] # remove unbinned fasta from wildcards list
 
     if len(genomes) == 0:
         logger.error(
             f"No genomes found with fasta extension in {genome_dir} "
+            "You don't have any Metagenome assembled genomes with sufficient quality. "
+            "You may want to change the assembly, binning or filtering parameters. "
+            "Or focus on the genecatalog workflow only."
+        )
+        exit(1)
+
+    return genomes
+
+
+def get_all_unbinned(wildcards):
+    checkpoints.rename_unbinned.get()
+    
+    # check if genomes are present
+    genomes = glob_wildcards(os.path.join("genomes/genomes/unbinned", "{genome}.fasta")).genome
+
+    if len(genomes) == 0:
+        logger.error(
+            f"No genomes found with fasta extension in genomes/genomes/unbinned "
             "You don't have any Metagenome assembled genomes with sufficient quality. "
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."

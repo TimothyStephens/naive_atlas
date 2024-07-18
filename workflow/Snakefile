@@ -46,6 +46,7 @@ include: "rules/binning.smk"
 include: "rules/derep.smk"
 include: "rules/genomes.smk"
 include: "rules/dram.smk"
+include: "rules/metaeuk.smk"
 include: "rules/genecatalog.smk"
 include: "rules/sra.smk"
 include: "rules/gtdbtk.smk"
@@ -56,6 +57,7 @@ include: "rules/patch.smk"
 
 CONDAENV = "envs"  # overwrite definition in download.smk
 
+CHECKM2_PSEUDO_DATA = os.path.join(workflow_folder, "data", "CHECKM2_PSEUDO_DATA.fasta")
 
 localrules:
     all,
@@ -117,11 +119,12 @@ rule strains:
 
 def get_genome_annotations():
     annotation_file_names = {
-        "gtdb_tree": "genomes/tree/finished_gtdb_trees",
+        "gtdb_tree":     "genomes/tree/finished_gtdb_trees",
         "gtdb_taxonomy": "genomes/taxonomy/gtdb_taxonomy.tsv",
-        "genes": "genomes/annotations/genes/predicted",
-        "kegg_modules": "genomes/annotations/dram/kegg_modules.tsv",
-        "dram": "genomes/annotations/dram/distil",
+        "genes":         "genomes/annotations/genes/predicted",
+        "kegg_modules":  "genomes/annotations/dram/kegg_modules.tsv",
+        "dram":          "genomes/annotations/dram/distil",
+        "metaeuk":       "genomes/annotations/metaeuk/finished",
     }
 
     annotations_requested = config["annotations"]

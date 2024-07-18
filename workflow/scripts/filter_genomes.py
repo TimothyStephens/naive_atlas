@@ -43,9 +43,20 @@ Q = load_quality(snakemake.input.quality)
 stats = pd.read_csv(snakemake.input.stats, index_col=0, sep="\t")
 stats["logN50"] = log(stats.N50)
 
+busco  = pd.read_csv(snakemake.input.busco,  index_col=0, sep="\t")
+checkv = pd.read_csv(snakemake.input.checkv, index_col=0, sep="\t")
+plasme = pd.read_csv(snakemake.input.plasme, index_col=0, sep="\t")
+
+
 # merge table but only shared Bins and non overlapping columns
-Q = Q.join(stats.loc[Q.index, stats.columns.difference(Q.columns)])
-del stats
+df_list = [Q,
+           stats.loc[Q.index, stats.columns.difference(Q.columns)],
+           busco,
+           checkv,
+           plasme,
+]
+Q = pd.concat(df_list, axis=1)
+del stats, busco, checkv, plasme
 
 n_all_bins = Q.shape[0]
 
