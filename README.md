@@ -14,18 +14,18 @@ All credit for this amazing workflow should go to the original authors. naive_at
 
 You can start using naive_atlas with the following commands:
 ```
-    # Setup
-    git clone https://github.com/TimothyStephens/naive_atlas.git
-    cd naive_atlas
-    
-    mamba env create -n naive_atlas --file naive_atlasenv.yml
-    conda activate naive_atlas
-    
-    pip install --editable .
-    
-    # Analysis
-    naive_atlas init --db-dir databases path/to/fastq/files
-    naive_atlas run all
+# Setup
+git clone https://github.com/TimothyStephens/naive_atlas.git
+cd naive_atlas
+
+mamba env create -n naive_atlas --file naive_atlasenv.yml
+conda activate naive_atlas
+
+pip install --prefix $CONDA_PREFIX --editable .
+
+# Analysis
+naive_atlas init --db-dir databases path/to/fastq/files
+naive_atlas run all
 ```
 naive_atlas does not have its own dedicted documentation, however, the atlas documentation is still highly relevent.
 
