@@ -166,7 +166,7 @@ metabat:
   min_contig_length: 1500 # default: 2500; metabat needs >=1500
   min_bin_length: 5000 # default: 200000
 
-genome_filter_criteria: (Length_scaffolds >= 5000)
+genome_filter_criteria: "(Length_scaffolds >= 5000)"
 
 filter_chimieric_bins: false # filter chimeric bins using GUNC
 gunc_database: progenomes   # 'progenomes' or 'gtdb'
@@ -188,15 +188,19 @@ annotations:
 - genes
 - kegg_modules
 - dram
-#- metaeuk
+- metaeuk
+- whokaryote
 
-metaeuk_database: "NR"
+metaeuk_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
+metaeuk_database_name: "SwissProt"
 # Extra params to pass to each step of MetaEuk
 metaeuk_createdb: ""
 metaeuk_predictexons: "--metaeuk-eval 0.0001 -e 100 --min-length 40"
 metaeuk_reduceredundancy: ""
 metaeuk_unitesetstofasta: ""
 metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
+
+whokaryote_min_contig_length: 1500 # Same as metabat
 
 
 ########################
