@@ -1,2 +1,2 @@
-recursive-include atlas *
+recursive-include naive_atlas *
 include versioneer.py

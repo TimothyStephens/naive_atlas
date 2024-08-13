@@ -1,10 +1,60 @@
 ## use just in time compilation for bbmap
 usejni: false
 
-gene_annotations: []
 
-genome_filter_criteria: "(Completeness-5*Contamination >50 ) & (Length_scaffolds >=50000) & (Ambigious_bases <1e6) & (N50 > 5*1e3) & (N_scaffolds < 1e3)"
+########################
+# Quality control
+########################
+
+preprocess_qtrim: "rl"
+preprocess_kmer_trim: "r"
+preprocess_minimum_base_quality: 10
+preprocess_allowable_kmer_mismatches: 1
+preprocess_reference_kmer_match_length: 27
+preprocess_minimum_passing_read_length: 51
+preprocess_minimum_base_frequency: 0.05
+preprocess_max_ns: -1
+preallocate_ram: "t"
+error_correction_overlapping_pairs: "t"
+
+
+########################
+# Quantification
+########################
+
+genome_aligner: "minimap"
+
+
+########################
+# Binning
+########################
+
+final_binner: metabat # [SemiBin, vamb, metabat, DASTool]
+
+binner: # If DASTool is used as final_binner, use predictions of this binners
+  - metabat
+  - maxbin
+#  - vamb
+
+cobinning_readmapping_id: 0.95 #when mapping different reads to contigs from different samples use less stringent alignment threshold
+
+semibin_options: ''
+semibin_train_extra: ''
+
+maxbin:
+  max_iteration: 50
+  prob_threshold: 0.9
+  min_contig_length: 1000
+
+DASTool:
+  search_engine: diamond
+  score_threshold: 0.5 # Score threshold until selection algorithm will keep selecting bins [0..1].
+
+genome_filter_criteria: "(Length_scaffolds >= 5000)"
 exclude_unplacable_genomes: false
+
+filter_chimieric_bins: false # filter chimeric bins using GUNC
+gunc_database: progenomes   # 'progenomes' or 'gtdb'
 
 genome_dereplication:
   ANI: 0.95 ## Genome dreplication threshold
@@ -18,30 +68,11 @@ genome_dereplication:
     length: 0
     centrality: 1
 
-genome_aligner: "minimap"
 
-bin_quality_asesser: checkm2 #[ checkm2, busco, cehckm]
+########################
+# Gene catalog
+#######################
 
-semibin_options: ""
-semibin_train_extra: ""
+gene_annotations: []
 
-filter_chimieric_bins: true
-gunc_database: "progenomes" # progenomes or gtdb
 
-binner: # If DASTool is used as final_binner, use predictions of this binners
-  - metabat
-  - maxbin
-#  - vamb
-
-cobinning_readmapping_id: 0.95 #when mapping different reads to contigs from different samples use less stringent alignment threshold
-
-preprocess_qtrim: "rl"
-preprocess_kmer_trim: "r"
-preprocess_minimum_base_quality: 10
-preprocess_allowable_kmer_mismatches: 1
-preprocess_reference_kmer_match_length: 27
-preprocess_minimum_passing_read_length: 51
-preprocess_minimum_base_frequency: 0.05
-preprocess_max_ns: -1
-preallocate_ram: "t"
-error_correction_overlapping_pairs: "t"

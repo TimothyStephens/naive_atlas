@@ -1,0 +1,6 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - whokaryote=1.1.2

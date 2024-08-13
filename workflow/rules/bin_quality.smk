@@ -70,6 +70,7 @@ rule run_checkm2:
     shell:
         "("
         "rm -fr {params.tmpdir}; "
+        "mkdir -p {params.tmpdir}; "
         "cp {CHECKM2_PSEUDO_DATA} {input.fasta_dir}/*.fasta {params.tmpdir}/; "
         "checkm2 predict"
         " --threads {threads}"
@@ -434,7 +435,7 @@ rule quality_filter_bins:
         paths="Binning/{binner}/filtered_bins_paths.txt",
     threads: 1
     log:
-        "logs/Binning/{binner}/filter_bins.log",
+        "logs/binning/{binner}/filter_bins.log",
     params:
         filter_criteria=config["genome_filter_criteria"],
     script:

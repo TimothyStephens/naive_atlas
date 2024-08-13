@@ -47,6 +47,7 @@ include: "rules/derep.smk"
 include: "rules/genomes.smk"
 include: "rules/dram.smk"
 include: "rules/metaeuk.smk"
+include: "rules/whokaryote.smk"
 include: "rules/genecatalog.smk"
 include: "rules/sra.smk"
 include: "rules/gtdbtk.smk"
@@ -125,6 +126,7 @@ def get_genome_annotations():
         "kegg_modules":  "genomes/annotations/dram/kegg_modules.tsv",
         "dram":          "genomes/annotations/dram/distil",
         "metaeuk":       "genomes/annotations/metaeuk/finished",
+        "whokaryote":    "genomes/annotations/whokaryote/finished",
     }
 
     annotations_requested = config["annotations"]
@@ -149,6 +151,7 @@ rule genomes:
         "genomes/clustering/allbins2genome.tsv",
         "reports/genome_mapping/results.html",
         *get_genome_annotations(),
+        #"genomes/genomes/unbinned",
         "finished_binning",
     output:
         temp(touch("finished_genomes")),
@@ -168,6 +171,7 @@ rule binning:
         "Binning/{binner}/bins2species.tsv".format(binner=config["final_binner"]),
         "Binning/{binner}/bin_info.tsv".format(binner=config["final_binner"]),
         expand("reports/bin_report_{binner}.html", binner=config["final_binner"]),
+        expand("{sample}/binning/{binner}/unbinned", binner=config["final_binner"], sample=SAMPLES),
         "finished_assembly",
     output:
         temp(touch("finished_binning")),

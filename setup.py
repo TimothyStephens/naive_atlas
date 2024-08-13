@@ -1,9 +1,9 @@
 from setuptools import setup
 import versioneer  # script in directory
 
-__author__ = "Silas Kieser, Joe Brown"
+__author__ = "atlas: Silas Kieser & Joe Brown; naive_atlas: Timothy Stephens"
 __copyright__ = "Copyright 2021, Silas Kieser"
-__email__ = "silas.kieser@gmail.com, brwnjm@gmail.com"
+__email__ = "atlas: silas.kieser@gmail.com & brwnjm@gmail.com; naive_atlas: ts942@sebs.rutgers.edu"
 __license__ = "BSD-3"
 
 # read the contents of your README file
@@ -15,18 +15,18 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 
 setup(
-    name="metagenome-atlas",
+    name="metagenome-naive_atlas",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    url="https://github.com/metagenome-atlas/atlas",
+    url="https://github.com/TimothyStephens/naive_atlas",
     license=__license__,
     author=__author__,
     author_email=__email__,
     zip_safe=False,
-    description="ATLAS - workflows for assembly, annotation, and genomic binning of metagenomic and metatranscriptomic data.",
+    description="NAIVE ATLAS - workflows for assembly, annotation, and genomic binning of mixed domain (prok, euk, virus) metagenomic and metatranscriptomic data.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=["atlas", "atlas.init"],
+    packages=["naive_atlas", "naive_atlas.init"],
     package_data={
         "": [
             "workflow",
@@ -36,6 +36,6 @@ setup(
     include_package_data=True,
     install_requires=[],
     # install via conda: click, pandas, pyyaml, snakemake
-    entry_points={"console_scripts": ["atlas = atlas.atlas:cli"]},
+    entry_points={"console_scripts": ["naive_atlas = naive_atlas.naive_atlas:cli"]},
     classifiers=["Topic :: Scientific/Engineering :: Bio-Informatics"],
 )

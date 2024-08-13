@@ -1,4 +1,4 @@
-# Metagenome-Atlas
+# Metagenome-Naive_Atlas
 
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/metagenome-atlas/badges/latest_release_relative_date.svg)](https://anaconda.org/bioconda/metagenome-atlas)
 [![Bioconda](https://img.shields.io/conda/dn/bioconda/metagenome-atlas.svg?label=Bioconda )](https://anaconda.org/bioconda/metagenome-atlas)
@@ -7,18 +7,27 @@
 <!--[![follow on twitter](https://img.shields.io/twitter/follow/SilasKieser.svg?style=social&label=Follow)](https://twitter.com/search?f=tweets&q=%40SilasKieser%20%23metagenomeAtlas&src=typd) -->
 
 
-Metagenome-atlas is a easy-to-use metagenomic pipeline based on snakemake. It handles all steps from QC, Assembly, Binning, to Annotation.
+Metagenome-naive_atlas is a easy-to-use metagenomic pipeline based on snakemake. It handles all steps from QC, Assembly, Binning, to Annotation, and is designed to be as domain agnostic as possible (i.e., to assemble and bin eukaryotes, prokaryotes, and viruses).
+All credit for this amazing workflow should go to the original authors. naive_atlas is simply a reconfiguration to remove filtering steps that select for only prokaryotes, allowing for eukaryote and viral bins to also be produced by the workflow.
 
 ![scheme of workflow](resources/images/atlas_list.png?raw=true)
 
-You can start using atlas with three commands:
+You can start using naive_atlas with the following commands:
 ```
-    mamba install -y -c bioconda -c conda-forge metagenome-atlas={latest_version}
-    atlas init --db-dir databases path/to/fastq/files
-    atlas run all
+    # Setup
+    git clone https://github.com/TimothyStephens/naive_atlas.git
+    cd naive_atlas
+    
+    mamba env create -n naive_atlas --file naive_atlasenv.yml
+    conda activate naive_atlas
+    
+    pip install --editable .
+    
+    # Analysis
+    naive_atlas init --db-dir databases path/to/fastq/files
+    naive_atlas run all
 ```
-where `{latest_version}` should be replaced by [![Version](https://anaconda.org/bioconda/metagenome-atlas/badges/version.svg)](https://anaconda.org/bioconda/metagenome-atlas)
-
+naive_atlas does not have its own dedicted documentation, however, the atlas documentation is still highly relevent.
 
 # Webpage
 

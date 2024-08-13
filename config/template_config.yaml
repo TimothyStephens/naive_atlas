@@ -11,6 +11,7 @@
 #  For more details about the config values see:
 #  https://metagenome-atlas.rtfd.io
 
+
 ########################
 # Execution parameters
 ########################
@@ -19,10 +20,10 @@ threads: 8
 mem: 60
 
 # threads and memory for jobs needing high amount of memory. e.g GTDB-tk,checkm or assembly
-large_mem: 250
-large_threads: 16
-assembly_threads: 8
-assembly_memory: 250
+large_mem: 150
+large_threads: 46
+assembly_threads: 60
+assembly_memory: 350
 simplejob_mem: 10
 simplejob_threads: 4
 
@@ -34,7 +35,12 @@ runtime: #in h
   simplejob: 1
 
 # directory where databases are downloaded with 'atlas download'
-database_dir: databases
+database_dir: 
+  /user/project/dir/databases
+
+tmpdir: 
+  /user/project/dir/tmp
+
 
 ########################
 # Quality control
@@ -48,7 +54,8 @@ duplicates_only_optical: false
 duplicates_allow_substitutions: 2
 
 # used to trim adapters from reads and read ends
-preprocess_adapters: /path/to/databases/adapters.fa
+preprocess_adapters: 
+  /user/project/dir/databases/adapters.fa
 preprocess_minimum_base_quality: 10
 preprocess_minimum_passing_read_length: 51
 # 0.05 requires at least 5 percent of each nucleotide per sequence
@@ -60,15 +67,18 @@ preprocess_reference_kmer_match_length: 27
 error_correction_overlapping_pairs: true
 #contamination references can be added such that -- key: /path/to/fasta
 contaminant_references:
-  PhiX: /path/to/databases/phiX174_virus.fa
-#  host:/path/to/host_genome.fasta
-
-# We won't allow large indels
+  PhiX: 
+    /user/project/dir/databases/phiX174_virus.fa
+  Host_A:
+    /user/project/host_refs/Host_A.fa
+  Host_B:
+    /user/project/host_refs/Host_B.fa
 contaminant_max_indel: 20
 contaminant_min_ratio: 0.65
 contaminant_kmer_length: 13
 contaminant_minimum_hits: 1
 contaminant_ambiguous: best
+
 
 ########################
 # Pre-assembly-processing
@@ -89,6 +99,7 @@ error_correction_aggressive: false
 # join R1 and R2 at overlap; unjoined reads are still utilized
 merge_pairs_before_assembly: true
 merging_k: 62
+
 
 ########################
 # Assembly
@@ -116,7 +127,7 @@ spades_use_scaffolds: true # if false use contigs
 #Comma-separated list of k-mer sizes to be used (all values must be odd, less than 128 and listed in ascending order).
 spades_k: auto
 spades_preset: meta # meta, ,normal, rna  single end libraries doesn't work for metaspades
-spades_extra: ""
+spades_extra: ''
 longread_type: none # [none,"pacbio", "nanopore", "sanger", "trusted-contigs", "untrusted-contigs"]
 # Preprocessed long reads can be defined in the sample table with 'longreads' , for more info see the spades manual
 
@@ -132,6 +143,7 @@ minimum_average_coverage: 1
 minimum_percent_covered_bases: 20
 minimum_mapped_reads: 0
 
+
 ########################
 # Quantification
 ########################
@@ -144,31 +156,20 @@ contig_max_distance_between_pairs: 1000
 maximum_counted_map_sites: 10
 minimum_map_quality: 0
 
+
 ########################
 # Binning
 ########################
 
-final_binner: vamb # [SemiBin, vamb, metabat, DASTool]
-
-semibin_options: ""
-
 metabat:
   sensitivity: sensitive
-  min_contig_length: 1500 # metabat needs >1500
+  min_contig_length: 1500 # default: 2500; metabat needs >=1500
+  min_bin_length: 5000 # default: 200000
 
-maxbin:
-  max_iteration: 50
-  prob_threshold: 0.9
-  min_contig_length: 1000
+genome_filter_criteria: (Length_scaffolds >= 5000)
 
-DASTool:
-  search_engine: "diamond"
-  score_threshold: 0.5 # Score threshold until selection algorithm will keep selecting bins [0..1].
-
-genome_filter_criteria: "(Completeness-5*Contamination >50 ) & (Length_scaffolds >=50000) & (Ambigious_bases <1e6) & (N50 > 5*1e3) & (N_scaffolds < 1e3)"
-
-filter_chimieric_bins: true # filter chimeric bins using GUNC
-gunc_database: "progenomes" # 'progenomes' or 'gtdb'
+filter_chimieric_bins: false # filter chimeric bins using GUNC
+gunc_database: progenomes   # 'progenomes' or 'gtdb'
 
 genome_dereplication:
   ANI: 0.95 ## Genome dreplication threshold 0.95 is more or less species
@@ -176,16 +177,27 @@ genome_dereplication:
 
 rename_mags_contigs: true #Rename contigs of representative MAGs
 
+
 ########################
 # Annotations
 #######################
 
 annotations:
-  - gtdb_tree
-  - gtdb_taxonomy
-  - genes
-  - kegg_modules
-  - dram
+- gtdb_tree
+- gtdb_taxonomy
+- genes
+- kegg_modules
+- dram
+#- metaeuk
+
+metaeuk_database: "NR"
+# Extra params to pass to each step of MetaEuk
+metaeuk_createdb: ""
+metaeuk_predictexons: "--metaeuk-eval 0.0001 -e 100 --min-length 40"
+metaeuk_reduceredundancy: ""
+metaeuk_unitesetstofasta: ""
+metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
+
 
 ########################
 # Gene catalog
@@ -196,12 +208,13 @@ genecatalog:
   minlength_nt: 270 # min length
   minid: 0.90 # min id for gene clustering for the main gene catalog used for annotation
   coverage: 0.9
-  extra: " "
+  extra: ' '
   SubsetSize: 500000
 
 gene_annotations:
-  - eggNOG
-  # - dram
+- eggNOG
+- dram
 
 eggNOG_use_virtual_disk: false # coping the eggNOG DB to a virtual disk can speed up the annotation
-virtual_disk: "/dev/shm" # But you need 37G extra ram
+virtual_disk: /dev/shm   # But you need 37G extra ram
+
