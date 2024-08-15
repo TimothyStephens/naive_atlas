@@ -33,7 +33,7 @@ sys.excepthook = handle_exception
 # start
 
 
-from atlas import utils
+from naive_atlas import utils
 
 rename_contigs = snakemake.params.rename_contigs
 

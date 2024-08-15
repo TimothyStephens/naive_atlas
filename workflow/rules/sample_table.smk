@@ -1,4 +1,4 @@
-from atlas.sample_table import load_sample_table, validate_bingroup_size
+from naive_atlas.sample_table import load_sample_table, validate_bingroup_size
 
 sampleTable = load_sample_table()
 validate_bingroup_size(sampleTable, config, logger)

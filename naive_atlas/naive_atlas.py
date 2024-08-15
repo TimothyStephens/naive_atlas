@@ -221,7 +221,7 @@ def run_workflow(
 @cli.command(
     "download",
     context_settings=dict(ignore_unknown_options=True),
-    short_help="download reference files (need ~50GB)",
+    short_help="download reference files (need ~500GB)",
 )
 @click.option(
     "-d",

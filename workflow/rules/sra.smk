@@ -83,7 +83,7 @@ RunTable = None
 def get_runids_for_biosample(wildcards):
     global RunTable
     if RunTable is None:
-        from atlas.init.parse_sra import load_and_validate_runinfo_table
+        from naive_atlas.init.parse_sra import load_and_validate_runinfo_table
 
         RunTable = load_and_validate_runinfo_table("RunInfo.tsv")
 

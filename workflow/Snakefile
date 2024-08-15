@@ -20,10 +20,10 @@ configfile: os.path.join(workflow_folder, "..", "config", "default_config.yaml")
 
 
 # add defualt values from python (TODO: replace this)
-from atlas.make_config import update_config as atlas_update_config
+from naive_atlas.make_config import update_config as atlas_update_config
 
 config = atlas_update_config(config)
-from atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEADER
+from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEADER
 
 
 # minimum required snakemake version

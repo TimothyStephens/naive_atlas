@@ -33,7 +33,7 @@ sys.excepthook = handle_exception
 # start
 
 
-from atlas import utils
+from naive_atlas import utils
 import pandas as pd
 
 # Bin     Filename        Proteins

@@ -76,9 +76,14 @@ rule metaeuk_annotation:
         metaeuk reduceredundancy \
           {output.tmp}/callsResultDB {output.tmp}/predsResultDB {output.tmp}/predGroupsDB \
           --threads {threads} {params.metaeuk_reduceredundancy}
-        metaeuk unitesetstofasta \
-          {output.tmp}/contigDB {input.database} {output.tmp}/predsResultDB {params.out} \
-          --threads {threads} {params.metaeuk_unitesetstofasta}
+        if [ -s {output.headerMap} ];
+        then
+            metaeuk unitesetstofasta \
+              {output.tmp}/contigDB {input.database} {output.tmp}/predsResultDB {params.out} \
+              --threads {threads} {params.metaeuk_unitesetstofasta}
+        else
+            touch 
+        fi
         if [ $(grep -c '>' "{output.fas}") -gt 0 ]; then
             metaeuk taxtocontig \
               {output.tmp}/contigDB {output.fas} {output.headerMap} {input.database} {params.out} {output.tmp}/tmp \
@@ -104,7 +109,9 @@ rule metaeuk_annotation:
                 }}' \
               {params.tax_per_contig_combined} > {output.mag_classification}
         else
-            echo "No predicted genes. Can't assess taxonomy!"
+            echo "WARNING: No predicted genes. Can't assess taxonomy!"
+            touch "{params.tax_per_contig}"
+            touch "{params.tax_per_contig_combined}"
             # Format results
             grep '>' "{input.fasta}" | sed -e 's/>//' \
               | awk 'BEGIN{{
