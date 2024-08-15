@@ -21,7 +21,7 @@ cd naive_atlas
 mamba env create -n naive_atlas --file naive_atlasenv.yml
 conda activate naive_atlas
 
-pip install --prefix $CONDA_PREFIX --editable .
+$CONDA_PREFIX/bin/pip3 install --prefix $CONDA_PREFIX --editable .
 
 # Analysis
 naive_atlas init --db-dir databases path/to/fastq/files
