@@ -2,123 +2,42 @@
 set -euo pipefail
 
 
-NThreads=2
-MaxMem=3
+NThreads=72
+MaxMem=50
 
-atlas --version
-atlas run --help
-
-
-databaseDir="test/databases"
-WD='test/Dryrun'
-reads_dir='test/reads/empty'
-snakemake_args=" --quiet rules $@ --dryrun " 
+databaseDir="databases"
+WD='testrun'
+reads_dir='test_reads'
+snakemake_args=" --quiet rules --cores $NThreads $@ --dryrun " 
 test_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 
-create_reads_dir() {
+# Starting clean up
+rm -rf $WD $reads_dir $databaseDir "test_reads.tar.gz" ".snakemake" "logs"
 
-    local reads_dir="$1"
-    local N=$2
+echo -e "\n\n\n\n\n\n## Version\n"
+naive_atlas --version
 
-echo "touch reads dir: $reads_dir"
+echo -e "\n\n\n\n\n\n## Help\n"
+naive_atlas run --help
 
-rm -rf $reads_dir
-mkdir -p $reads_dir
+echo -e "\n\n\n\n\n\n## Download read data\n"
+wget "https://zenodo.org/record/3992790/files/test_reads.tar.gz"
+tar -xzf test_reads.tar.gz
 
-for (( i=1; i<=$N; i++ )); do
-    sample="Sample$i"
-    
-  for fraction in R1 R2;
-    do
-    touch $reads_dir/${sample}_${fraction}.fastq.gz
-  done
-done
-}
+echo -e "\n\n\n\n\n\n## Atlas download\n"
+naive_atlas download --db-dir $databaseDir $snakemake_args
 
-# need at least 10 samples for cobinning
+echo -e "\n\n\n\n\n\n## Init\n"
+naive_atlas init --db-dir $databaseDir --threads=$NThreads -w $WD $reads_dir
 
-create_reads_dir $reads_dir 10 
+echo -e "\n\n\n\n\n\n## Dryrun all\n"
+naive_atlas run all -w $WD $snakemake_args
 
 
 
+# Ending clean up
+#rm -rf $WD $reads_dir $databaseDir "test_reads.tar.gz" ".snakemake" "logs"
 
 
-rm -fr $WD
-
-echo "Atlas download"
-atlas download --db-dir $databaseDir -n
-
-echo "Init"
-atlas init --db-dir $databaseDir --threads=$NThreads -w $WD $reads_dir
-
-
-
-
-echo "Dryrun all"
-atlas run all -w $WD  $snakemake_args
-
-echo "Dryrun strains"
-atlas run genomes strains -w $WD $snakemake_args
-
-
-for binner in metabat SemiBin vamb DASTool ; do
-
-  echo "
-        Dryrun Binner $binner
-      "
-
-  atlas run binning -w $WD --config final_binner=$binner $snakemake_args
-
-done
-
-
-#
-
-echo "
-      Dryrun with skip QC and megahit
-    "
-#
-
-rm -fr $WD
-
-WD=${WD}/noQC
-rm -fr $WD
-
-atlas init --db-dir $databaseDir --skip-qc -w $WD --assembler megahit $reads_dir
-
-atlas run all -w $WD $snakemake_args
-
-
-echo "
-      execution with profile
-    "
-
-  mkdir -p $WD/local
-  printf 'cores: 2\n' > $WD/local/config.yaml
-
-  atlas run qc -w $WD  --profile $WD/local $snakemake_args
-
-
-# clean up
-rm -rf $WD $reads_dir
-
-
-
-
-
-
-echo " 
-      test with external genomes
-      "
-
-bash $test_script_dir/test_external_genomes.sh $snakemake_args
-
-
-
-echo " 
-      test init with different samples
-      "
-
-bash $test_script_dir/test_init_many_samples.sh $snakemake_args
