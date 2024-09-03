@@ -32,8 +32,8 @@ def handle_max_mem(max_mem, profile):
         import psutil
         from math import floor
 
-        # calulate max  system meory in GB (float!)
-        max_system_memory = psutil.virtual_memory().total / (1024**3)
+        # calulate max  system meory in GB (float!) - Include SWAP for systems that have it avaliale
+        max_system_memory = (psutil.virtual_memory().total / (1024**3)) + (psutil.swap_memory().total / (1024**3))
 
         if max_mem is None:
             max_mem = 0.95
