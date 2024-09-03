@@ -207,7 +207,7 @@ def make_config(
     # conf["refseq_tree"] = os.path.join(database_dir, "refseq.tree")
     # conf["diamond_db"] = os.path.join(database_dir, "refseq.dmnd")
 
-    conf["final_binner"] = binner
+    #conf["final_binner"] = binner
 
     if os.path.exists(config):
         logger.warning(
