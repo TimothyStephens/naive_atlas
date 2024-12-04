@@ -7,7 +7,7 @@ rule identify:
         genes_flag="genomes/annotations/genes/predicted",
     output:
         directory(f"{gtdb_dir}/identify"),
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -31,7 +31,7 @@ checkpoint align:
         f"{gtdb_dir}/identify",
     output:
         directory(f"{gtdb_dir}/align"),
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -51,10 +51,10 @@ rule classify:
         genome_dir=genome_dir,
     output:
         directory(f"{gtdb_dir}/classify"),
-    threads: config["threads"]  #pplacer needs much memory for not many threads
+    threads: config["simplejob_threads"]  #pplacer needs much memory for not many threads
     resources:
-        mem=config["large_mem"],
-        time=config["runtime"]["long"],
+        mem=config["large_memory"],
+        time=config["simplejob_runtime"],
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -94,7 +94,7 @@ rule build_tree:
     log:
         "logs/genomes/tree/{msa}.log",
         "logs/genomes/tree/{msa}.err",
-    threads: max(config["threads"], 3)
+    threads: max(config["simplejob_threads"], 3)
     params:
         outdir=lambda wc, output: Path(output[0]).parent,
     conda:
@@ -121,10 +121,9 @@ rule root_tree:
         tree="genomes/tree/{msa}.nwk",
     conda:
         "../envs/tree.yaml"
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
-        ttime=config["runtime"]["simplejob"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     log:
         "logs/genomes/tree/root_tree_{msa}.log",
     script:

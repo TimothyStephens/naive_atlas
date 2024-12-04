@@ -84,11 +84,11 @@ rule initialize_qc:
     log:
         "{sample}/logs/QC/init.log",
     conda:
-        "%s/required_packages.yaml" % CONDAENV
-    threads: config.get("simplejob_threads", 1)
+        "../envs/required_packages.yaml"
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_mem"],
-        java_mem=int(config["simplejob_mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -117,11 +117,11 @@ rule get_read_stats:
     log:
         "{sample}/logs/QC/read_stats/{step}.log",
     # conda:
-    #     "%s/required_packages.yaml" % CONDAENV
-    threads: config.get("simplejob_threads", 1)
+    #     "../envs/required_packages.yaml"
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_mem"],
-        java_mem=int(config["simplejob_mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     params:
         folder=lambda wc, output: os.path.splitext(output[0])[0],
         single_end_file=(
@@ -161,11 +161,11 @@ if not SKIP_QC:
                 sterr="{sample}/logs/QC/deduplicate.err",
                 stout="{sample}/logs/QC/deduplicate.log",
             conda:
-                "%s/required_packages.yaml" % CONDAENV
-            threads: config.get("threads", 1)
+                "../envs/required_packages.yaml"
+            threads: config["simplejob_threads"]
             resources:
-                mem=config["mem"],
-                java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+                mem=config["simplejob_memory"],
+                java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
             shell:
                 "clumpify.sh "
                 " {params.inputs} "
@@ -232,11 +232,11 @@ if not SKIP_QC:
             sterr="{sample}/logs/QC/quality_filter.err",
             stout="{sample}/logs/QC/quality_filter.log",
         conda:
-            "%s/required_packages.yaml" % CONDAENV
-        threads: config.get("threads", 1)
+            "../envs/required_packages.yaml"
+        threads: config["simplejob_threads"]
         resources:
-            mem=config["mem"],
-            java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+            mem=config["simplejob_memory"],
+            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
         shell:
             " bbduk.sh {params.inputs} "
             " {params.ref} "
@@ -272,14 +272,14 @@ if not SKIP_QC:
                 ancient(config["contaminant_references"].values()),
             output:
                 "ref/genome/1/summary.txt",
-            threads: config.get("threads", 1)
+            threads: config["simplejob_threads"]
             resources:
-                mem=config["mem"],
-                java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+                mem=config["simplejob_memory"],
+                java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
             log:
                 "logs/QC/build_decontamination_db.log",
             conda:
-                "%s/required_packages.yaml" % CONDAENV
+                "../envs/required_packages.yaml"
             params:
                 k=config["contaminant_kmer_length"],
                 refs_in=" ".join(
@@ -335,10 +335,10 @@ if not SKIP_QC:
                 stout="{sample}/logs/QC/decontamination.log",
             conda:
                 "../envs/required_packages.yaml"
-            threads: config.get("threads", 1)
+            threads: config["simplejob_threads"]
             resources:
-                mem=config["mem"],
-                java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+                mem=config["simplejob_memory"],
+                java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
             shell:
                 " bbsplit.sh "
                 " {params.inputs} "
@@ -374,7 +374,6 @@ if not SKIP_QC:
                     step=PROCESSED_STEPS[-1],
                 )
             ),
-        threads: 1
         run:
             import shutil
             import pandas as pd
@@ -423,10 +422,10 @@ if PAIRED_END:
             read_length=(
                 "{sample}/sequence_quality_control/read_stats/QC_read_length_hist.txt"
             ),
-        threads: config.get("simplejob_threads", 1)
+        threads: config["simplejob_threads"]
         resources:
-            mem=config["mem"],
-            java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+            mem=config["simplejob_memory"],
+            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
         conda:
             "../envs/required_packages.yaml"
         log:
@@ -465,7 +464,7 @@ else:
             kmer=config["merging_k"],
         threads: config["simplejob_threads"]
         resources:
-            mem=config["simplejob_mem"],
+            mem=config["simplejob_memory"],
         conda:
             "../envs/required_packages.yaml"
         log:
@@ -511,16 +510,12 @@ rule combine_read_length_stats:
 #     run:
 #         import pandas as pd
 #         import os
-
 #         stats= pd.Series()
-
 #         for file in input:
 #             sample= file.split(os.path.sep)[0]
 #             with open(file) as f:
 #                 cardinality= int(f.read().strip())
-
 #             stats.loc[sample]=cardinality
-
 #         stats.to_csv(output[0],sep='"t')
 
 

@@ -10,10 +10,10 @@ rule metaeuk_download:
         database=os.path.join(f"{DBDIR}/MetaEuk", config["metaeuk_database_name"]),
     params:
         metaeuk_database=config["metaeuk_database"],
-    threads: config["large_threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["large_mem"],
-        time=config["runtime"]["default"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     log:
         "logs/genomes/annotations/metaeuk/download_MetaEuk_database.log",
     benchmark:
@@ -53,10 +53,10 @@ rule metaeuk_annotation:
         out="genomes/annotations/metaeuk/{genome}.fasta.metaeuk",
         out_combined="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_combined",
         mag_id=lambda wildcards: wildcards.genome,
-    threads: config["large_threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["large_mem"],
-        time=config["runtime"]["default"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     conda:
         "../envs/metaeuk.yaml"
     log:

@@ -60,12 +60,13 @@ rule cluster_genes:
         temp("Genecatalog/representatives_of_clusters.fasta"),
         temp("Genecatalog/gene_catalog_oldnames.clstr"),
     conda:
-        "%s/cd-hit.yaml" % CONDAENV
+        "../envs/cd-hit.yaml"
     log:
         "logs/Genecatalog/cluster_genes.log",
-    threads: config.get("threads", 1)
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["mem"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     params:
         coverage=config["genecatalog"]["coverage"],
         identity=config["genecatalog"]["minid"],
@@ -100,7 +101,6 @@ rule generate_orf_info:
     output:
         cluster_attribution="Genecatalog/clustering/orf_info.parquet",
         rep2genenr="Genecatalog/clustering/representative2genenr.tsv",
-    threads: 1
     run:
         import pandas as pd
         import numpy as np

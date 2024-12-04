@@ -97,6 +97,7 @@ def get_snakefile(file="workflow/Snakefile"):
             "quantify_genomes",
             "None",
             "all",
+            "test",
         ]
     ),
     #    show_default=True,

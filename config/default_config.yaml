@@ -29,32 +29,7 @@ genome_aligner: "minimap"
 # Binning
 ########################
 
-final_binner: metabat # [SemiBin, vamb, metabat, DASTool]
-
-binner: # If DASTool is used as final_binner, use predictions of this binners
-  - metabat
-  - maxbin
-#  - vamb
-
-cobinning_readmapping_id: 0.95 #when mapping different reads to contigs from different samples use less stringent alignment threshold
-
-semibin_options: ''
-semibin_train_extra: ''
-
-maxbin:
-  max_iteration: 50
-  prob_threshold: 0.9
-  min_contig_length: 1000
-
-DASTool:
-  search_engine: diamond
-  score_threshold: 0.5 # Score threshold until selection algorithm will keep selecting bins [0..1].
-
-genome_filter_criteria: "(Length_scaffolds >= 5000)"
-exclude_unplacable_genomes: false
-
-filter_chimieric_bins: false # filter chimeric bins using GUNC
-gunc_database: progenomes   # 'progenomes' or 'gtdb'
+cobinning_readmapping_id: 0.95
 
 genome_dereplication:
   ANI: 0.95 ## Genome dreplication threshold

@@ -1,402 +1,488 @@
 from glob import glob
 
 
-include: "bin_quality.smk"
-
-
-rule pileup_for_binning:
+rule get_metabat_depth_file_one_sample:
     input:
-        fasta=get_assembly,
-        bam="{sample}/sequence_alignment/{sample_reads}.bam",
+        "{sample}/sequence_alignment/{sample_reads}.bam",
     output:
-        covstats="{sample}/binning/coverage/{sample_reads}_coverage_stats.txt",
-    params:
-        pileup_secondary=(
-            "t"
-            if config.get("count_multi_mapped_reads", CONTIG_COUNT_MULTI_MAPPED_READS)
-            else "f"
-        ),
+        "{sample}/binning/coverage/{sample_reads}.metabat_depth.txt",
+    benchmark:
+        "{sample}/logs/benchmarks/binning/coverage/{sample_reads}.txt"
     log:
-        "{sample}/logs/binning/calculate_coverage/pileup_reads_from_{sample_reads}_to_filtered_contigs.log",  # this file is udes for assembly report
-    conda:
-        "../envs/required_packages.yaml"
-    threads: config["threads"]
-    resources:
-        mem_mb=config["mem"] * 1000,
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
-    shell:
-        "pileup.sh "
-        " ref={input.fasta} "
-        " in={input.bam} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}G "
-        " covstats={output.covstats} "
-        " secondary={params.pileup_secondary} "
-        " 2> {log} "
-
-
-localrules:
-    get_contig_coverage_from_bb,
-    combine_coverages,
-
-
-rule get_contig_coverage_from_bb:
-    input:
-        coverage="{sample}/binning/coverage/{sample_reads}_coverage_stats.txt",
-    output:
-        temp("{sample}/binning/coverage/{sample_reads}_coverage.txt"),
-    run:
-        with open(input[0]) as fi, open(output[0], "w") as fo:
-            # header
-            next(fi)
-            for line in fi:
-                toks = line.strip().split("\t")
-                print(toks[0], toks[1], sep="\t", file=fo)
-
-
-rule combine_coverages:
-    input:
-        covstats=lambda wc: expand(
-            "{sample}/binning/coverage/{sample_reads}_coverage_stats.txt",
-            sample_reads=get_alls_samples_of_group(wc),
-            sample=wc.sample,
-        ),
-    output:
-        "{sample}/binning/coverage/combined_coverage.tsv",
-    run:
-        from utils.parsers_bbmap import combine_coverages
-
-        combined_cov, _ = combine_coverages(
-            input.covstats, get_alls_samples_of_group(wildcards), "Avg_fold"
-        )
-
-        combined_cov.T.to_csv(output[0], sep="\t")
-
-
-## CONCOCT
-rule run_concoct:
-    input:
-        coverage="{sample}/binning/coverage/combined_coverage.tsv",
-        fasta=get_assembly,
-    output:
-        "{{sample}}/binning/concoct/intermediate_files/clustering_gt{}.csv".format(
-            config["concoct"]["min_contig_length"]
-        ),
-    params:
-        basename=lambda wc, output: os.path.dirname(output[0]),
-        Nexpected_clusters=config["concoct"]["Nexpected_clusters"],
-        read_length=config["concoct"]["read_length"],
-        min_length=config["concoct"]["min_contig_length"],
-        niterations=config["concoct"]["Niterations"],
-    log:
-        "{sample}/binning/concoct/intermediate_files/log.txt",
-    conda:
-        "%s/concoct.yaml" % CONDAENV
-    threads: 10  # concoct uses 10 threads by default, wit for update: https://github.com/BinPro/CONCOCT/issues/177
-    resources:
-        mem=config["mem"],
-    shell:
-        """
-        concoct -c {params.Nexpected_clusters} \
-            --coverage_file {input.coverage} \
-            --composition_file {input.fasta} \
-            --basename {params.basename} \
-            --read_length {params.read_length} \
-            --length_threshold {params.min_length} \
-            --converge_out \
-            --iterations {params.niterations}
-        """
-
-
-localrules:
-    convert_concoct_csv_to_tsv,
-
-
-rule convert_concoct_csv_to_tsv:
-    input:
-        rules.run_concoct.output[0],
-    output:
-        "{sample}/binning/concoct/cluster_attribution.tmp",
-    run:
-        with open(input[0]) as fin, open(output[0], "w") as fout:
-            for line in fin:
-                fout.write(line.replace(",", "\t"))
-
-
-## METABAT
-rule get_metabat_depth_file:
-    input:
-        bams=lambda wc: expand(
-            "{sample}/sequence_alignment/{sample_reads}.bam",
-            sample_reads=get_alls_samples_of_group(wc),
-            sample=wc.sample,
-        ),
-    output:
-        temp("{sample}/binning/metabat/metabat_depth.txt"),
-    log:
-        "{sample}/binning/metabat/metabat.log",
+        "{sample}/logs/binning/coverage/{sample_reads}.log",
     conda:
         "../envs/metabat.yaml"
-    threads: config["threads"]  # multithreaded trough OMP_NUM_THREADS
+    threads: config["simplejob_threads"]  # multithreaded trough OMP_NUM_THREADS
     resources:
-        mem_mb=config["mem"] * 1000,
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     params:
-        minid=lambda wc, input: config["cobinning_readmapping_id"] * 100
-        if len(input.bams) > 1
-        else 97,
+        minid=config["cobinning_readmapping_id"] * 100,
+    priority: 100
     shell:
         "jgi_summarize_bam_contig_depths "
         " --percentIdentity {params.minid} "
         " --outputDepth {output} "
-        " {input.bams} &> {log} "
+        " {input} &> {log} "
 
 
-def get_metabat_sensitivity():
-    if config["metabat"]["sensitivity"] == "sensitive":
-        return 500
-    else:
-        200
-
-
-rule metabat:
+rule get_metabat_depth_file_combine:
     input:
-        depth_file=rules.get_metabat_depth_file.output,
-        contigs=get_assembly,
+        depths=lambda wc: expand(
+            "{sample}/binning/coverage/{sample_reads}.metabat_depth.txt",
+            sample_reads=get_alls_samples_of_group(wc),
+            sample=wc.sample,
+        ),
     output:
-        "{sample}/binning/metabat/cluster_attribution.tmp",
-    params:
-        sensitivity=get_metabat_sensitivity(),
-        min_contig_len=config["metabat"]["min_contig_length"],
-        min_bin_len=config["metabat"]["min_bin_length"],
-        output_prefix="{sample}/binning/bins/bin",
+        "{sample}/binning/coverage/metabat_depth.txt",
     benchmark:
-        "logs/benchmarks/binning/metabat/{sample}.txt"
+        "{sample}/logs/benchmarks/binning/coverage/metabat_depth.txt"
     log:
-        "{sample}/logs/binning/metabat.txt",
-    conda:
-        "%s/metabat.yaml" % CONDAENV
-    threads: config["threads"]
+        "{sample}/logs/binning/coverage/metabat.log",
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["mem"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    run:
+        import pandas as pd
+        from functools import reduce
+        
+        # Load each depth file and merge using columns which are identical across files: 'contigName', 'contigLen', 'totalAvgDepth'
+        data_frames = [ pd.read_table(file_name, sep='\t') for file_name in input.depths ]
+        df_merged = reduce(lambda left,right: pd.merge(left,right, on=['contigName', 'contigLen', 'totalAvgDepth'], how='outer'), data_frames)
+        df_merged.to_csv(output, sep='\t', index=False, na_rep=0.0)
+
+
+rule binning_prokaryotic:
+    input:
+        depth_file=rules.get_metabat_depth_file_combine.output,
+        contigs=get_assembly,
+        dbdir=rules.veba_download.output.dbdir,
+    output:
+        bins="{sample}/binning/veba/1_prokaryotic/{sample}/output/genomes",
+        unbinned="{sample}/binning/veba/1_prokaryotic/{sample}/output/unbinned.fasta",
+        stats="{sample}/binning/veba/1_prokaryotic/{sample}/output/genome_statistics.tsv",
+    params:
+        workflow_folder=f"{workflow_folder}",
+        minimum_contig_length=config["veba_prokaryotic"]["minimum_contig_length"],
+        minimum_genome_length=config["veba_prokaryotic"]["minimum_genome_length"],
+        checkm2_completeness=config["veba_prokaryotic"]["checkm2_completeness"],
+        checkm2_contamination=config["veba_prokaryotic"]["checkm2_contamination"],
+        n_iter=config["veba_prokaryotic"]["n_iter"],
+        output_path="{sample}/binning/veba/1_prokaryotic",
+        output_prefix="{sample}",
+    benchmark:
+        "{sample}/logs/benchmarks/binning/veba/{sample}.prokaryotic.txt"
+    log:
+        "{sample}/logs/binning/veba/{sample}.prokaryotic.txt",
+    conda:
+        "../envs/VEBA-binning-prokaryotic_env.yml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["large_memory"],
+        time=config["large_runtime"],
     shell:
         """
-        metabat2 -i {input.contigs} \
-            --abdFile {input.depth_file} \
-            --minContig {params.min_contig_len} \
-            --minClsSize {params.min_bin_len} \
-            --numThreads {threads} \
-            --maxEdges {params.sensitivity} \
-            --saveCls --noBinOut \
-            -o {output} \
+        {params.workflow_folder}/scripts/veba/binning-prokaryotic.py \
+            --fasta {input.contigs} \
+            --name {params.output_prefix} \
+            --coverage {input.depth_file} \
+            --project_directory {params.output_path} \
+            --veba_database {input.dbdir} \
+            --n_jobs {threads} \
+            --minimum_contig_length {params.minimum_contig_length} \
+            --minimum_genome_length {params.minimum_genome_length} \
+            --checkm2_completeness {params.checkm2_completeness} \
+            --checkm2_contamination {params.checkm2_contamination} \
+            --skip_concoct \
+            --n_iter {params.n_iter} \
             &> {log}
         """
 
 
-rule maxbin:
+rule binning_eukaryotic:
     input:
-        fasta=get_assembly,
-        abund="{sample}/binning/coverage/{sample}_coverage.txt",
+        depth_file=rules.get_metabat_depth_file_combine.output,
+        contigs=rules.binning_prokaryotic.output.unbinned,
+        dbdir=rules.veba_download.output.dbdir,
     output:
-        directory("{sample}/binning/maxbin/intermediate_files"),
-        "{sample}/binning/maxbin/{sample}.summary",
-        "{sample}/binning/maxbin/{sample}.marker",
-        "{sample}/binning/maxbin/{sample}.marker_of_each_bin.tar.gz",
-        "{sample}/binning/maxbin/{sample}.log",
+        bins="{sample}/binning/veba/2_eukaryotic/{sample}/output/genomes",
+        unbinned="{sample}/binning/veba/2_eukaryotic/{sample}/output/unbinned.fasta",
+        stats="{sample}/binning/veba/2_eukaryotic/{sample}/output/genome_statistics.tsv",
     params:
-        mi=config["maxbin"]["max_iteration"],
-        mcl=config["maxbin"]["min_contig_length"],
-        pt=config["maxbin"]["prob_threshold"],
-        output_prefix=lambda wc, output: os.path.join(output[0], wc.sample),
+        workflow_folder=f"{workflow_folder}",
+        minimum_contig_length=config["veba_eukaryotic"]["minimum_contig_length"],
+        minimum_genome_length=config["veba_eukaryotic"]["minimum_genome_length"],
+        busco_completeness=config["veba_eukaryotic"]["busco_completeness"],
+        busco_contamination=config["veba_eukaryotic"]["busco_contamination"],
+        output_path="{sample}/binning/veba/2_eukaryotic",
+        output_prefix="{sample}",
+    benchmark:
+        "{sample}/logs/benchmarks/binning/veba/{sample}.eukaryotic.txt"
     log:
-        "{sample}/logs/binning/maxbin.log",
+        "{sample}/logs/binning/veba/{sample}.eukaryotic.txt",
     conda:
-        "%s/maxbin.yaml" % CONDAENV
-    threads: config["threads"]
+        "../envs/VEBA-binning-eukaryotic_env.yml"
+    threads: config["large_threads"]
+    resources:
+        mem=config["large_memory"],
+        time=config["large_runtime"],
     shell:
         """
-        mkdir {output[0]} 2> {log}
-        run_MaxBin.pl -contig {input.fasta} \
-            -abund {input.abund} \
-            -out {params.output_prefix} \
-            -min_contig_length {params.mcl} \
-            -thread {threads} \
-            -prob_threshold {params.pt} \
-            -max_iteration {params.mi} >> {log}
-
-        mv {params.output_prefix}.summary {output[0]}/.. 2>> {log}
-        mv {params.output_prefix}.marker {output[0]}/..  2>> {log}
-        mv {params.output_prefix}.marker_of_each_bin.tar.gz {output[0]}/..  2>> {log}
-        mv {params.output_prefix}.log {output[0]}/..  2>> {log}
-
+        {params.workflow_folder}/scripts/veba/binning-eukaryotic.py \
+            --fasta {input.contigs} \
+            --name {params.output_prefix} \
+            --coverage {input.depth_file} \
+            --project_directory {params.output_path} \
+            --veba_database {input.dbdir} \
+            --n_jobs {threads} \
+            --minimum_contig_length {params.minimum_contig_length} \
+            --minimum_genome_length {params.minimum_genome_length} \
+            --busco_completeness {params.busco_completeness} \
+            --busco_contamination {params.busco_contamination} \
+            &> {log}
         """
 
 
-localrules:
-    get_bins,
-    get_unbinned,
-
-
-localrules:
-    get_unique_cluster_attribution,
-    get_maxbin_cluster_attribution,
-
-
-rule get_unique_cluster_attribution:
+rule binning_viral:
     input:
-        "{sample}/binning/{binner}/cluster_attribution.tmp",
+        depth_file=rules.get_metabat_depth_file_combine.output,
+        contigs=rules.binning_eukaryotic.output.unbinned,
+        dbdir=rules.veba_download.output.dbdir,
     output:
-        "{sample}/binning/{binner}/cluster_attribution.tsv",
-        "{sample}/binning/{binner}/cluster_attribution_unbinned.tsv",
+        plastid_bins="{sample}/binning/veba/3_viral/{sample}/output/filtered_plastid_bins/genomes",
+        plastid_stats="{sample}/binning/veba/3_viral/{sample}/output/filtered_plastid_bins/genomad_results.filtered.tsv",
+        viral_bins="{sample}/binning/veba/3_viral/{sample}/output/filtered_viral_bins/genomes",
+        viral_stats="{sample}/binning/veba/3_viral/{sample}/output/filtered_viral_bins/genomad_results.filtered.tsv",
+        unbinned="{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta",
+    params:
+        workflow_folder=f"{workflow_folder}",
+        minimum_contig_length=config["veba_viral"]["minimum_contig_length"],
+        minimum_genome_length=config["veba_viral"]["minimum_genome_length"],
+        minimum_score=config["veba_viral"]["minimum_score"],
+        output_path="{sample}/binning/veba/3_viral",
+        output_prefix="{sample}",
+    benchmark:
+        "{sample}/logs/benchmarks/binning/veba/{sample}.viral.txt"
+    log:
+        "{sample}/logs/binning/veba/{sample}.viral.txt",
+    conda:
+        "../envs/VEBA-binning-viral_env.yml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["large_memory"],
+        time=config["large_runtime"],
+    shell:
+        """
+        {params.workflow_folder}/scripts/veba/binning-viral.py \
+            --fasta {input.contigs} \
+            --name {params.output_prefix} \
+            --coverage {input.depth_file} \
+            --project_directory {params.output_path} \
+            --veba_database {input.dbdir} \
+            --n_jobs {threads} \
+            --minimum_contig_length {params.minimum_contig_length} \
+            --minimum_genome_length {params.minimum_genome_length} \
+            --minimum_score {params.minimum_score} \
+            &> {log}
+        """
+
+
+## Combine binning results
+def get_list_of_files(dirs, pattern):
+    fasta_files = []
+    
+    # searh for fasta files (.f*) in all bin folders
+    for dir in dirs:
+        dir = Path(dir)
+        fasta_files += list(dir.glob(pattern))
+        
+        filenames = pd.DataFrame(fasta_files, columns=["Filename"])
+        filenames.index = filenames.Filename.apply(io.simplify_path)
+        filenames.index.name = "Bin"
+        
+        filenames.sort_index(inplace=True)
+
+    return filenames
+
+
+# Combine Prokaryotic bin paths and completness stats
+localrules:
+    get_prokaryotic_bins,
+
+rule get_prokaryotic_bins:
+    input:
+        dirs=expand(
+            "{sample}/binning/veba/1_prokaryotic/{sample}/output/genomes",
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            "{sample}/binning/veba/1_prokaryotic/{sample}/output/genome_statistics.tsv",
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            "{sample}/binning/veba/1_prokaryotic/{sample}/output/checkm2_results.filtered.tsv",
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="binning/raw_bins/prokaryotic.paths.tsv",
+        stats="binning/raw_bins/prokaryotic.statistics.tsv",
+    log:
+        "logs/binning/raw_bins/get_prokaryotic_bins.log",
     run:
         import pandas as pd
-        import numpy as np
-
-
-        d = pd.read_csv(input[0], index_col=0, header=None, sep="\t").squeeze()
-
-        assert (
-            type(d) == pd.Series
-        ), "expect the input to be a two column file: {}".format(input[0])
+        from pathlib import Path
+        from utils import io
+        import os.path
         
-        # Get binned contigs
-        old_cluster_ids = list(d.unique())
-        if 0 in old_cluster_ids:
-            old_cluster_ids.remove(0)
-
-        map_cluster_ids = dict(
-            zip(
-                old_cluster_ids,
-                utils.gen_names_for_range(
-                    len(old_cluster_ids),
-                    prefix="{sample}_{binner}_".format(**wildcards),
-                ),
-            )
-        )
-
-        new_d = d.map(map_cluster_ids)
-        new_d.dropna(inplace=True)
-        if new_d.shape[0] == 0:
-            logger.warning(
-                f"No bins detected with binner {wildcards.binner} in sample {wildcards.sample}.\n"
-                "I add longest contig to make the pipeline continue"
-            )
-
-            new_d[f"{wildcards.sample}_0"] = "{sample}_{binner}_1".format(**wildcards)
-
-        new_d.to_csv(output[0], sep="\t", header=False)
-
-        # Get unbinned contigs
-        map_cluster_ids = {0:"{sample}_{binner}_unbinned".format(**wildcards)}
-
-        new_d = d.map(map_cluster_ids)
-        new_d.dropna(inplace=True)
+        genome_filenames = get_list_of_files(input.dirs, "*.fa")
+        faa_filenames    = get_list_of_files(input.dirs, "*.faa")
+        cds_filenames    = get_list_of_files(input.dirs, "*.ffn")
+        gff_filenames    = get_list_of_files(input.dirs, "*.gff")
+        rRNA_filenames   = get_list_of_files(input.dirs, "*.rRNA")
+        tRNA_filenames   = get_list_of_files(input.dirs, "*.tRNA")
         
-        new_d.to_csv(output[1], sep="\t", header=False)
-
-#
-
-
-rule get_maxbin_cluster_attribution:
-    input:
-        "{sample}/binning/maxbin/intermediate_files",
-    output:
-        "{sample}/binning/maxbin/cluster_attribution.tmp",
-    params:
-        file_name=lambda wc, input: "{folder}/{sample}.{{binid}}.fasta".format(
-            folder=input[0], **wc
-        ),
-    run:
-        (bin_ids,) = glob_wildcards(params.file_name)
-        print("found {} bins".format(len(bin_ids)))
-        with open(output[0], "w") as out_file:
-            for binid in bin_ids:
-                with open(params.file_name.format(binid=binid)) as bin_file:
-                    for line in bin_file:
-                        if line.startswith(">"):
-                            fasta_header = line[1:].strip().split()[0]
-                            out_file.write(f"{fasta_header}\t{binid}\n")
-                os.remove(params.file_name.format(binid=binid))
-
-
-rule get_bins:
-    input:
-        cluster_attribution="{sample}/binning/{binner}/cluster_attribution.tsv",
-        contigs=get_assembly,
-    output:
-        directory("{sample}/binning/{binner}/bins"),
-    conda:
-        "../envs/sequence_utils.yaml"
-    log:
-        "{sample}/logs/binning/get_bins_{binner}.log",
-    script:
-        "../scripts/get_fasta_of_bins.py"
+        assert all(
+            genome_filenames.index == faa_filenames.index
+        ), "faa index does not match fa index"
+        assert all(
+            genome_filenames.index == cds_filenames.index
+        ), "ffn index does not match fa index"
+        assert all(
+            genome_filenames.index == gff_filenames.index
+        ), "gff index does not match fa index"
+        assert all(
+            genome_filenames.index == rRNA_filenames.index
+        ), "rRNA index does not match fa index"
+        assert all(
+            genome_filenames.index == tRNA_filenames.index
+        ), "tRNA index does not match fa index"
+        
+        faa_filenames.columns  = ["Proteins"]
+        cds_filenames.columns  = ["CDS"]
+        gff_filenames.columns  = ["GFF"]
+        rRNA_filenames.columns = ["rRNA"]
+        tRNA_filenames.columns = ["tRNA"]
+        
+        filenames = pd.concat((genome_filenames, faa_filenames, cds_filenames, gff_filenames, rRNA_filenames, tRNA_filenames), axis=1)
+        
+        filenames.to_csv(output.filenames, sep="\t")
+        
+        # Load each genome stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.genome_stats if os.path.isfile(file_name) ]
+        df_merged_1 = pd.concat(data_frames, axis=1)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.completness_stats if os.path.isfile(file_name) ]
+        df_merged_2 = pd.concat(data_frames, axis=1)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=False, na_rep=0.0)
 
 
-rule get_unbinned:
-    input:
-        cluster_attribution="{sample}/binning/{binner}/cluster_attribution_unbinned.tsv",
-        contigs=get_assembly,
-    output:
-        directory("{sample}/binning/{binner}/unbinned"),
-    conda:
-        "../envs/sequence_utils.yaml"
-    log:
-        "{sample}/logs/binning/get_unbinned_{binner}.log",
-    script:
-        "../scripts/get_fasta_of_bins.py"
-
-
+## Combine Eukaryotic bin paths and completness stats
 localrules:
-    get_unique_bin_ids,
+    get_eukaryotic_bins,
 
-
-rule get_unique_bin_ids:
+rule get_eukaryotic_bins:
     input:
-        "{sample}/binning/{binner}/cluster_attribution.tsv",
-    output:
-        "{sample}/binning/DASTool/{binner}.scaffolds2bin",
-    shell:
-        "cp {input} {output}"
-
-
-rule run_das_tool:
-    input:
-        cluster_attribution=expand(
-            "{{sample}}/binning/DASTool/{binner}.scaffolds2bin",
-            binner=config["binner"],
+        dirs=expand(
+            "{sample}/binning/veba/2_eukaryotic/{sample}/output/genomes",
+            sample=SAMPLES,
         ),
-        contigs=get_assembly,
-        proteins="{sample}/annotation/predicted_genes/{sample}.faa",
+        genome_stats=expand(
+            "{sample}/binning/veba/2_eukaryotic/{sample}/output/genome_statistics.tsv",
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            "{sample}/binning/veba/2_eukaryotic/{sample}/output/busco_results.filtered.tsv",
+            sample=SAMPLES,
+        ),
     output:
-        "{sample}/binning/DASTool/{sample}_DASTool_summary.tsv",
-        "{sample}/binning/DASTool/{sample}_allBins.eval",
-        cluster_attribution="{sample}/binning/DASTool/cluster_attribution.tsv",
-    threads: config["threads"]
+        filenames="binning/raw_bins/eukaryotic.paths.tsv",
+        stats="binning/raw_bins/eukaryotic.statistics.tsv",
     log:
-        "{sample}/logs/binning/DASTool.log",
-    conda:
-        "%s/DASTool.yaml" % CONDAENV
-    params:
-        binner_names=",".join(config["binner"]),
-        scaffolds2bin=lambda wc, input: ",".join(input.cluster_attribution),
-        output_prefix="{sample}/binning/DASTool/{sample}",
-        score_threshold=config["DASTool"]["score_threshold"],
-        megabin_penalty=config["DASTool"]["megabin_penalty"],
-        duplicate_penalty=config["DASTool"]["duplicate_penalty"],
-    shell:
-        " DAS_Tool --outputbasename {params.output_prefix} "
-        " --bins {params.scaffolds2bin} "
-        " --labels {params.binner_names} "
-        " --contigs {input.contigs} "
-        " --search_engine diamond "
-        " --proteins {input.proteins} "
-        " --write_bin_evals "
-        " --megabin_penalty {params.megabin_penalty}"
-        " --duplicate_penalty {params.duplicate_penalty} "
-        " --threads {threads} "
-        " --debug "
-        " --score_threshold {params.score_threshold} &> {log} "
-        " ; mv {params.output_prefix}_DASTool_contig2bin.tsv {output.cluster_attribution} &>> {log}"
+        "logs/binning/raw_bins/get_eukaryotic_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os.path
+        
+        genome_filenames  = get_list_of_files(input.dirs, "*.fa")
+        faa_filenames     = get_list_of_files(input.dirs, "*.faa")
+        cds_filenames     = get_list_of_files(input.dirs, "*.ffn")
+        gff_filenames     = get_list_of_files(input.dirs, "*.gff")
+        rRNA_filenames    = get_list_of_files(input.dirs, "*.rRNA")
+        tRNA_filenames    = get_list_of_files(input.dirs, "*.tRNA")
+        seqType_filenames = get_list_of_files(input.dirs, "*.seq_type.tsv")
+        
+        assert all(
+            genome_filenames.index == faa_filenames.index
+        ), "faa index does not match fa index"
+        assert all(
+            genome_filenames.index == cds_filenames.index
+        ), "ffn index does not match fa index"
+        assert all(
+            genome_filenames.index == gff_filenames.index
+        ), "gff index does not match fa index"
+        assert all(
+            genome_filenames.index == rRNA_filenames.index
+        ), "rRNA index does not match fa index"
+        assert all(
+            genome_filenames.index == tRNA_filenames.index
+        ), "tRNA index does not match fa index"
+        assert all(
+            genome_filenames.index == seqType_filenames.index
+        ), "seq_type index does not match fa index"
+        
+        faa_filenames.columns  = ["Proteins"]
+        cds_filenames.columns  = ["CDS"]
+        gff_filenames.columns  = ["GFF"]
+        rRNA_filenames.columns = ["rRNA"]
+        tRNA_filenames.columns = ["tRNA"]
+        seqType_filenames.columns = ["seq_type"]
+        
+        filenames = pd.concat((genome_filenames, faa_filenames, cds_filenames, gff_filenames, rRNA_filenames, tRNA_filenames, seqType_filenames), axis=1)
+        
+        filenames.to_csv(output.filenames, sep="\t")
+        
+        # Load each genome stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.genome_stats if os.path.isfile(file_name) ]
+        df_merged_1 = pd.concat(data_frames, axis=1)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0, header=[0,1]) for file_name in input.completness_stats if os.path.isfile(file_name) ]
+        df_merged_2 = pd.concat(data_frames, axis=1)
+        # Needed since the BUSCO results have two row header (join into one line)
+        df_merged_2.columns = df_merged_2.columns.map('-'.join)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=False, na_rep=0.0)
 
 
-#
+## Combine Virus and Plasmid bin paths and completness stats
+localrules:
+    get_virus_bins,
+    get_plasmid_bins,
+
+rule get_virus_bins:
+    input:
+        dirs=expand(
+            "{sample}/binning/veba/3_viral/{sample}/output/filtered_viral_bins/genomes",
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            "{sample}/binning/veba/3_viral/{sample}/output/filtered_viral_bins/genome_statistics.tsv",
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            "{sample}/binning/veba/3_viral/{sample}/output/filtered_viral_bins/genomad_results.filtered.tsv",
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="binning/raw_bins/viral.paths.tsv",
+        stats="binning/raw_bins/viral.genome_statistics.tsv",
+    log:
+        "logs/binning/raw_bins/get_virus_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os.path
+        
+        genome_filenames = get_list_of_files(input.dirs, "*.fa")
+        faa_filenames    = get_list_of_files(input.dirs, "*.faa")
+        cds_filenames    = get_list_of_files(input.dirs, "*.ffn")
+        gff_filenames    = get_list_of_files(input.dirs, "*.gff")
+        
+        assert all(
+            genome_filenames.index == faa_filenames.index
+        ), "faa index does not match fa index"
+        assert all(
+            genome_filenames.index == cds_filenames.index
+        ), "ffn index does not match fa index"
+        assert all(
+            genome_filenames.index == gff_filenames.index
+        ), "gff index does not match fa index"
+        
+        faa_filenames.columns  = ["Proteins"]
+        cds_filenames.columns  = ["CDS"]
+        gff_filenames.columns  = ["GFF"]
+        
+        filenames = pd.concat((genome_filenames, faa_filenames, cds_filenames, gff_filenames), axis=1)
+        
+        filenames.to_csv(output.filenames, sep="\t")
+        
+        # Load each genome stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.genome_stats if os.path.isfile(file_name) ]
+        df_merged_1 = pd.concat(data_frames, axis=1)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.completness_stats if os.path.isfile(file_name) ]
+        df_merged_2 = pd.concat(data_frames, axis=1)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=False, na_rep=0.0)
+
+
+rule get_plasmid_bins:
+    input:
+        dirs=expand(
+            "{sample}/binning/veba/3_viral/{sample}/output/filtered_plasmid_bins/genomes",
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            "{sample}/binning/veba/3_viral/{sample}/output/filtered_plasmid_bins/genome_statistics.tsv",
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            "{sample}/binning/veba/3_viral/{sample}/output/filtered_plasmid_bins/genomad_results.filtered.tsv",
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="binning/raw_bins/plasmid.paths.tsv",
+        stats="binning/raw_bins/plasmid.genome_statistics.tsv",
+    log:
+        "logs/binning/raw_bins/get_plasmid_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os.path
+        
+        genome_filenames = get_list_of_files(input.dirs, "*.fa")
+        faa_filenames    = get_list_of_files(input.dirs, "*.faa")
+        cds_filenames    = get_list_of_files(input.dirs, "*.ffn")
+        gff_filenames    = get_list_of_files(input.dirs, "*.gff")
+        
+        assert all(
+            genome_filenames.index == faa_filenames.index
+        ), "faa index does not match fa index"
+        assert all(
+            genome_filenames.index == cds_filenames.index
+        ), "ffn index does not match fa index"
+        assert all(
+            genome_filenames.index == gff_filenames.index
+        ), "gff index does not match fa index"
+        
+        faa_filenames.columns  = ["Proteins"]
+        cds_filenames.columns  = ["CDS"]
+        gff_filenames.columns  = ["GFF"]
+        
+        filenames = pd.concat((genome_filenames, faa_filenames, cds_filenames, gff_filenames), axis=1)
+        
+        filenames.to_csv(output.filenames, sep="\t")
+        
+        # Load each genome stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.genome_stats if os.path.isfile(file_name) ]
+        df_merged_1 = pd.concat(data_frames, axis=1)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.completness_stats if os.path.isfile(file_name) ]
+        df_merged_2 = pd.concat(data_frames, axis=1)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=False, na_rep=0.0)
+
+

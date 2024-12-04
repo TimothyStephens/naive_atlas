@@ -1,0 +1,18 @@
+name: VEBA-binning-viral_env__v2023.7.7
+channels:
+  - conda-forge
+  - bioconda
+  - jolespin
+  - defaults
+dependencies:
+  - checkv=1.0.1=pyhdfd78af_0
+  - coverm=0.4.0=hc216eb9_2
+  - genomad=1.5.0=pyhdfd78af_0
+  - metabat2=2.15=h986a166_1
+  - pip=22.0.4=pyhd8ed1ab_0
+  - prodigal-gv=2.10.0=h7132678_0
+  - seqkit=2.4.0=h9ee0642_0
+  - subread=2.0.3=h7132678_1
+  - genopype=2023.5.15=py_0
+  - pip:
+      - checkm2==1.0.1

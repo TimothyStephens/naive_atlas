@@ -20,13 +20,12 @@ rule prefetch:
         "logs/SRAdownload/prefetch/{sra_run}.log",
     benchmark:
         "logs/benchmarks/SRAdownload/prefetch/{sra_run}.tsv"
-    threads: 1
     resources:
-        mem=1,
-        time=int(config["runtime"]["simplejob"]),
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
         internet_connection=1,
     conda:
-        "%s/sra.yaml" % CONDAENV
+        "../envs/sra.yaml"
     shell:
         " mkdir -p {params.outdir} 2> {log} "
         " ; "
@@ -59,10 +58,10 @@ rule extract_run:
         "logs/benchmarks/SRAdownload/fasterqdump/{sra_run}.tsv"
     threads: config["simplejob_threads"]
     resources:
-        time=int(config["runtime"]["simplejob"]),
-        mem=1,  #default 100Mb
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     conda:
-        "%s/sra.yaml" % CONDAENV
+        "../envs/sra.yaml"
     shell:
         " vdb-validate {params.sra_file} &>> {log} "
         " ; "
@@ -119,7 +118,6 @@ rule merge_runs_to_sample:
             "SRA/Samples/{{sample}}/{{sample}}{fraction}.fastq.gz",
             fraction=SRA_read_fractions,
         ),
-    threads: 1
     run:
         from utils import io
 

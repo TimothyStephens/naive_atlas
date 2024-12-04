@@ -8,16 +8,10 @@ CHECKMDIR = os.path.join(DBDIR, "checkm")
 CHECKM_ARCHIVE = "checkm_data_v1.0.9.tar.gz"
 CAT_DIR = os.path.join(DBDIR, "CAT")
 CAT_flag_downloaded = os.path.join(CAT_DIR, "downloaded")
-GUNCDIR = os.path.join(DBDIR, "gunc_database")
-BUSCODIR = os.path.join(DBDIR, "busco_lineages")
-CHECKVDIR = os.path.join(DBDIR, "checkv")
-PLASMEDONE = os.path.join(DBDIR, "plasme.done")
 
 ZENODO_ARCHIVE = "1134890"
 EGGNOG_VERSION = "5"
 EGGNOG_DIR = os.path.join(DBDIR, "EggNOG_V" + EGGNOG_VERSION)
-
-CONDAENV = "../envs"
 
 GTDB_VERSION = "R220"
 GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
@@ -100,7 +94,6 @@ localrules:
     download_eggNOG_files,
     download_atlas_files,
     download_checkm_data,
-    download_gunc,
 
 
 ruleorder: download_eggNOG_files > download_atlas_files
@@ -120,7 +113,6 @@ rule download_eggNOG_files:
     output:
         f"{EGGNOG_DIR}/eggnog.db",
         f"{EGGNOG_DIR}/eggnog_proteins.dmnd",
-    threads: 1
     conda:
         "../envs/eggNOG.yaml"
     shell:
@@ -130,7 +122,6 @@ rule download_eggNOG_files:
 rule download_atlas_files:
     output:
         f"{DBDIR}/{{filename}}",
-    threads: 1
     wildcard_constraints:
         filename="[A-Za-z0-9_.]+",
     run:
@@ -169,7 +160,7 @@ rule initialize_checkm:
     params:
         database_dir=CHECKMDIR,
     conda:
-        "%s/checkm.yaml" % CONDAENV
+        "../envs/checkm.yaml"
     log:
         "logs/initialize_checkm.log",
     shell:
@@ -185,9 +176,8 @@ rule download_gtdb:
         temp(f"{GTDBTK_DATA_PATH}/gtdb_data.tar.gz"),
     conda:
         "../envs/gtdbtk.yaml"
-    threads: 1
     resources:
-        time=int(config.get("runtime", {"long": 10})["long"]),
+        time=config["simplejob_runtime"],
     log:
         "logs/download/gtdbtk.log",
     shell:
@@ -201,9 +191,8 @@ rule extract_gtdb:
         touch(os.path.join(GTDBTK_DATA_PATH, "downloaded_success")),
     conda:
         "../envs/gtdbtk.yaml"
-    threads: 1
     resources:
-        time=int(config.get("runtime", {"long": 10})["long"]),
+        time=config["simplejob_runtime"],
     log:
         "logs/download/gtdbtk_untar.log",
     shell:
@@ -215,89 +204,36 @@ rule checkm2_download_db:
         directory(f"{DBDIR}/CheckM2"),
     conda:
         "../envs/checkm2.yaml"
-    threads: 1
     log:
         "logs/download/checkm2.log",
     resources:
-        time=int(config.get("runtime", {"long": 10})["long"]),
+        time=config["simplejob_runtime"],
     shell:
         " checkm2 database --download --path {output} "
         " &>> {log}"
 
 
-rule download_gunc:
+localrules:
+    veba_download,
+
+rule veba_download:
     output:
-        os.path.join(GUNCDIR, "{gunc_database}"),
-    conda:
-        "../envs/gunc.yaml"
-    threads: 1
+        dbdir=directory(f"{DBDIR}/veba"),
+    threads: config["simplejob_threads"]
     resources:
-        time=int(config.get("runtime", {"default": 5})["default"]),
-        mem_mb=config.get("simplejob_mem", 1) * 1000,
-        tmpdir=config.get("tmpdir", "."),  # you can store the file in the main working folder if you want
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     log:
-        "logs/download/gunc_download_{gunc_database}.log",
-    shell:
-        "gunc download_db {resources.tmpdir} -db {wildcards.gunc_database} &> {log} ;"
-        "mv {resources.tmpdir}/gunc_db_{wildcards.gunc_database}*.dmnd {output} 2>> {log}"
-
-
-rule download_busco:
-    output:
-        directory(BUSCODIR),
+        "logs/binning/download_veba_binning_database.log",
+    benchmark:
+        "logs/benchmarks/binning/download_veba_binning_database.tsv"
     conda:
-        "../envs/busco.yaml"
-    threads: 1
-    resources:
-        time=int(config.get("runtime", {"default": 5})["default"]),
-        mem_mb=config.get("simplejob_mem", 1) * 1000,
-    log:
-        "logs/download/busco_lineages.log",
+        "../envs/VEBA-database_env.yml"
     shell:
-        """
-        export PATH="$CONDA_PREFIX/bin:$PATH"
-        export PYTHONPATH="$CONDA_PREFIX/lib/python3.7/site-packages"
-        busco -q --download_path {output} --download all &> {log}
-        """
-
-
-rule download_checkv:
-    output:
-        directory(CHECKVDIR),
-    conda:
-        "../envs/checkv.yaml"
-    threads: 1
-    resources:
-        time=int(config.get("runtime", {"default": 5})["default"]),
-        mem_mb=config.get("simplejob_mem", 1) * 1000,
-    log:
-        "logs/download/checkv_download.log",
-    shell:
-        "checkv download_database {output} &> {log}"
-
-
-rule download_plasme:
-    output:
-        touch(PLASMEDONE),
-    conda:
-        "../envs/plasme.yaml"
-    threads: 1
-    resources:
-        time=int(config.get("runtime", {"default": 5})["default"]),
-        mem_mb=config.get("simplejob_mem", 1) * 1000,
-    log:
-        "logs/download/plasme_download.log",
-    shell:
-        "("
-        "cd $CONDA_PREFIX; "
-        "rm -fr PLASMe; "
-        "git clone https://github.com/HubertTang/PLASMe; "
-        "chmod +x PLASMe/PLASMe_db.py PLASMe/PLASMe.py; "
-        "cd bin; ln -fs ../PLASMe/PLASMe_db.py; ln -fs ../PLASMe/PLASMe.py; "
-        "cd ../PLASMe/; "
-        "wget https://zenodo.org/record/8046934/files/DB.zip?download=1 -O DB.zip; "
-        "python PLASMe_db.py --threads {threads}"
-        ") &> {log}"
+        f"bash {workflow_folder}/scripts/veba/download_databases.sh"
+        " {output.dbdir}"
+        " {threads}"
+        " &> {log}"
 
 
 onsuccess:

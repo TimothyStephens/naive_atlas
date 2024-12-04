@@ -11,7 +11,6 @@ rule filter_genes:
         short=temp("{gene_file}.short.faa"),
     conda:
         "../envs/fasta.yaml"
-    threads: 1
     log:
         "logs/Genecatalog/filter_genes/{gene_file}.log",
     params:
@@ -84,10 +83,13 @@ if (config["genecatalog"]["clustermethod"] == "linclust") or (
             db=temp(directory("Genecatalog/all_genes/predicted_genes")),
             clusterdb=temp(directory("Genecatalog/clustering/mmseqs")),
         conda:
-            "%s/mmseqs.yaml" % CONDAENV
+            "../envs/mmseqs.yaml"
         log:
             "logs/Genecatalog/clustering/cluster_proteins.log",
-        threads: config.get("threads", 1)
+        threads: config["simplejob_threads"]
+        resources:
+            mem=config["simplejob_memory"],
+            time=config["simplejob_runtime"],
         params:
             tmpdir=os.path.join(config["tmpdir"], "mmseqs"),
             clustermethod=(
@@ -121,10 +123,10 @@ if (config["genecatalog"]["clustermethod"] == "linclust") or (
             rep_seqs_db=temp(directory("Genecatalog/protein_catalog")),
             rep_seqs=temp("Genecatalog/representatives_of_clusters.faa"),
         conda:
-            "%s/mmseqs.yaml" % CONDAENV
+            "../envs/mmseqs.yaml"
         log:
             "logs/Genecatalog/clustering/get_rep_proteins.log",
-        threads: config.get("threads", 1)
+        threads: config["simplejob_threads"]
         params:
             clusterdb=lambda wc, input: os.path.join(input.clusterdb, "clusterdb"),
             db=lambda wc, input: os.path.join(input.db, "inputdb"),
@@ -148,10 +150,9 @@ if (config["genecatalog"]["clustermethod"] == "linclust") or (
             temp("Genecatalog/representatives_of_clusters.fna"),
         conda:
             "../envs/required_packages.yaml"
-        threads: 1
         resources:
-            mem=config["mem"],
-            java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+            mem=config["simplejob_memory"],
+            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
         log:
             "logs/Genecatalog/clustering/get_cds_of_proteins.log",
         shell:
@@ -169,7 +170,6 @@ if (config["genecatalog"]["clustermethod"] == "linclust") or (
         output:
             cluster_attribution="Genecatalog/clustering/orf_info.parquet",
             rep2genenr="Genecatalog/clustering/representative2genenr.tsv",
-        threads: 1
         log:
             "logs/Genecatalog/clustering/generate_orf_info.log",
         script:
@@ -216,10 +216,9 @@ rule get_genecatalog_seq_info:
         "logs/Genecatalog/get_seq_info.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
-        java_mem=int(config["simplejob_mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     shell:
         "stats.sh gcformat=4 gc={output} in={input} &> {log}"
 
@@ -244,9 +243,6 @@ rule concat_all_reads:
         temp("Intermediate/genecatalog/alignments/{sample}.fastq.gz"),
     log:
         "logs/Genecatalog/alignment/concat_reads/{sample}.log",
-    threads: 1
-    resources:
-        mem_mb=300,
     shell:
         "cat {input} > {output} 2> {log}"
 
@@ -259,9 +255,9 @@ rule align_reads_to_Genecatalog:
         temp("Genecatalog/alignments/{sample}.bam"),
     log:
         "logs/Genecatalog/alignment/{sample}_map.log",
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem_mb=config["mem"] * 1000,
+        mem=config["simplejob_memory"],
     params:
         extra="-x sr --split-prefix {sample}_split_ ",
         sort="coordinate",
@@ -281,10 +277,10 @@ rule pileup_Genecatalog:
         "logs/Genecatalog/alignment/{sample}_pileup.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     shell:
         " pileup.sh "
         " in={input.bam}"
@@ -302,10 +298,9 @@ rule gene_pileup_as_parquet:
         #rpkm = "Genecatalog/alignments/{sample}_rpkm.tsv"
     output:
         "Genecatalog/alignments/{sample}_coverage.parquet",
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
-        time_min=config["runtime"]["simplejob"] * 60,
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     log:
         "logs/Genecatalog/counts/parse_gene_coverages/{sample}.log",
     run:
@@ -337,7 +332,7 @@ rule gene_pileup_as_parquet:
 def get_combine_cov_time():
     estimated_time = (0.5 * len(SAMPLES) + 20) / 60
 
-    config_time = config["runtime"]["long"]
+    config_time = config["simplejob_runtime"]
 
     if config_time < estimated_time:
         logger.error(
@@ -366,9 +361,8 @@ rule combine_gene_coverages:
         samples=SAMPLES,
     conda:
         "../envs/hdf.yaml"
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
+        mem=config["simplejob_memory"],
         time_min=get_combine_cov_time(),
     script:
         "../scripts/combine_gene_coverages.py"
@@ -441,8 +435,8 @@ rule eggNOG_homology_search:
         data_dir=EGGNOG_DIR,
         prefix=lambda wc, output: output[0].replace(".emapper.seed_orthologs", ""),
     resources:
-        mem=config["mem"],
-    threads: config["threads"]
+        mem=config["simplejob_memory"],
+    threads: config["simplejob_threads"]
     shadow:
         "minimal"
     conda:
@@ -458,7 +452,7 @@ rule eggNOG_homology_search:
 
 
 def calculate_mem_eggnog():
-    return 2 * config["simplejob_mem"] + (
+    return 2 * config["simplejob_memory"] + (
         37 if config["eggNOG_use_virtual_disk"] else 0
     )
 
@@ -475,7 +469,7 @@ rule eggNOG_annotation:
         ),
         prefix=lambda wc, output: output[0].replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
-    threads: config.get("threads", 1)
+    threads: config["simplejob_threads"]
     resources:
         mem=calculate_mem_eggnog(),
     shadow:
@@ -521,7 +515,7 @@ rule combine_egg_nogg_annotations:
     log:
         "logs/genecatalog/annotation/eggNOG/combine.log",
     resources:
-        time=config["runtime"]["default"],
+        time=config["simplejob_runtime"],
     run:
         try:
             import pandas as pd
@@ -558,7 +552,7 @@ rule convert_eggNOG_tsv2parquet:
     output:
         "Genecatalog/annotations/eggNOG.parquet",
     resources:
-        time=config["runtime"]["default"],
+        time=config["simplejob_runtime"],
     log:
         "logs/genecatalog/annotation/eggNOG/tsv2parquet.log",
     run:
@@ -597,8 +591,8 @@ rule DRAM_annotate_genecatalog:
         genes=temp("Intermediate/genecatalog/annotation/dram/{subset}/genes.faa"),
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_mem"],
-        time=config["runtime"]["long"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     conda:
         "../envs/dram.yaml"
     params:
@@ -634,7 +628,7 @@ rule combine_dram_genecatalog_annotations:
     output:
         directory("Genecatalog/annotations/dram"),
     resources:
-        time=config["runtime"]["default"],
+        time=config["simplejob_runtime"],
     log:
         "logs/genecatalog/annotation/dram/combine.log",
     script:
@@ -692,7 +686,7 @@ rule gene2genome:
 #     benchmark:
 #         "logs/benchmarks/canopy_clustering.txt"
 #     conda:
-#         "%s/canopy.yaml" % CONDAENV
+#         "../envs/canopy.yaml"
 #     threads:
 #         12
 #     resources:
@@ -711,12 +705,12 @@ rule predict_single_copy_genes:
         script_dir=os.path.dirname(os.path.abspath(workflow.snakefile)),
         key=lambda wc: wc.domain[:3],  #bac for bacteria, #arc for archaea
     conda:
-        "%s/DASTool.yaml" % CONDAENV  # needs pearl
+        "../envs/DASTool.yaml" # needs pearl
     log:
         "logs/Genecatalog/annotation/predict_single_copy_genes_{domain}.log",
     shadow:
         "shallow"
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     shell:
         " DIR=$(dirname $(readlink -f $(which DAS_Tool))) "
         ";"

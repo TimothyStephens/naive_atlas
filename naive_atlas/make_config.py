@@ -19,8 +19,6 @@ def make_default_config():
     config["tmpdir"] = tempfile.gettempdir()
     config["threads"] = 6
 
-    config["simplejob_mem"] = 10
-    config["simplejob_threads"] = 4
     config[
         "importqc_params"
     ] = "iupacToN=t touppercase=t qout=33 addslash=t trimreaddescription=t"
@@ -112,30 +110,10 @@ def make_default_config():
     # binning
     config["perform_genome_binning"] = True
 
-    config["final_binner"] = "DASTool"
-    config["binner"] = ["metabat", "maxbin"]
+    config["final_binner"] = "metabat"
+    config["binner"] = ["metabat"]
 
     config["metabat"] = {"sensitivity": "sensitive", "min_contig_length": 1500}
-
-    config["concoct"] = {
-        "Nexpected_clusters": 200,  # important parameter
-        "read_length": 100,  # change this parameter !
-        "Niterations": 500,
-        "min_contig_length": 1000,
-    }
-
-    config["maxbin"] = {
-        "max_iteration": MAXBIN_MAX_ITERATION,
-        "prob_threshold": MAXBIN_PROB_THRESHOLD,
-        "min_contig_length": MAXBIN_MIN_CONTIG_LENGTH,
-    }
-
-    config["DASTool"] = {
-        "search_engine": "diamond",
-        "score_threshold": 0.5,
-        "duplicate_penalty": 0.6,
-        "megabin_penalty": 0.5,
-    }
 
     config["gunc_database"] = "gtdb"
 

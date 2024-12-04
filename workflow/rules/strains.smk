@@ -9,7 +9,7 @@ rule instrain_profile:
         scaffold_to_genome="genomes/clustering/contig2genome.tsv",
     output:
         directory("strains/intermediate_files/{sample}"),
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     params:
         extra=config.get("instrain_profile_extra", ""),
     log:
@@ -19,8 +19,8 @@ rule instrain_profile:
     benchmark:
         "logs/benchmarks/strains/profile/{sample}.tsv"
     resources:
-        mem=config["mem"],
-        time=config["runtime"]["long"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     shell:
         #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
         #" ; "
@@ -41,7 +41,7 @@ rule instrain_compare:
         scaffold_to_genome="genomes/clustering/contig2genome.tsv",
     output:
         directory("strains/comparison"),
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     params:
         extra=config.get("instrain_compare_extra", ""),
     log:
@@ -51,8 +51,8 @@ rule instrain_compare:
     benchmark:
         "logs/benchmarks/strains/compare.tsv"
     resources:
-        mem=config["mem"],
-        time=config["runtime"]["long"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     shell:
         "inStrain compare "
         " --input {input.profiles} "

@@ -8,10 +8,9 @@ rule generate_sketch:
         "logs/screen/make_sketch/{sample}.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
-        java_mem=int(config["simplejob_mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     shell:
         "bbsketch.sh "
         "in={input[0]}"
@@ -34,10 +33,9 @@ rule compare_sketch:
         "logs/screen/compare_sketch.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: 1
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     shell:
         "comparesketch.sh alltoall "
         " format=3 out={output} "

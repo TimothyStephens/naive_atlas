@@ -147,13 +147,13 @@ ruleorder: get_contig2genomes > rename_genomes
 #     output:
 #         directory("genomes/annotations/genes")
 #     conda:
-#         "%s/prodigal.yaml" % CONDAENV
+#         "../envs/prodigal.yaml"
 #     log:
 #         "logs/genomes/prodigal.log"
 #     shadow:
 #         "shallow"
 #     threads:
-#         config.get("threads", 1)
+#         config["simplejob_threads"]
 #     script:
 #         "predict_genes_of_genomes.py"
 
@@ -166,13 +166,12 @@ rule predict_genes_genomes:
         faa="genomes/annotations/genes/{genome}.faa",
         gff=temp("genomes/annotations/genes/{genome}.gff"),
     conda:
-        "%s/prodigal.yaml" % CONDAENV
+        "../envs/prodigal.yaml"
     log:
         "logs/genomes/prodigal/{genome}.txt",
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
-        time=config["runtime"]["simplejob"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     shell:
         """
         prodigal -i {input} -o {output.gff} -d {output.fna} \
@@ -241,7 +240,7 @@ if config["genome_aligner"] == "minimap":
             index_size="12G",
         threads: 3
         resources:
-            mem=config["mem"],
+            mem=config["simplejob_memory"],
         wrapper:
             "v1.19.0/bio/minimap2/index"
 
@@ -256,10 +255,9 @@ if config["genome_aligner"] == "minimap":
         params:
             extra="-x sr",
             sort="coordinate",
-        threads: config["threads"]
+        threads: config["simplejob_threads"]
         resources:
-            mem=config["mem"],
-            mem_mb=config["mem"] * 1000,
+            mem=config["simplejob_memory"],
         wrapper:
             "v1.19.0/bio/minimap2/aligner"
 
@@ -275,7 +273,7 @@ elif config["genome_aligner"] == "bwa":
             "logs/genomes/alignments/bwa_index.log",
         threads: 4
         resources:
-            mem=config["mem"],
+            mem=config["simplejob_memory"],
         wrapper:
             "v1.19.0/bio/bwa-mem2/index"
 
@@ -291,10 +289,10 @@ elif config["genome_aligner"] == "bwa":
             extra=r"-R '@RG\tID:{sample}\tSM:{sample}'",
             sort="samtools",
             sort_order="coordinate",
-        threads: config["threads"]
+        threads: config["simplejob_threads"]
         resources:
-            mem=config["mem"],
-            mem_mb=config["mem"] * 1000,
+            mem=config["simplejob_memory"],
+            mem_mb=config["simplejob_memory"] * 1000,
         wrapper:
             "v1.19.0/bio/bwa-mem2/mem"
 
@@ -332,9 +330,8 @@ rule mapping_stats_genomes:
         "genomes/alignments/stats/{sample}.stats",
     log:
         "logs/genomes/alignments/{sample}_stats.log",
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
+        mem=config["simplejob_memory"],
     wrapper:
         "v1.19.0/bio/samtools/stats"
 
@@ -364,10 +361,10 @@ rule pileup_MAGs:
         "logs/genomes/alignments/pilup_{sample}.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
     shell:
         "pileup.sh in={input.bam} "
         " threads={threads} "
@@ -399,9 +396,8 @@ rule combine_coverages_MAGs:
         median_abund="genomes/counts/median_coverage_genomes.parquet",
     log:
         "logs/genomes/counts/combine_binned_coverages_MAGs.log",
-    threads: 1
     resources:
-        mem_mb=1000 * config["simplejob_mem"],
-        time_min=config["runtime"]["simplejob"] * 60,
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     script:
         "../scripts/combine_coverage_MAGs.py"

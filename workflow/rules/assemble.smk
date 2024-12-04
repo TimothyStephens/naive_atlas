@@ -48,11 +48,12 @@ if SKIP_QC & (len(MULTIFILE_FRACTIONS) < 3):
         log:
             "{sample}/logs/assembly/init.log",
         conda:
-            "%s/required_packages.yaml" % CONDAENV
-        threads: config.get("simplejob_threads", 1)
+            "../envs/required_packages.yaml"
+        threads: config["simplejob_threads"]
         resources:
-            mem=config["simplejob_mem"],
-            java_mem=int(config["simplejob_mem"] * JAVA_MEM_FRACTION),
+            mem=config["simplejob_memory"],
+            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+            time=config["simplejob_runtime"],
         shell:
             """
             reformat.sh {params.inputs} \
@@ -85,7 +86,6 @@ else:
                     fraction=MULTIFILE_FRACTIONS,
                 )
             ),
-        threads: 1
         run:
             # make symlink
             assert len(input) == len(
@@ -125,11 +125,12 @@ rule normalize_reads:
     benchmark:
         "logs/benchmarks/assembly/pre_process/normalization/{sample}_{previous_steps}.txt"
     conda:
-        "%s/required_packages.yaml" % CONDAENV
-    threads: config.get("threads", 1)
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["large_memory"],
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"],
     shell:
         " bbnorm.sh {params.inputs} "
         " {params.outputs} "
@@ -163,10 +164,12 @@ rule error_correction:
     log:
         "{sample}/logs/assembly/pre_process/error_correction_{previous_steps}.log",
     conda:
-        "%s/required_packages.yaml" % CONDAENV
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["large_memory"],
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"],
     params:
         inputs=lambda wc, input: io_params_for_tadpole(input),
         outputs=lambda wc, output: io_params_for_tadpole(output, key="out"),
@@ -177,7 +180,6 @@ rule error_correction:
         lowdepthfraction=config["error_correction_lowdepth_fraction"],
         aggressive=config["error_correction_aggressive"],
         shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
-    threads: config.get("threads", 1)
     shell:
         "tadpole.sh -Xmx{resources.java_mem}G "
         " prefilter={params.prefilter} "
@@ -210,12 +212,13 @@ rule merge_pairs:
                 fraction=["R1", "R2", "me"],
             )
         ),
-    threads: config.get("threads", 1)
+    threads: config["large_threads"],
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["large_memory"],
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"],
     conda:
-        "%s/required_packages.yaml" % CONDAENV
+        "../envs/required_packages.yaml"
     log:
         "{sample}/logs/assembly/pre_process/merge_pairs_{previous_steps}.log",
     benchmark:
@@ -312,8 +315,8 @@ if config.get("assembler", "megahit") == "megahit":
             "../envs/megahit.yaml"
         threads: config["assembly_threads"]
         resources:
-            mem_mb=config["assembly_memory"]*1000,
-            time=config["runtime"]["assembly"],
+            mem_mb=config["assembly_memory"] * 1000,
+            time=config["assembly_runtime"],
         shell:
             """
             rm -r {params.outdir} 2> {log}
@@ -432,7 +435,7 @@ else:
         threads: config["assembly_threads"]
         resources:
             mem=config["assembly_memory"],
-            time=config["runtime"]["assembly"],
+            time=config["assembly_runtime"],
         shell:
             # remove pipeline_state file to create all output files again
             " rm -f {params.p[outdir]}/pipeline_state/stage_*_copy_files 2> {log} ; "
@@ -472,10 +475,10 @@ rule rename_contigs:
     output:
         fasta="{sample}/assembly/{sample}_prefilter_contigs.fasta",
         mapping_table="{sample}/assembly/old2new_contig_names.tsv",
-    threads: config.get("simplejob_threads", 1)
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_mem"],
-        time=config["runtime"]["default"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     log:
         "{sample}/logs/assembly/post_process/rename_and_filter_size.log",
     params:
@@ -500,9 +503,10 @@ if config["filter_contigs"]:
             extra="-x sr",
         log:
             "{sample}/logs/assembly/post_process/align_reads_to_prefiltered_contigs.log",
-        threads: config["threads"]
+        threads: config["simplejob_threads"]
         resources:
-            mem_mb=config["mem"] * 1000,
+            mem_mb=config["simplejob_memory"] * 1000,
+            time=config["simplejob_runtime"],
         wrapper:
             "v1.19.0/bio/minimap2/aligner"
 
@@ -519,10 +523,11 @@ if config["filter_contigs"]:
             "{sample}/logs/assembly/post_process/pilup_prefilter_contigs.log",
         conda:
             "../envs/required_packages.yaml"
-        threads: config["threads"]
+        threads: config["simplejob_threads"]
         resources:
-            mem_mb=config["mem"] * 1000,
-            java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+            mem_mb=config["simplejob_memory"] * 1000,
+            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+            time=config["simplejob_runtime"],
         shell:
             "pileup.sh ref={input.fasta} in={input.bam} "
             " threads={threads} "
@@ -549,11 +554,12 @@ if config["filter_contigs"]:
         log:
             "{sample}/logs/assembly/post_process/filter_by_coverage.log",
         conda:
-            "%s/required_packages.yaml" % CONDAENV
-        threads: 1
+            "../envs/required_packages.yaml"
+        threads: config["simplejob_threads"]
         resources:
-            mem=config["simplejob_mem"],
-            java_mem=int(config["simplejob_mem"] * JAVA_MEM_FRACTION),
+            mem=config["simplejob_memory"],
+            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+            time=config["simplejob_runtime"],
         shell:
             """filterbycoverage.sh in={input.fasta} \
             cov={input.covstats} \
@@ -580,7 +586,6 @@ else:  # no filter
             "{sample}/assembly/{sample}_prefilter_contigs.fasta",
         output:
             "{sample}/assembly/{sample}_final_contigs.fasta",
-        threads: 1
         shell:
             "cp {input} {output}"
 
@@ -594,7 +599,6 @@ rule finalize_contigs:
         "{sample}/assembly/{sample}_final_contigs.fasta",
     output:
         "Assembly/fasta/{sample}.fasta",
-    threads: 1
     shell:
         "cp {input} {output}"
 
@@ -608,10 +612,6 @@ rule calculate_contigs_stats:
         "../envs/required_packages.yaml"
     log:
         "{sample}/logs/assembly/post_process/contig_stats_final.log",
-    threads: 1
-    resources:
-        mem=1,
-        time=config["runtime"]["simplejob"],
     shell:
         "stats.sh in={input} format=3 out={output} &> {log}"
 
@@ -622,7 +622,7 @@ rule align_reads_to_final_contigs:
         query=get_quality_controlled_reads,
         target="Assembly/fasta/{sample_contigs}.fasta",
     output:
-        bam="{sample_contigs}/sequence_alignment/{sample}.bam",
+        bam=temp("{sample_contigs}/sequence_alignment/{sample}.bam"),
     params:
         extra="-x sr",
         sorting="coordinate",
@@ -630,9 +630,10 @@ rule align_reads_to_final_contigs:
         "logs/benchmarks/assembly/calculate_coverage/align_reads_to_filtered_contigs/{sample}_to_{sample_contigs}.txt"
     log:
         "{sample_contigs}/logs/assembly/calculate_coverage/align_reads_from_{sample}_to_filtered_contigs.log",
-    threads: config["threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem_mb=config["mem"] * 1000,
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     wrapper:
         "v1.19.0/bio/minimap2/aligner"
 
@@ -657,11 +658,12 @@ rule pileup_contigs_sample:
     log:
         "{sample}/logs/assembly/calculate_coverage/pilup_final_contigs.log",  # This log file is uesd for report
     conda:
-        "%s/required_packages.yaml" % CONDAENV
-    threads: config.get("threads", 1)
+        "../envs/required_packages.yaml"
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["mem"],
-        java_mem=int(config["mem"] * JAVA_MEM_FRACTION),
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+        time=config["simplejob_runtime"],
     shell:
         "pileup.sh "
         " ref={input.fasta} "
@@ -684,9 +686,10 @@ rule create_bam_index:
         "{file}.bam.bai",
     conda:
         "../envs/required_packages.yaml"
-    threads: 1
+    threads: config["simplejob_threads"]
     resources:
-        mem=2 * config["simplejob_threads"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     shell:
         "samtools index {input}"
 
@@ -699,15 +702,14 @@ rule predict_genes:
         faa="{sample}/annotation/predicted_genes/{sample}.faa",
         gff="{sample}/annotation/predicted_genes/{sample}.gff",
     conda:
-        "%s/prodigal.yaml" % CONDAENV
+        "../envs/prodigal.yaml"
     log:
         "{sample}/logs/gene_annotation/prodigal.txt",
     benchmark:
         "logs/benchmarks/prodigal/{sample}.txt"
-    threads: 1
     resources:
-        mem=config["simplejob_mem"],
-        time=config["runtime"]["simplejob"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     shell:
         """
         prodigal -i {input} -o {output.gff} -d {output.fna} \
@@ -798,7 +800,7 @@ rule build_assembly_report:
     output:
         report="reports/assembly_report.html",
     conda:
-        "%s/report.yaml" % CONDAENV
+        "../envs/report.yaml"
     log:
         "logs/assembly/report.log",
     script:

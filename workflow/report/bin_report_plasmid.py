@@ -67,26 +67,31 @@ def make_plots(bin_info):
 
     add_stats("All", df)
 
-    df.eval("Quality_score = Completeness - 5* Contamination", inplace=True)
+    df.eval("Quality_score = `plasmid_score`", inplace=True)
     div[
         "QualityScore"
-    ] = "<p>Quality score is calculated as: Completeness - 5 x Contamination.</p>"
-    add_stats("Quality score >50 ", df.query("Quality_score>50"))
-    add_stats("Good quality", df.query("Completeness>90 & Contamination <5"))
-    add_stats("Quality score >90 ", df.query("Quality_score>90"))
+    ] = "<p>Quality score is calculated as: plasmid_score.</p>"
+    add_stats("Quality score >0.5 ", df.query("Quality_score>0.5"))
+    add_stats("Good quality", df.query("`plasmid_score`>0.9 & `agreement`>0.5"))
+    add_stats("Quality score >0.9 ", df.query("Quality_score>0.9"))
 
     div["table"] = st.to_html()
 
     logging.info(df.describe())
 
-    # Bin Id  Completeness    completeness_general    Contamination   completeness_specific   completeness_model_used translation_table_used  coding_density  contig_n50      average_gene_length      genome_size     gc_content      total_coding_sequences  additional_notes        quality_score   sample  Ambigious_bases Length_contigs  Length_scaffolds N50     N_contigs       N_scaffolds     logN50
+    # id_contig  file  length  topology  n_genes  genetic_code  plasmid_score  fdr  n_hallmarks  marker_enrichment  conjugation_genes  amr_genes
+    # format  type  num_seqs  sum_len  min_len  avg_len   max_len  Q1       Q2        Q3        sum_gap  N50      Q20(%)  Q30(%)  GC(%)
     hover_data = [
-        "Completeness_Model_Used",
-        "Coding_Density",
+        "plasmid_score",
+        "fdr",
+        "n_hallmarks",
+        "marker_enrichment",
+        "conjugation_genes",
+        "amr_genes",
         "N50",
-        "GC_Content",
+        "GC(%)",
     ]
-    size_name = "Genome_Size"
+    size_name = "sum_len"
 
     lineage_name = "Species"
 
@@ -95,8 +100,8 @@ def make_plots(bin_info):
     logging.info("make 2d plot")
     fig = px.scatter(
         data_frame=df,
-        y="Completeness",
-        x="Contamination",
+        y="plasmid_score",
+        x="n_genes_with_taxonomy",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,
@@ -111,8 +116,8 @@ def make_plots(bin_info):
     logging.info("make 2d plot species")
     fig = px.scatter(
         data_frame=df.loc[df.Representative.unique()],
-        y="Completeness",
-        x="Contamination",
+        y="plasmid_score",
+        x="n_genes_with_taxonomy",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,

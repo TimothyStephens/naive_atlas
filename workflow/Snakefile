@@ -51,7 +51,6 @@ include: "rules/whokaryote.smk"
 include: "rules/genecatalog.smk"
 include: "rules/sra.smk"
 include: "rules/gtdbtk.smk"
-include: "rules/cobinning.smk"
 include: "rules/strains.smk"
 include: "rules/patch.smk"
 
@@ -76,6 +75,16 @@ rule all:
         "finished_genomes",
         "finished_genecatalog",
         "genomes/annotations/gene2genome.parquet",
+
+
+rule test:
+    input:
+        expand("{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta", sample=SAMPLES),
+        "finished_QC",
+        "finished_assembly",
+    output:
+        touch("finished_test"),
+
 
 
 def get_gene_catalog_input():
@@ -170,7 +179,7 @@ rule binning:
         ),
         "Binning/{binner}/bins2species.tsv".format(binner=config["final_binner"]),
         "Binning/{binner}/bin_info.tsv".format(binner=config["final_binner"]),
-        expand("reports/bin_report_{binner}.html", binner=config["final_binner"]),
+        expand("reports/bin_report_{lineage}.html", lineage=binned_lineages),
         expand("{sample}/binning/{binner}/unbinned", binner=config["final_binner"], sample=SAMPLES),
         "finished_assembly",
     output:
@@ -180,7 +189,6 @@ rule binning:
 rule assembly_one_sample:
     input:
         get_assembly,
-        "{sample}/sequence_alignment/{sample}.bam",
         "{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
         "{sample}/assembly/contig_stats/final_contig_stats.txt",
     output:
@@ -238,12 +246,11 @@ for r in workflow.rules:
             r.resources["mem_mb"] = config["mem"] * 1000
 
     # add time if ot present. Simple jobs use simple time
-
     if "time_min" not in r.resources:
-        if "time" in r.resources:
-            r.resources["time_min"] = r.resources["time"] * 60
+        if "runtime" in r.resources:
+            r.resources["time_min"] = r.resources["runtime"] * 60
         else:
             r.resources["time_min"] = config["runtime"]["default"] * 60
-
+    
     if not "runtime" in r.resources:
-        r.resources["runtime"] = r.resources["time_min"]
+        r.resources["runtime"] = config["runtime"]["default"]

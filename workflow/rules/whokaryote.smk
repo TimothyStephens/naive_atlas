@@ -13,8 +13,8 @@ rule whokaryote_annotation:
         mag_id=lambda wildcards: wildcards.genome,
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_mem"],
-        time=config["runtime"]["default"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     conda:
         "../envs/whokaryote.yaml"
     log:

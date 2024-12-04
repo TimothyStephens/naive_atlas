@@ -54,7 +54,7 @@ for fasta_in in snakemake.input.unbinned:
                 Nseq += 1
                 
                 if rename_contigs:
-                    new_header = f"{new_name}_{Nseq}"
+                    new_header = f"{new_name}_{Nseq:06}"
                 else:
                     new_header = line[1:].strip().split()[0]
                 

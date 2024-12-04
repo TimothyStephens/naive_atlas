@@ -44,7 +44,7 @@ with open(snakemake.output.fasta, "w") as output_handle, open(
             break
 
         old_name = record.id
-        new_name = f"{snakemake.wildcards.sample}_{i}"
+        new_name = f"{snakemake.wildcards.sample}_{i:09}"
         record.id = new_name
         record.description = ""
 
