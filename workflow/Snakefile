@@ -56,14 +56,20 @@ include: "rules/patch.smk"
 
 CONDAENV = "envs"  # overwrite definition in download.smk
 
-CHECKM2_PSEUDO_DATA = os.path.join(workflow_folder, "data", "CHECKM2_PSEUDO_DATA.fasta")
 
 localrules:
     all,
     qc,
     assembly_one_sample,
     assembly,
+    binning,
     genomes,
+    quantify_genomes,
+    genome_annotation,
+    gene_annotation,
+    strains,
+    screen,
+
 
 
 rule all:
@@ -73,31 +79,8 @@ rule all:
         "finished_binning",
         "finished_genomes",
         "finished_quantify_genomes",
+        "finished_genome_annotation",
         "finished_gene_annotation",
-
-
-rule test:
-    input:
-        #"finished_QC",
-        #"finished_assembly",
-        #"finished_binning",
-        #"finished_genomes",
-        #"finished_quantify_genomes",
-        #"finished_gene_annotation",
-        #"finished_genome_annotation",
-        #"finished_strains",
-        "finished_screen",
-    output:
-        touch("finished_test"),
-
-
-
-
-
-
-
-
-
 
 
 ## ---- ##
@@ -262,7 +245,7 @@ for r in workflow.rules:
         if "runtime" in r.resources:
             r.resources["time_min"] = r.resources["runtime"] * 60
         else:
-            r.resources["time_min"] = config["runtime"]["default"] * 60
+            r.resources["time_min"] = config["runtime"] * 60
     
     if not "runtime" in r.resources:
-        r.resources["runtime"] = config["runtime"]["default"]
+        r.resources["runtime"] = config["runtime"]
