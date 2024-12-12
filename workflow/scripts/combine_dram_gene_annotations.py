@@ -32,6 +32,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from collections import defaultdict
+import re
 
 db_columns = {
     "kegg": ["ko_id", "kegg_hit"],
@@ -58,13 +59,11 @@ for file in snakemake.input:
     df = df.query("rank!='E'")
 
     # change index from 'subset1_Gene111' ->  simply 'Gene111'
+    def remove_substring(row):
+        return re.sub('^'+row['fasta']+'_', '', row.name).strip()
+    df.index = df.apply(remove_substring, axis=1)
+    
     # Gene name to nr
-    df.index = (
-        df.index.str.split("_", n=1, expand=True)
-        .get_level_values(1)
-        .str[len("Gene") :]
-        .astype(np.int64)
-    )
     df.index.name = "GeneNr"
 
     # select columns, drop na rows and append to list
@@ -85,3 +84,4 @@ for db in Tables:
     combined.sort_index(inplace=True)
 
     combined.reset_index().to_parquet(out_dir / (db + ".parquet"))
+    combined.reset_index().to_csv(out_dir / (db + ".tsv.gz"), index=False, sep='\t', na_rep='NA')

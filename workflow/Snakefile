@@ -47,8 +47,7 @@ include: "rules/derep.smk"
 include: "rules/genomes.smk"
 include: "rules/dram.smk"
 include: "rules/metaeuk.smk"
-include: "rules/whokaryote.smk"
-include: "rules/genecatalog.smk"
+include: "rules/annotation_genes.smk"
 include: "rules/sra.smk"
 include: "rules/gtdbtk.smk"
 include: "rules/strains.smk"
@@ -73,137 +72,35 @@ rule all:
         "finished_assembly",
         "finished_binning",
         "finished_genomes",
-        "finished_genecatalog",
-        "genomes/annotations/gene2genome.parquet",
+        "finished_quantify_genomes",
+        "finished_gene_annotation",
 
 
 rule test:
     input:
-        expand("{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta", sample=SAMPLES),
-        "finished_QC",
-        "finished_assembly",
+        #"finished_QC",
+        #"finished_assembly",
+        #"finished_binning",
+        #"finished_genomes",
+        #"finished_quantify_genomes",
+        #"finished_gene_annotation",
+        #"finished_genome_annotation",
+        #"finished_strains",
+        "finished_screen",
     output:
         touch("finished_test"),
 
 
 
-def get_gene_catalog_input():
-    annotation_file_names = {
-        "eggNOG": "Genecatalog/annotations/eggNOG.parquet",
-        "dram": "Genecatalog/annotations/dram",
-        "single_copy": expand(
-            "Genecatalog/annotation/single_copy_genes_{domain}.tsv",
-            domain=["bacteria", "archaea"],
-        ),
-    }
-
-    annotations_requested = config.get("gene_annotations", [])
-
-    try:
-        annotations_files = ["Genecatalog/counts/median_coverage.h5"] + [
-            annotation_file_names[key] for key in annotations_requested
-        ]
-
-    except Exception as e:
-        raise IOError(
-            "Error in gene_annotations requested, check config file 'gene_annotations' "
-        ) from e
-
-    return annotations_files
 
 
-rule genecatalog:
-    input:
-        "Genecatalog/gene_catalog.fna",
-        "Genecatalog/gene_catalog.faa",
-        "Genecatalog/clustering/orf_info.parquet",
-        get_gene_catalog_input(),
-    output:
-        temp(touch("finished_genecatalog")),
 
 
-rule strains:
-    input:
-        "strains/comparison",
 
 
-def get_genome_annotations():
-    annotation_file_names = {
-        "gtdb_tree":     "genomes/tree/finished_gtdb_trees",
-        "gtdb_taxonomy": "genomes/taxonomy/gtdb_taxonomy.tsv",
-        "genes":         "genomes/annotations/genes/predicted",
-        "kegg_modules":  "genomes/annotations/dram/kegg_modules.tsv",
-        "dram":          "genomes/annotations/dram/distil",
-        "metaeuk":       "genomes/annotations/metaeuk/finished",
-        "whokaryote":    "genomes/annotations/whokaryote/finished",
-    }
-
-    annotations_requested = config["annotations"]
-
-    try:
-        annotations_files = ["genomes/genome_quality.tsv"] + [
-            annotation_file_names[an] for an in annotations_requested
-        ]
-
-    except Exception as e:
-        raise IOError(
-            "Error in annotations requested, check config file 'annotations' "
-        ) from e
-
-    return annotations_files
 
 
-rule genomes:
-    input:
-        "genomes/counts/median_coverage_genomes.parquet",
-        "genomes/counts/counts_genomes.parquet",
-        "genomes/clustering/allbins2genome.tsv",
-        "reports/genome_mapping/results.html",
-        *get_genome_annotations(),
-        #"genomes/genomes/unbinned",
-        "finished_binning",
-    output:
-        temp(touch("finished_genomes")),
-
-
-rule quantify_genomes:
-    input:
-        "genomes/counts/median_coverage_genomes.parquet",
-        expand("genomes/counts/counts_genomes.parquet"),
-
-
-rule binning:
-    input:
-        "Binning/{binner}/genome_similarities.parquet".format(
-            binner=config["final_binner"]
-        ),
-        "Binning/{binner}/bins2species.tsv".format(binner=config["final_binner"]),
-        "Binning/{binner}/bin_info.tsv".format(binner=config["final_binner"]),
-        expand("reports/bin_report_{lineage}.html", lineage=binned_lineages),
-        expand("{sample}/binning/{binner}/unbinned", binner=config["final_binner"], sample=SAMPLES),
-        "finished_assembly",
-    output:
-        temp(touch("finished_binning")),
-
-
-rule assembly_one_sample:
-    input:
-        get_assembly,
-        "{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
-        "{sample}/assembly/contig_stats/final_contig_stats.txt",
-    output:
-        touch("{sample}/finished_assembly"),
-
-
-rule assembly:
-    input:
-        expand("{sample}/finished_assembly", sample=SAMPLES),
-        "reports/assembly_report.html",
-        "finished_QC",
-    output:
-        touch("finished_assembly"),
-
-
+## ---- ##
 rule qc:
     input:
         expand("{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
@@ -218,25 +115,140 @@ rule qc:
         touch("finished_QC"),
 
 
+## ---- ##
+rule assembly_one_sample:
+    input:
+        get_assembly,
+        "{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
+        "{sample}/assembly/contig_stats/final_contig_stats.txt",
+    output:
+        touch("{sample}/finished_assembly"),
+
+rule assembly:
+    input:
+        "finished_QC",
+        expand("{sample}/finished_assembly", sample=SAMPLES),
+        "reports/assembly_report.html",
+    output:
+        touch("finished_assembly"),
+
+
+## ---- ##
+rule binning:
+    input:
+        "finished_assembly",
+        expand("{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta", sample=SAMPLES),
+    output:
+        temp(touch("finished_binning")),
+
+
+## ---- ##
+rule genomes:
+    input:
+        "finished_binning",
+        expand("reports/bin_report_{lineage}.html", lineage=binned_lineages),
+        "genomes/genomes",
+        "genomes/unbinned",
+    output:
+        temp(touch("finished_genomes")),
+
+
+## ---- ##
+rule quantify_genomes:
+    input:
+        "finished_genomes",
+        "genomes/coverage/coverage.tsv.gz",
+        "genomes/coverage/read_stats.tsv",
+    output:
+        temp(touch("finished_quantify_genomes")),
+
+
+## ---- ##
+def get_genome_annotations():
+    annotation_file_names = {
+        "gtdb_tree":        "genomes/annotations/genomes/tree/finished_gtdb_trees",
+        "gtdb_taxonomy":    "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
+        "dram":             "genomes/annotations/genomes/dram/finished",
+        "metaeuk":          expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="genomes"),
+        "metaeuk_unbinned": expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="unbinned"),
+    }
+    annotations_requested = config["genome_annotations"]
+
+    try:
+        annotations_files = [
+            annotation_file_names[an] for an in annotations_requested
+        ]
+    except Exception as e:
+        raise IOError(
+            "Error in annotations requested, check config file 'genome_annotations' "
+        ) from e
+
+    return annotations_files
+
+rule genome_annotation:
+    input:
+        "finished_genomes",
+        *get_genome_annotations(),
+    output:
+        temp(touch("finished_genome_annotation")),
+
+
+## ---- ##
+def get_gene_annotations():
+    annotation_file_names = {
+        "eggNOG": "genomes/annotations/genes/eggNOG.tsv.gz",
+        "dram": "genomes/annotations/genes/dram",
+    }
+    annotations_requested = config.get("gene_annotations", [])
+
+    try:
+        annotations_files = [
+            annotation_file_names[key] for key in annotations_requested
+        ]
+    except Exception as e:
+        raise IOError(
+            "Error in gene_annotations requested, check config file 'gene_annotations' "
+        ) from e
+
+    return annotations_files
+
+rule gene_annotation:
+    input:
+        "finished_genomes",
+        get_gene_annotations(),
+    output:
+        temp(touch("finished_gene_annotation")),
+
+
+## ---- ##
+rule strains:
+    input:
+        "finished_genomes",
+        "genomes/strains/comparison",
+    output:
+        temp(touch("finished_strains")),
+
+
+## ---- ##
 rule screen:
     input:
+        "finished_QC",
         "QC/screen/sketch_comparison.tsv.gz",
+    output:
+        temp(touch("finished_screen")),
 
 
-# overwrite commands in rules/download.snakefile
+## overwrite commands in rules/download.snakefile
 onsuccess:
     print("ATLAS finished")
     print("The last rule shows you the main output files")
-
-
 onerror:
     print("Note the path to the log file for debugging.")
     print("Documentation is available at: https://metagenome-atlas.readthedocs.io")
     print("Issues can be raised at: https://github.com/metagenome-atlas/atlas/issues")
 
 
-### pepulate resources for rules that don't have
-
+## pepulate resources for rules that don't have
 for r in workflow.rules:
     if not "mem_mb" in r.resources:
         if "mem" in r.resources:

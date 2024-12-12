@@ -233,10 +233,10 @@ if not SKIP_QC:
             stout="{sample}/logs/QC/quality_filter.log",
         conda:
             "../envs/required_packages.yaml"
-        threads: config["simplejob_threads"]
+        threads: config["large_threads"]
         resources:
-            mem=config["simplejob_memory"],
-            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+            mem=config["large_memory"],
+            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
         shell:
             " bbduk.sh {params.inputs} "
             " {params.ref} "
@@ -272,10 +272,10 @@ if not SKIP_QC:
                 ancient(config["contaminant_references"].values()),
             output:
                 "ref/genome/1/summary.txt",
-            threads: config["simplejob_threads"]
+            threads: config["large_threads"]
             resources:
-                mem=config["simplejob_memory"],
-                java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+                mem=config["large_memory"],
+                java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
             log:
                 "logs/QC/build_decontamination_db.log",
             conda:
@@ -335,10 +335,10 @@ if not SKIP_QC:
                 stout="{sample}/logs/QC/decontamination.log",
             conda:
                 "../envs/required_packages.yaml"
-            threads: config["simplejob_threads"]
+            threads: config["large_threads"]
             resources:
-                mem=config["simplejob_memory"],
-                java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+                mem=config["large_memory"],
+                java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
             shell:
                 " bbsplit.sh "
                 " {params.inputs} "
@@ -422,10 +422,10 @@ if PAIRED_END:
             read_length=(
                 "{sample}/sequence_quality_control/read_stats/QC_read_length_hist.txt"
             ),
-        threads: config["simplejob_threads"]
+        threads: config["large_threads"]
         resources:
-            mem=config["simplejob_memory"],
-            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+            mem=config["large_memory"],
+            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
         conda:
             "../envs/required_packages.yaml"
         log:

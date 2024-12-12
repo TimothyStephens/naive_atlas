@@ -40,27 +40,26 @@ rename_contigs = snakemake.params.rename_contigs
 output_dir = snakemake.output.dir
 os.makedirs(output_dir)
 
-for fasta_in in snakemake.input.unbinned:
-    new_name = os.path.splitext(os.path.basename(fasta_in))[0]
-    
-    fasta_out = os.path.join(output_dir, f"{new_name}.fasta")
-    
-    # write names of contigs in mapping file
-    with open(fasta_in) as ffi, open(fasta_out, "w") as ffo:
-        Nseq = 0
-        for line in ffi:
-            # if header line
-            if line[0] == ">":
-                Nseq += 1
-                
-                if rename_contigs:
-                    new_header = f"{new_name}_{Nseq:06}"
-                else:
-                    new_header = line[1:].strip().split()[0]
-                
-                # write to fasta file
-                ffo.write(f">{new_header}\n")
+fasta_in = snakemake.input.unbinned
+new_name = snakemake.params.prefix
+fasta_out = os.path.join(output_dir, f"{new_name}.fa")
+
+# write names of contigs in mapping file
+with open(fasta_in, "r") as ffi, open(fasta_out, "w") as ffo:
+    Nseq = 0
+    for line in ffi:
+        # if header line
+        if line[0] == ">":
+            Nseq += 1
+            
+            if rename_contigs:
+                new_header = f"{new_name}-{Nseq:08}"
             else:
-                ffo.write(line)
+                new_header = line[1:].strip().split()[0]
+            
+            # write to fasta file
+            ffo.write(f">{new_header}\n")
+        else:
+            ffo.write(line)
 
 

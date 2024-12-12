@@ -1,28 +1,176 @@
-## use just in time compilation for bbmap
-usejni: false
+###################################################################
+####                 _______   _                    _____      ####
+####         /\     |__   __| | |          /\      / ____|     ####
+####        /  \       | |    | |         /  \    | (___       ####
+####       / /\ \      | |    | |        / /\ \    \___ \      ####
+####      / ____ \     | |    | |____   / ____ \   ____) |     ####
+####     /_/    \_\    |_|    |______| /_/    \_\ |_____/      ####
+####                                                           ####
+###################################################################
+
+#  For more details about the config values see:
+#  https://metagenome-atlas.rtfd.io
+
+
+
+
+
+########################
+# Execution parameters
+########################
+#Runtime only for cluster execution
+#Threads and Memory for all executions
+
+# BBMAPs tools threads and memory - needs relatively high amount of memory: normalize_reads, error_correction, merge_pairs
+large_memory: 150 #GB
+large_threads: 46
+large_runtime: 24 #hr
+# Assembly threads and memory: run_megahit, run_spades
+assembly_memory: 350 #GB
+assembly_threads: 60
+assembly_runtime: 48 #hr
+# All other major analysis rules Simple text parsing jobs
+simplejob_memory: 20 #GB
+simplejob_threads: 8
+simplejob_runtime: 24 #hr
+# Simple text parsing jobs
+mem: 2 #GB
+threads: 1 
+runtime: 4 #hr
+
+# directory where databases are downloaded with 'atlas download'
+database_dir: 
+  /user/project/dir/databases
+
+tmpdir: 
+  /user/project/dir/tmp
+
+
+
 
 
 ########################
 # Quality control
 ########################
+data_type: metagenome # metagenome or metatranscriptome
+interleaved_fastqs: false
 
+# remove (PCR)-duplicated reads using clumpify
+deduplicate: true
+duplicates_only_optical: false
+duplicates_allow_substitutions: 2
+
+# used to trim adapters from reads and read ends
+preprocess_adapters: 
+  /user/project/dir/databases/adapters.fa
 preprocess_qtrim: "rl"
 preprocess_kmer_trim: "r"
 preprocess_minimum_base_quality: 10
 preprocess_allowable_kmer_mismatches: 1
 preprocess_reference_kmer_match_length: 27
 preprocess_minimum_passing_read_length: 51
-preprocess_minimum_base_frequency: 0.05
+
 preprocess_max_ns: -1
 preallocate_ram: "t"
-error_correction_overlapping_pairs: "t"
+
+# 0.05 requires at least 5 percent of each nucleotide per sequence
+preprocess_minimum_base_frequency: 0.05
+preprocess_adapter_min_k: 8
+preprocess_allowable_kmer_mismatches: 1
+preprocess_reference_kmer_match_length: 27
+# normalize reads
+normalize_reads_before_assembly: false
+normalization_kmer_length: 21
+normalization_target_depth: 1000
+normalization_minimum_kmer_depth: 3
+# error correction where PE reads overlap
+error_correction_overlapping_pairs: true
+#contamination references can be added such that -- key: /path/to/fasta
+contaminant_references:
+  PhiX: 
+    /user/project/dir/databases/phiX174_virus.fa
+  Host_A:
+    /user/project/host_refs/Host_A.fa
+  Host_B:
+    /user/project/host_refs/Host_B.fa
+contaminant_max_indel: 20
+contaminant_min_ratio: 0.65
+contaminant_kmer_length: 13
+contaminant_minimum_hits: 1
+contaminant_ambiguous: best
+
+
+
 
 
 ########################
-# Quantification
+# Pre-assembly-processing
 ########################
 
-genome_aligner: "minimap"
+# Advanced Error correction
+error_correction_before_assembly: true
+spades_skip_BayesHammer: true # Skip error correction in spades assembler
+error_correction_kmer: 31 # can be longer e.g. 62 but takes more memory
+
+# remove reads with k-mers that cannot be used for assembly.
+# Filter reads that have a 10% of k-mers below a minimum depth.
+error_correction_remove_lowdepth: false
+error_correction_minimum_kmer_depth: 1 #
+error_correction_aggressive: false
+
+# Merging of pairs
+# join R1 and R2 at overlap; unjoined reads are still utilized
+merge_pairs_before_assembly: true
+merging_k: 62
+
+
+
+
+
+########################
+# Assembly
+########################
+# megahit OR spades
+assembler: spades
+
+minimum_contig_length: 1000
+# Megahit
+#-----------
+# 2 is for metagenomes, 3 for genomes with 30x coverage
+megahit_min_count: 2
+megahit_k_min: 21
+megahit_k_max: 121
+megahit_k_step: 20
+megahit_merge_level: 20,0.98
+megahit_prune_level: 2
+megahit_low_local_ratio: 0.2
+# ['default','meta-large','meta-sensitive']
+megahit_preset: default
+
+# Spades
+#------------
+spades_use_scaffolds: true # if false use contigs
+#Comma-separated list of k-mer sizes to be used (all values must be odd, less than 128 and listed in ascending order).
+spades_k: auto
+spades_preset: meta # meta, ,normal, rna  single end libraries doesn't work for metaspades
+spades_extra: ''
+longread_type: none # [none,"pacbio", "nanopore", "sanger", "trusted-contigs", "untrusted-contigs"]
+# Preprocessed long reads can be defined in the sample table with 'longreads' , for more info see the spades manual
+
+# Filtering
+#------------
+# filter out assembled noise
+# this is more important for assembly from megahit
+filter_contigs: false
+# trim contig tips
+contig_trim_bp: 0
+# require contigs to have read support
+minimum_average_coverage: 1
+minimum_percent_covered_bases: 20
+minimum_mapped_reads: 0
+
+
+
 
 
 ########################
@@ -30,6 +178,31 @@ genome_aligner: "minimap"
 ########################
 
 cobinning_readmapping_id: 0.95
+
+veba_prokaryotic:
+  minimum_contig_length: 1500 # Minimum contig length. Anything under 2500 will default to 2500 for MetaBat2.
+  minimum_genome_length: 150000 # Minimum prokaryote genome length.
+  checkm2_completeness: 50 # CheckM2 completeness threshold.
+  checkm2_contamination: 10 # CheckM2 contamination threshold.
+  mdmcleaner_options: '' # MDMcleaner commandline options. e.g., '--fast_run'
+  n_iter: 3 # Number of iterations to run binning.
+
+veba_eukaryotic:
+  minimum_contig_length: 1500 # Minimum contig length. Anything under 2500 will default to 2500 for MetaBat2.
+  minimum_genome_length: 2000000 # Minimum eukaryote genome length.
+  busco_completeness: 10 # BUSCO completeness threshold.
+  busco_contamination: 10 # BUSCO contamination threshold.
+
+veba_viral:
+  minimum_contig_length: 1500 # Minimum contig length. Anything under 2500 will default to 2500 for MetaBat2.
+  minimum_genome_length: 2500 # Minimum viral/plastid genome length.
+  minimum_score: 0.7 # Minimum score to flag a sequence as virus or plasmid.
+
+genome_dereplication:
+  ANI: 0.95 ## Genome dreplication threshold 0.95 is more or less species
+  overlap: 0.2
+
+rename_mags_contigs: true #Rename contigs of representative MAGs
 
 genome_dereplication:
   ANI: 0.95 ## Genome dreplication threshold
@@ -44,10 +217,83 @@ genome_dereplication:
     centrality: 1
 
 
+
+
+
 ########################
-# Gene catalog
+# Quantification
+########################
+
+genome_aligner: "minimap"
+
+coverm_params: '--min-read-percent-identity 98 --min-covered-fraction 0 --min-read-aligned-percent 70'
+coverm_stats: 'relative_abundance mean trimmed_mean covered_bases variance length count reads_per_base rpkm tpm'
+
+
+
+
+
+########################
+# Genome Annotations
 #######################
 
+genome_annotations:
+- gtdb_tree
+- gtdb_taxonomy
+- dram
+- metaeuk
+
+metaeuk_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
+metaeuk_database_name: "SwissProt"
+# Extra params to pass to each step of MetaEuk
+metaeuk_createdb: ""
+metaeuk_predictexons: "--metaeuk-eval 0.0001 -e 100 --min-length 40"
+metaeuk_reduceredundancy: ""
+metaeuk_unitesetstofasta: ""
+metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
+
+
+
+
+
+########################
+# Gene annotations
+#######################
 gene_annotations: []
 
+genecatalog:
+  source: contigs # [contigs, genomes] Predict genes from all contigs or only from the representative genomes
+  clustermethod: linclust # [mmseqs or linclust] see mmseqs for more details
+  minlength_nt: 270 # min length
+  minid: 0.90 # min id for gene clustering for the main gene catalog used for annotation
+  coverage: 0.9
+  extra: ' '
+  SubsetSize: 500000
+
+gene_annotations:
+- eggNOG
+- dram
+
+eggNOG_use_virtual_disk: false # coping the eggNOG DB to a virtual disk can speed up the annotation
+virtual_disk: /dev/shm   # But you need 37G extra ram
+
+
+
+
+
+########################
+# Genome annotations
+#######################
+genome_annotations: []
+
+
+
+
+
+########################
+# Misc
+#######################
+
+## use just in time compilation for bbmap
+usejni: false
 

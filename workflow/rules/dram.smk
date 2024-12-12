@@ -43,12 +43,12 @@ rule dram_download:
 
 rule DRAM_annotate:
     input:
-        fasta="genomes/genomes/{genome}.fasta",
+        fasta="genomes/genomes/{genome}.fa",
         #checkm= "genomes/checkm/completeness.tsv",
         #gtdb_dir= "genomes/taxonomy/gtdb/classify",
         config=get_dram_config,
     output:
-        outdir=directory("genomes/annotations/dram/intermediate_files/{genome}"),
+        outdir=directory("genomes/annotations/genomes/dram/intermediate_files/{genome}"),
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -88,7 +88,7 @@ rule concat_annotations:
     input:
         get_all_dram,
     output:
-        expand("genomes/annotations/dram/{annotation}", annotation=DRAM_ANNOTATON_FILES),
+        expand("genomes/annotations/genomes/dram/{annotation}", annotation=DRAM_ANNOTATON_FILES),
     resources:
         time=config["simplejob_runtime"],
     run:
@@ -109,7 +109,7 @@ rule DRAM_destill:
         rules.concat_annotations.output,
         config=get_dram_config,
     output:
-        outdir=directory("genomes/annotations/dram/distil"),
+        outdir=directory("genomes/annotations/genomes/dram/distil"),
     resources:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
@@ -127,10 +127,10 @@ rule DRAM_destill:
 
 rule get_all_modules:
     input:
-        annotations="genomes/annotations/dram/annotations.tsv",
+        annotations="genomes/annotations/genomes/dram/annotations.tsv",
         config=get_dram_config,
     output:
-        "genomes/annotations/dram/kegg_modules.tsv",
+        "genomes/annotations/genomes/dram/kegg_modules.tsv",
     resources:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
@@ -144,5 +144,7 @@ rule get_all_modules:
 
 rule dram:
     input:
-        "genomes/annotations/dram/distil",
-        "genomes/annotations/dram/kegg_modules.tsv",
+        "genomes/annotations/genomes/dram/distil",
+        "genomes/annotations/genomes/dram/kegg_modules.tsv",
+    output:
+        touch("genomes/annotations/genomes/dram/finished"),

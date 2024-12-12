@@ -102,14 +102,14 @@ def make_plots(bin_info):
     fig = px.scatter(
         data_frame=df,
         y="virus_score",
-        x="n_genes_with_taxonomy",
+        x="n_hallmarks",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,
         hover_name="Bin Id",
     )
-    fig.update_yaxes(range=(50, 102))
-    fig.update_xaxes(range=(-0.2, 10.1))
+    fig.update_yaxes(range=(-0.1, 1.1))
+    #fig.update_xaxes(range=(-0.2, 10.1))
     div["2D"] = fig.to_html(**HTML_PARAMS)
 
     # 2D plot
@@ -118,18 +118,18 @@ def make_plots(bin_info):
     fig = px.scatter(
         data_frame=df.loc[df.Representative.unique()],
         y="virus_score",
-        x="n_genes_with_taxonomy",
+        x="n_hallmarks",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,
         hover_name="Bin Id",
     )
-    fig.update_yaxes(range=(50, 102))
-    fig.update_xaxes(range=(-0.2, 10.1))
+    fig.update_yaxes(range=(-0.1, 1.1))
+    #fig.update_xaxes(range=(-0.2, 10.1))
     div["2Dsp"] = fig.to_html(**HTML_PARAMS)
 
     ## By sample
-    logging.info("plot  by sample")
+    logging.info("plot by sample")
     fig = px.strip(
         data_frame=df,
         y="Quality_score",
@@ -138,7 +138,7 @@ def make_plots(bin_info):
         hover_data=hover_data,
         hover_name="Bin Id",
     )
-    fig.update_yaxes(range=(50, 102))
+    fig.update_yaxes(range=(-0.1, 1.1))
     div["bySample"] = fig.to_html(**HTML_PARAMS)
 
     # # By species

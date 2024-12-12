@@ -84,7 +84,7 @@ def make_plots(bin_info):
     # format  type  num_seqs  sum_len  min_len  avg_len   max_len  Q1       Q2        Q3        sum_gap  N50      Q20(%)  Q30(%)  GC(%)
     hover_data = [
         "generic-one_line_summary",
-        "specific-specific",
+        "specific-one_line_summary",
         "specific-dataset_name",
         "N50",
         "GC(%)",
@@ -98,14 +98,14 @@ def make_plots(bin_info):
     logging.info("make 2d plot")
     fig = px.scatter(
         data_frame=df,
-        y="Completeness",
-        x="Contamination",
+        y="generic-Complete",
+        x="generic-Multi copy",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,
         hover_name="Bin Id",
     )
-    fig.update_yaxes(range=(50, 102))
+    fig.update_yaxes(range=(-2, 102))
     fig.update_xaxes(range=(-0.2, 10.1))
     div["2D"] = fig.to_html(**HTML_PARAMS)
 
@@ -114,19 +114,19 @@ def make_plots(bin_info):
     logging.info("make 2d plot species")
     fig = px.scatter(
         data_frame=df.loc[df.Representative.unique()],
-        y="Completeness",
-        x="Contamination",
+        y="generic-Complete",
+        x="generic-Multi copy",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,
         hover_name="Bin Id",
     )
-    fig.update_yaxes(range=(50, 102))
+    fig.update_yaxes(range=(-2, 102))
     fig.update_xaxes(range=(-0.2, 10.1))
     div["2Dsp"] = fig.to_html(**HTML_PARAMS)
 
     ## By sample
-    logging.info("plot  by sample")
+    logging.info("plot by sample")
     fig = px.strip(
         data_frame=df,
         y="Quality_score",
@@ -135,7 +135,7 @@ def make_plots(bin_info):
         hover_data=hover_data,
         hover_name="Bin Id",
     )
-    fig.update_yaxes(range=(50, 102))
+    fig.update_yaxes(range=(-2, 102))
     div["bySample"] = fig.to_html(**HTML_PARAMS)
 
     # # By species

@@ -1,51 +1,88 @@
 
 
+#################################
+####                         ####
+#### Rename and move genomes ####
+####                         ####
+#################################
+
 localrules:
     rename_genomes,
+    rename_unbinned,
+    move_genomes,
+    move_unbinned,
 
 
 checkpoint rename_genomes:
     input:
-        paths="Binning/{binner}/raw_bins/paths.tsv".format(
-            binner=config["final_binner"]
-        ),
-        mapping_file="Binning/{binner}/bins2species.tsv".format(
-            binner=config["final_binner"]
-        ),
-        genome_info=f"Binning/{config['final_binner']}/filtered_bin_info.tsv",
+        paths="Binning/raw_bins/{lineage}.paths.tsv",
+        mapping_file="Binning/{lineage}.bins2species.tsv",
+        genome_info="Binning/{lineage}.bin_info.tsv",
     output:
-        dir=directory("genomes/genomes"),
-        mapfile_contigs="genomes/clustering/contig2genome.tsv",
-        mapfile_old2mag="genomes/clustering/old2newID.tsv",
-        mapfile_allbins2mag="genomes/clustering/allbins2genome.tsv",
-        genome_info="genomes/genome_quality.tsv",
+        dir=temp(directory("tmp/genomes/{lineage}")),
+        mapfile_contigs="genomes/clustering/{lineage}.contig2genome.tsv",
+        mapfile_old2mag="genomes/clustering/{lineage}.old2newID.tsv",
+        mapfile_allbins2mag="genomes/clustering/{lineage}.allbins2genome.tsv",
+        genome_info="tmp/genomes/MAG_{lineage}.genome_quality.tsv",
     params:
         rename_contigs=config["rename_mags_contigs"],
+        prefix="MAG_{lineage}_",
     shadow:
         "shallow"
     log:
-        "logs/genomes/rename_genomes.log",
+        "logs/genomes/clustering/{lineage}.rename_genomes.log",
     script:
         "../scripts/rename_genomes.py"
 
+
 checkpoint rename_unbinned:
     input:
-        unbinned=expand("{sample}/binning/{binner}/unbinned/{sample}_{binner}_unbinned.fasta",
-            sample=SAMPLES,
-            binner=config["final_binner"],
-        ),
+        unbinned="{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta",
     output:
-        dir=directory("genomes/genomes/unbinned"),
+        dir=temp(directory("tmp/unbinned/{sample}")),
     params:
         rename_contigs=config["rename_mags_contigs"],
+        prefix="Unbinned_{sample}",
     shadow:
         "shallow"
     log:
-        "logs/genomes/rename_unbinned.log",
+        "logs/genomes/clustering/{sample}.rename_unbinned.log",
     script:
         "../scripts/rename_unbinned.py"
 
 
+rule move_genomes:
+    input:
+        dirs=expand("tmp/genomes/{lineage}",
+            lineage=binned_lineages
+        ),
+    output:
+        dir=directory("genomes/genomes"),
+    log:
+        "logs/genomes/move_mags.log",
+    script:
+        "../scripts/move_genomes.sh"
+
+
+rule move_unbinned:
+    input:
+        dirs=expand("tmp/unbinned/{sample}",
+            sample=SAMPLES
+        ),
+    output:
+        dir=directory("genomes/unbinned"),
+    log:
+        "logs/genomes/move_unbinned.log",
+    script:
+        "../scripts/move_unbinned.sh"
+
+
+
+#####################################
+####                             ####
+#### Genome mapping and coverage ####
+####                             ####
+#####################################
 
 def get_genome_dir():
     if ("genome_dir" in config) and (config["genome_dir"] is not None):
@@ -55,10 +92,10 @@ def get_genome_dir():
         logger.info(f"Set genomes from {genome_dir}.")
 
         # check if genomes are present
-        genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fasta")).genome
+        genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
 
         if len(genomes) == 0:
-            logger.error(f"No genomes found with fasta extension in {genome_dir} ")
+            logger.error(f"No genomes found with fa extension in {genome_dir} ")
             exit(1)
 
     else:
@@ -74,15 +111,15 @@ def get_all_genomes(wildcards):
     global genome_dir
 
     if genome_dir == "genomes/genomes":
-        checkpoints.rename_genomes.get()
+        for lineage in binned_lineages:
+            checkpoints.rename_genomes.get(lineage=lineage)
 
     # check if genomes are present
-    genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fasta")).genome
-    genomes = [l for l in genomes if not 'unbinned/' in l] # remove unbinned fasta from wildcards list
+    genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
 
     if len(genomes) == 0:
         logger.error(
-            f"No genomes found with fasta extension in {genome_dir} "
+            f"No genomes found with fa extension in {genome_dir} "
             "You don't have any Metagenome assembled genomes with sufficient quality. "
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."
@@ -93,10 +130,11 @@ def get_all_genomes(wildcards):
 
 
 def get_all_unbinned(wildcards):
-    checkpoints.rename_unbinned.get()
+    for sample in SAMPLES:
+        checkpoints.rename_unbinned.get(sample=sample)
     
     # check if genomes are present
-    genomes = glob_wildcards(os.path.join("genomes/genomes/unbinned", "{genome}.fasta")).genome
+    genomes = glob_wildcards(os.path.join("genomes/unbinned", "{genome}.fa")).genome
 
     if len(genomes) == 0:
         logger.error(
@@ -114,13 +152,14 @@ rule get_contig2genomes:
     input:
         genome_dir,
     output:
-        "genomes/clustering/contig2genome.tsv",
+        c2g="genomes/clustering/contig2genome.tsv",
+        g2c="genomes/clustering/genome2contig.tsv",
     run:
         from glob import glob
 
-        fasta_files = glob(input[0] + "/*.f*")
+        fasta_files = glob(input[0] + "/*.fa")
 
-        with open(output[0], "w") as out_contigs:
+        with open(output["c2g"], "w") as out_c2g, open(output["g2c"], "w") as out_g2c:
             for fasta in fasta_files:
                 bin_name, ext = os.path.splitext(os.path.split(fasta)[-1])
                 # if gz remove also fasta extension
@@ -132,96 +171,25 @@ rule get_contig2genomes:
                     for line in f:
                         if line[0] == ">":
                             header = line[1:].strip().split()[0]
-                            out_contigs.write(f"{header}\t{bin_name}\n")
-
+                            out_c2g.write(f"{header}\t{bin_name}\n")
+                            out_g2c.write(f"{bin_name}\t{header}\n")
 
 # alternative way to get to contigs2genomes for quantification with external genomes
-
-
 ruleorder: get_contig2genomes > rename_genomes
-
-
-# rule predict_genes_genomes:
-#     input:
-#         dir= genomes_dir
-#     output:
-#         directory("genomes/annotations/genes")
-#     conda:
-#         "../envs/prodigal.yaml"
-#     log:
-#         "logs/genomes/prodigal.log"
-#     shadow:
-#         "shallow"
-#     threads:
-#         config["simplejob_threads"]
-#     script:
-#         "predict_genes_of_genomes.py"
-
-
-rule predict_genes_genomes:
-    input:
-        os.path.join(genome_dir, "{genome}.fasta"),
-    output:
-        fna="genomes/annotations/genes/{genome}.fna",
-        faa="genomes/annotations/genes/{genome}.faa",
-        gff=temp("genomes/annotations/genes/{genome}.gff"),
-    conda:
-        "../envs/prodigal.yaml"
-    log:
-        "logs/genomes/prodigal/{genome}.txt",
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-    shell:
-        """
-        prodigal -i {input} -o {output.gff} -d {output.fna} \
-            -a {output.faa} -p meta -f gff 2> {log}
-        """
-
-
-def get_all_genes(wildcards, extension=".faa"):
-    return expand(
-        "genomes/annotations/genes/{genome}{extension}",
-        genome=get_all_genomes(wildcards),
-        extension=extension,
-    )
-
-
-localrules:
-    all_prodigal,
-
-
-rule all_prodigal:
-    input:
-        get_all_genes,
-    output:
-        touch("genomes/annotations/genes/predicted"),
 
 
 ### Quantification
 
-
 localrules:
-    concat_orfs,
     concat_genomes,
-
-
-rule concat_orfs:
-    input:
-        lambda wc: get_all_genes(wc, extension=".fna"),
-    output:
-        temp("genomes/all_orfs.fasta"),
-    shell:
-        "cat {input} > {output}"
-
 
 rule concat_genomes:
     input:
         genome_dir,
     output:
-        temp("genomes/all_contigs.fasta"),
+        "genomes/alignments/all_contigs.fa",
     params:
-        ext="fasta",
+        ext="fa",
     shell:
         "cat {input}/*{params.ext} > {output}"
 
@@ -230,7 +198,7 @@ if config["genome_aligner"] == "minimap":
 
     rule index_genomes:
         input:
-            target=ancient("genomes/all_contigs.fasta"),
+            target=rules.concat_genomes.output,
             timestamp=genome_dir,
         output:
             "ref/genomes.mmi",
@@ -254,7 +222,7 @@ if config["genome_aligner"] == "minimap":
             "logs/genomes/alignments/{sample}_map.log",
         params:
             extra="-x sr",
-            sort="coordinate",
+            sorting="coordinate",
         threads: config["simplejob_threads"]
         resources:
             mem=config["simplejob_memory"],
@@ -265,7 +233,7 @@ elif config["genome_aligner"] == "bwa":
 
     rule index_genomes:
         input:
-            ancient("genomes/all_contigs.fasta"),
+            rules.concat_genomes.output,
             timestamp=genome_dir,
         output:
             multiext("ref/genomes", ".amb", ".ann", ".bwt.2bit.64", ".pac"),
@@ -298,7 +266,7 @@ elif config["genome_aligner"] == "bwa":
 
 else:
     raise Exception(
-        "'genome_aligner' not understood, it should be 'minimap' or 'bwa', got '{genome_aligner}'. check config file".format(
+        "'genome_aligner' not understood, it should be 'minimap' or 'bwa', not '{genome_aligner}'. check config file".format(
             **config
         )
     )
@@ -347,57 +315,42 @@ rule multiqc_mapping_genome:
         "v3.3.6/bio/multiqc"
 
 
-rule pileup_MAGs:
+rule mapping_coverm_coverage:
     input:
-        bam="genomes/alignments/bams/{sample}.bam",
-        orf="genomes/all_orfs.fasta",
+        g2c="genomes/clustering/genome2contig.tsv",
+        bams=expand("genomes/alignments/bams/{sample}.bam", sample=SAMPLES),
     output:
-        covstats=temp("genomes/alignments/coverage/{sample}.tsv.gz"),
-        bincov=temp("genomes/alignments/coverage_binned/{sample}.tsv.gz"),
-        orf="genomes/alignments/orf_coverage/{sample}.tsv.gz",
+        cov="genomes/coverage/coverage.tsv.gz",
+        read_stats="genomes/coverage/read_stats.tsv",
     params:
-        minmapq=config["minimum_map_quality"],
+        extra=config["coverm_params"],
+        stats=config["coverm_stats"],
     log:
-        "logs/genomes/alignments/pilup_{sample}.log",
-    conda:
-        "../envs/required_packages.yaml"
+        general="logs/coverage/coverage.log",
+        coverm="logs/coverage/coverm.log",
     threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    conda:
+        "../envs/coverm.yaml"
     shell:
-        "pileup.sh in={input.bam} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}G "
-        " covstats={output.covstats} "
-        " fastaorf={input.orf} outorf={output.orf} "
-        " concise=t "
-        " physical=t "
-        " minmapq={params.minmapq} "
-        " bincov={output.bincov} "
-        " 2> {log}"
+        "("
+        "coverm genome"
+        "  {params.extra}"
+        "  --output-format sparse --methods {params.stats}"
+        "  --genome-definition {input.g2c}"
+        "  -t {threads}"
+        "  -b {input.bams}"
+        " 2>{log.coverm}"
+        " | sed -e 's/\.coordSorted//g'"
+        " | gzip -c"
+        " > {output.cov}; "
+        "cat {log.coverm}"
+        " | grep 'In sample'"
+        " | sed -e \"s/.* '\([^']*\).*found \([^ ]*\) reads mapped out of \([^ ]*\) total (\(.*\))/\\1\\t\\2\\t\\3\\t\\4/\""
+        " | sort"
+        " | awk 'BEGIN{{print \"sample_id\\tmapped_reads\\ttotal_reads\\tpercent_mapped\"}}{{print}}'"
+        " > {output.read_stats}"
+        ")"
+        " 1>{log.general} 2>&1"
 
 
-rule combine_coverages_MAGs:
-    input:
-        binned_coverage_files=expand(
-            "genomes/alignments/coverage_binned/{sample}.tsv.gz", sample=SAMPLES
-        ),
-        coverage_files=expand(
-            "genomes/alignments/coverage/{sample}.tsv.gz", sample=SAMPLES
-        ),
-        contig2genome="genomes/clustering/contig2genome.tsv",
-    params:
-        samples=SAMPLES,
-    output:
-        coverage_contigs="genomes/counts/coverage_contigs.parquet",
-        counts="genomes/counts/counts_genomes.parquet",
-        binned_cov="genomes/counts/binned_coverage.parquet",
-        median_abund="genomes/counts/median_coverage_genomes.parquet",
-    log:
-        "logs/genomes/counts/combine_binned_coverages_MAGs.log",
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-    script:
-        "../scripts/combine_coverage_MAGs.py"
+

@@ -1,26 +1,38 @@
-gtdb_dir = "genomes/taxonomy/gtdb"
+gtdb_dir = "genomes/annotations/genomes/taxonomy/gtdb"
+GTDBTK_DATA_PATH = os.path.join(rules.veba_download.output.dbdir, 'Classify', 'GTDB')
+
+
+rule copy_prokaryotic_genomes:
+    input:
+        "genomes/genomes",
+    output:
+        directory("tmp/gtdbtk"),
+    log:
+        "logs/genomes/annotations/genomes/copy_prokaryotic_genomes.log",
+    shell:
+        "mkdir -p {output} && cp {input}/MAG_prokaryotic* {output}"
 
 
 rule identify:
     input:
-        flag=rules.extract_gtdb.output,
-        genes_flag="genomes/annotations/genes/predicted",
+        flag=rules.veba_download.output.dbdir,
+        #flag=rules.extract_gtdb.output,
+        genes_flag=rules.copy_prokaryotic_genomes.output,
     output:
         directory(f"{gtdb_dir}/identify"),
     threads: config["simplejob_threads"]
     conda:
         "../envs/gtdbtk.yaml"
     log:
-        "logs/taxonomy/gtdbtk/identify.txt",
+        "logs/genomes/annotations/genomes/taxonomy/gtdbtk/identify.txt",
         f"{gtdb_dir}/gtdbtk.log",
     params:
         outdir=gtdb_dir,
         extension="faa",
-        gene_dir=lambda wc, input: os.path.abspath(os.path.dirname(input.genes_flag)),
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk identify "
-        "--genes --genome_dir {params.gene_dir} "
+        "--genes --genome_dir {input.genes_flag} "
         " --out_dir {params.outdir} "
         "--extension {params.extension} "
         "--cpus {threads} &> {log[0]}"
@@ -35,7 +47,7 @@ checkpoint align:
     conda:
         "../envs/gtdbtk.yaml"
     log:
-        "logs/taxonomy/gtdbtk/align.txt",
+        "logs/genomes/annotations/genomes/taxonomy/gtdbtk/align.txt",
         f"{gtdb_dir}/gtdbtk.log",
     params:
         outdir=gtdb_dir,
@@ -48,7 +60,7 @@ checkpoint align:
 rule classify:
     input:
         rules.align.output,
-        genome_dir=genome_dir,
+        genome_dir=rules.copy_prokaryotic_genomes.output,
     output:
         directory(f"{gtdb_dir}/classify"),
     threads: config["simplejob_threads"]  #pplacer needs much memory for not many threads
@@ -58,11 +70,11 @@ rule classify:
     conda:
         "../envs/gtdbtk.yaml"
     log:
-        "logs/taxonomy/gtdbtk/classify.txt",
+        "logs/genomes/annotations/genomes/taxonomy/gtdbtk/classify.txt",
         f"{gtdb_dir}/gtdbtk.log",
     params:
         outdir=gtdb_dir,
-        extension="fasta",
+        extension="fa",
         mashdir=Path(GTDBTK_DATA_PATH) / "mash_db",
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
@@ -79,9 +91,9 @@ rule combine_taxonomy:
         folder=f"{gtdb_dir}/classify",
     output:
         combined=f"{gtdb_dir}/gtdbtk.combined.summary.tsv",
-        taxonomy="genomes/taxonomy/gtdb_taxonomy.tsv",
+        taxonomy="genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
     log:
-        "logs/taxonomy/gtdbtk/combine.txt",
+        "logs/genomes/annotations/genomes/taxonomy/gtdbtk/combine.txt",
     script:
         "../scripts/combine_taxonomy.py"
 
@@ -90,10 +102,10 @@ rule build_tree:
     input:
         f"{gtdb_dir}/align/{{msa}}.user_msa.fasta.gz",
     output:
-        temp("genomes/taxonomy/gtdb/{msa}.unrooted.tree"),
+        temp("genomes/annotations/genomes/taxonomy/gtdb/{msa}.unrooted.tree"),
     log:
-        "logs/genomes/tree/{msa}.log",
-        "logs/genomes/tree/{msa}.err",
+        "logs/genomes/annotations/genomes/tree/{msa}.log",
+        "logs/genomes/annotations/genomes/tree/{msa}.err",
     threads: max(config["simplejob_threads"], 3)
     params:
         outdir=lambda wc, output: Path(output[0]).parent,
@@ -118,14 +130,14 @@ rule root_tree:
     wildcard_constraints:
         msa="((?!unrooted).)*",
     output:
-        tree="genomes/tree/{msa}.nwk",
+        tree="genomes/annotations/genomes/tree/{msa}.nwk",
     conda:
         "../envs/tree.yaml"
     resources:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     log:
-        "logs/genomes/tree/root_tree_{msa}.log",
+        "logs/genomes/annotations/genomes/tree/root_tree_{msa}.log",
     script:
         "../scripts/root_tree.py"
 
@@ -135,11 +147,11 @@ def all_gtdb_trees_input(wildcards):
 
     domains = glob_wildcards(f"{dir}/gtdbtk.{{domain}}.user_msa.fasta.gz").domain
 
-    return expand("genomes/tree/gtdbtk.{domain}.nwk", domain=domains)
+    return expand("genomes/annotations/genomes/tree/gtdbtk.{domain}.nwk", domain=domains)
 
 
 rule all_gtdb_trees:
     input:
         all_gtdb_trees_input,
     output:
-        touch("genomes/tree/finished_gtdb_trees"),
+        touch("genomes/annotations/genomes/tree/finished_gtdb_trees"),

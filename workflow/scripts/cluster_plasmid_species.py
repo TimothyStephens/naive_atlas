@@ -66,7 +66,7 @@ gd.verify_expected_range(min_aligned_fraction, 0.1, 0.95, "min_aligned_fraction"
 
 # load quality
 Q = pd.read_csv(snakemake.input.bin_info, sep="\t", index_col=0)
-Q.Additional_Notes = Q.Additional_Notes.fillna("").astype(str)
+Q['Additional_Notes'] = ""
 
 
 logging.info("Load distances")

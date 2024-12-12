@@ -15,7 +15,7 @@ rule metaeuk_download:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     log:
-        "logs/genomes/annotations/metaeuk/download_MetaEuk_database.log",
+        "logs/genomes/annotations/genomes/metaeuk/download_MetaEuk_database.log",
     benchmark:
         "logs/benchmarks/metaeuk/download_MetaEuk_database.tsv"
     conda:
@@ -29,29 +29,29 @@ rule metaeuk_download:
 
 rule metaeuk_annotation:
     input:
-        fasta="genomes/genomes/{genome}.fasta",
+        fasta="genomes/{dataset}/{genome}.fa",
         database=rules.metaeuk_download.output.database,
     output:
-        codon="genomes/annotations/metaeuk/{genome}.fasta.metaeuk.codon.fas",
-        fas="genomes/annotations/metaeuk/{genome}.fasta.metaeuk.fas",
-        gff="genomes/annotations/metaeuk/{genome}.fasta.metaeuk.gff",
-        headerMap="genomes/annotations/metaeuk/{genome}.fasta.metaeuk.headersMap.tsv",
-        headerMap_combined="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_combined.headersMap.tsv",
-        contig_classification="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_contig_classification.tsv",
-        mag_classification="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_mag_classification.tsv",
-        tmp=temp(directory("genomes/annotations/metaeuk/{genome}.fasta.metaeuk.tmp")),
+        codon="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.codon.fas",
+        fas="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.fas",
+        gff="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.gff",
+        headerMap="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.headersMap.tsv",
+        headerMap_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined.headersMap.tsv",
+        contig_classification="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv",
+        mag_classification="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv",
+        tmp=temp(directory("genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.tmp")),
     params:
-        tax_per_contig="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_tax_per_contig.tsv",
-        tax_per_pred="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_tax_per_pred.tsv",
-        tax_per_contig_combined="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_combined_tax_per_contig.tsv",
-        tax_per_pred_combined="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_combined_tax_per_pred.tsv",
+        tax_per_contig="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_tax_per_contig.tsv",
+        tax_per_pred="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_tax_per_pred.tsv",
+        tax_per_contig_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined_tax_per_contig.tsv",
+        tax_per_pred_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined_tax_per_pred.tsv",
         metaeuk_createdb=config["metaeuk_createdb"],
         metaeuk_predictexons=config["metaeuk_predictexons"],
         metaeuk_reduceredundancy=config["metaeuk_reduceredundancy"],
         metaeuk_unitesetstofasta=config["metaeuk_unitesetstofasta"],
         metaeuk_taxtocontig=config["metaeuk_taxtocontig"],
-        out="genomes/annotations/metaeuk/{genome}.fasta.metaeuk",
-        out_combined="genomes/annotations/metaeuk/{genome}.fasta.metaeuk_combined",
+        out="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk",
+        out_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined",
         mag_id=lambda wildcards: wildcards.genome,
     threads: config["simplejob_threads"]
     resources:
@@ -60,9 +60,9 @@ rule metaeuk_annotation:
     conda:
         "../envs/metaeuk.yaml"
     log:
-        "logs/genomes/annotations/metaeuk/{genome}.log",
+        "logs/genomes/annotations/{dataset}/metaeuk/{genome}.log",
     benchmark:
-        "logs/benchmarks/metaeuk/{genome}.tsv"
+        "logs/benchmarks/genomes/annotations/{dataset}/metaeuk/{genome}.tsv"
     shell:
         """
         (
@@ -126,22 +126,29 @@ rule metaeuk_annotation:
 
 
 def get_all_metaeuk(wildcards):
-    all_genomes = get_all_genomes(wildcards)
-    all_unbinned_genomes = get_all_unbinned(wildcards)
-    all_genomes.extend(['unbinned/'+l for l in all_unbinned_genomes])
+    if wildcards.dataset == "genomes":
+        all_genomes = get_all_genomes(wildcards)
+    else:
+        all_genomes = get_all_unbinned(wildcards)
     return all_genomes
 
 def get_all_metaeuk_contigs(wildcards):
     all_genomes = get_all_metaeuk(wildcards)
-    return( expand('genomes/genomes/{genome}.fasta', genome=all_genomes) )
+    return(expand('genomes/{dataset}/{genome}.fa', 
+                        dataset=wildcards.dataset, genome=all_genomes)
+    )
 
 def get_all_metaeuk_contig_results(wildcards):
     all_genomes = get_all_metaeuk(wildcards)
-    return( expand('genomes/annotations/metaeuk/{genome}.fasta.metaeuk_contig_classification.tsv', genome=all_genomes) )
+    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv', 
+                        dataset=wildcards.dataset, genome=all_genomes)
+    )
 
 def get_all_metaeuk_mag_results(wildcards):
     all_genomes = get_all_metaeuk(wildcards)
-    return( expand('genomes/annotations/metaeuk/{genome}.fasta.metaeuk_mag_classification.tsv', genome=all_genomes) )
+    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv', 
+                        dataset=wildcards.dataset, genome=all_genomes)
+    )
 
 
 rule combine_metaeuk:
@@ -150,12 +157,12 @@ rule combine_metaeuk:
         contig_results_files=get_all_metaeuk_contig_results,
         mag_results_files=get_all_metaeuk_mag_results,
     output:
-        contig_output_table="genomes/annotations/metaeuk_contig_predictions.tsv",
-        mag_output_table="genomes/annotations/metaeuk_mag_predictions.tsv",
+        contig_output_table="genomes/annotations/{dataset}/metaeuk_contig_predictions.tsv",
+        mag_output_table="genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv",
     params:
         genomes=get_all_metaeuk,
     log:
-        "logs/genomes/annotations/metaeuk/combine.log",
+        "logs/genomes/annotations/{dataset}/metaeuk/combine.log",
     script:
         "../scripts/combine_metaeuk.py"
 
@@ -170,6 +177,6 @@ rule all_metaeuk:
         rules.combine_metaeuk.output.contig_output_table,
         rules.combine_metaeuk.output.mag_output_table,
     output:
-        touch("genomes/annotations/metaeuk/finished"),
+        touch("genomes/annotations/{dataset}/metaeuk/finished"),
 
 

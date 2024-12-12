@@ -123,7 +123,7 @@ def make_plots(bin_info):
     div["2Dsp"] = fig.to_html(**HTML_PARAMS)
 
     ## By sample
-    logging.info("plot  by sample")
+    logging.info("plot by sample")
     fig = px.strip(
         data_frame=df,
         y="Quality_score",

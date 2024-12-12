@@ -224,13 +224,13 @@ rule veba_download:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     log:
-        "logs/binning/download_veba_binning_database.log",
+        "logs/Binning/download_veba_binning_database.log",
     benchmark:
-        "logs/benchmarks/binning/download_veba_binning_database.tsv"
+        "logs/benchmarks/Binning/download_veba_binning_database.tsv"
     conda:
         "../envs/VEBA-database_env.yml"
     shell:
-        f"bash {workflow_folder}/scripts/veba/download_databases.sh"
+        f"bash {workflow_folder}/scripts/veba/download_databases-classify.sh"
         " {output.dbdir}"
         " {threads}"
         " &> {log}"

@@ -215,16 +215,15 @@ def get_prodigal_cmd(input_filepaths, output_filepaths, output_directory, direct
         os.path.join(output_directory, "viral_bins"),
             "&&",
         "mkdir -p",
-        os.path.join(output_directory, "plastid_bins"),
+        os.path.join(output_directory, "plasmid_bins"),
     ]
     ##
     ## VIRUS
     ##
-    if len(glob.glob( os.path.join(input_filepaths[0], "*.fa") )) == 0:
-        print("No Viral MAGs found. Skipping gene prediction!")
-    else:
-        cmd += [
-                "&&",
+    cmd += [
+             "&&",
+        
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(input_filepaths[0])),
             
             "cat",
             os.path.join(input_filepaths[0], "*.fa"),
@@ -275,16 +274,20 @@ done
 #           os.path.join(output_directory, "viral_bins", "gene_models.gff"),
 #           os.path.join(output_directory, "viral_bins", "gene_models.ffn"),
 #           os.path.join(output_directory, "viral_bins", "gene_models.faa"),
+    
+        "else",
+            "echo 'No Viral MAGs found. Skipping gene prediction!';",
+        "fi",
+        
         ]
     
     ##
     ## PLASTID
     ##
-    if len(glob.glob( os.path.join(input_filepaths[2], "*.fa") )) == 0:
-        print("No Plastid MAGs found. Skipping gene prediction!")
-    else:
-        cmd += [
-                "&&",
+    cmd += [
+           "&&",
+        
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(input_filepaths[2])),
             
             "cat",
             os.path.join(input_filepaths[2], "*.fa"),
@@ -293,22 +296,22 @@ done
             "-p meta",
             "-g {}".format(opts.prodigal_genetic_code),
             "-f gff",
-            "-d {}".format(os.path.join(output_directory, "plastid_bins", "gene_models.ffn")),
-            "-a {}".format(os.path.join(output_directory, "plastid_bins", "gene_models.faa")),
+            "-d {}".format(os.path.join(output_directory, "plasmid_bins", "gene_models.ffn")),
+            "-a {}".format(os.path.join(output_directory, "plasmid_bins", "gene_models.faa")),
             "|",
             os.environ["append_geneid_to_prodigal_gff.py"],
             "-a gene_id",
             ">",
-            os.path.join(output_directory, "plastid_bins", "gene_models.gff"),
+            os.path.join(output_directory, "plasmid_bins", "gene_models.gff"),
             
                 "&&",
             
             os.environ["partition_gene_models.py"],
             "-i {}".format(input_filepaths[3]),
-            "-g {}".format(os.path.join(output_directory, "plastid_bins", "gene_models.gff")),
-            "-d {}".format(os.path.join(output_directory, "plastid_bins", "gene_models.ffn")),
-            "-a {}".format(os.path.join(output_directory, "plastid_bins", "gene_models.faa")),
-            "-o {}".format(os.path.join(directories[("intermediate", "2__genomad")], "filtered_plastid_bins", "genomes")),
+            "-g {}".format(os.path.join(output_directory, "plasmid_bins", "gene_models.gff")),
+            "-d {}".format(os.path.join(output_directory, "plasmid_bins", "gene_models.ffn")),
+            "-a {}".format(os.path.join(output_directory, "plasmid_bins", "gene_models.faa")),
+            "-o {}".format(os.path.join(directories[("intermediate", "2__genomad")], "filtered_plasmid_bins", "genomes")),
             
 """
 
@@ -326,16 +329,22 @@ do
 done
 
 """.format(
-                os.path.join(directories[("intermediate",  "2__genomad")], "filtered_plastid_bins", "genomes"),
-                os.path.join(directories[("intermediate",  "2__genomad")], "filtered_plastid_bins", "genomes", "*.fa"),
+                os.path.join(directories[("intermediate",  "2__genomad")], "filtered_plasmid_bins", "genomes"),
+                os.path.join(directories[("intermediate",  "2__genomad")], "filtered_plasmid_bins", "genomes", "*.fa"),
                 os.environ["compile_gff.py"],
             ),
 
 #        "rm -rf",
-#        os.path.join(output_directory, "plastid_bins", "gene_models.gff"),
-#        os.path.join(output_directory, "plastid_bins", "gene_models.ffn"),
-#        os.path.join(output_directory, "plastid_bins", "gene_models.faa"),
-        ]    
+#        os.path.join(output_directory, "plasmid_bins", "gene_models.gff"),
+#        os.path.join(output_directory, "plasmid_bins", "gene_models.ffn"),
+#        os.path.join(output_directory, "plasmid_bins", "gene_models.faa"),
+
+        "else",
+            "echo 'No Plastid MAGs found. Skipping gene prediction!';",
+        "fi",
+    
+    ]    
+
     return cmd
 
 
@@ -351,11 +360,10 @@ def get_featurecounts_cmd(input_filepaths, output_filepaths, output_directory, d
     ##
     ## VIRAL
     ##
-    if len(glob.glob( os.path.join(input_filepaths[1], "*.faa") )) == 0:
-        print("No Viral MAGs found. Skipping featurecounts!")
-    else:
-        cmd += [
-                "&&",
+    cmd += [
+            "&&",
+            
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(input_filepaths[1])),
             
             "cat",
             os.path.join(input_filepaths[1], "*.gff"),
@@ -387,16 +395,20 @@ def get_featurecounts_cmd(input_filepaths, output_filepaths, output_directory, d
                 "&&",
             
             "rm -rf {}".format(os.path.join(directories["tmp"], "featurecounts","*" )),
-        ]
+        
+        "else",
+            "echo 'No Viral MAGs found. Skipping feature counting!';",
+        "fi",
+        
+    ]
     
     ##
     ## PLASTID
     ##
-    if len(glob.glob( os.path.join(input_filepaths[2], "*.faa") )) == 0:
-        print("No Plastid MAGs found. Skipping featurecounts!")
-    else:
-        cmd += [
-                "&&",
+    cmd += [
+            "&&",
+
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(input_filepaths[2])),
             
             "cat",
             os.path.join(input_filepaths[2], "*.gff"),
@@ -428,7 +440,13 @@ def get_featurecounts_cmd(input_filepaths, output_filepaths, output_directory, d
                 "&&",
             
             "rm -rf {}".format(os.path.join(directories["tmp"], "featurecounts","*" )),
-        ]
+            
+        "else",
+            "echo 'No Plastid MAGs found. Skipping feature counting!';",
+        "fi",
+    
+    ]
+    
     return cmd
 
 
@@ -451,11 +469,10 @@ def get_output_cmd(input_filepaths, output_filepaths, output_directory, director
     ##
     ## Virus
     ##
-    if len(glob.glob( os.path.join(input_filepaths[0], "genomes", "*.fa") )) == 0:
-        print("No Virus MAGs found. Skipping SeqKit stats!")
-    else:
-        cmd += [ 
-                "&&",
+    cmd += [ 
+            "&&",
+        
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(input_filepaths[0], "genomes")),
             
             # Statistics
             os.environ["seqkit"],
@@ -488,16 +505,20 @@ def get_output_cmd(input_filepaths, output_filepaths, output_directory, director
                 "&&",
             
             "rm -rf {}".format(os.path.join(directories["tmp"], "*")),
-        ]
+        
+        "else",
+            "echo 'No Viral MAGs found. Skipping seqkit!';",
+        "fi",
+    
+    ]
     
     ##
     ## Plastid
     ##    
-    if len(glob.glob( os.path.join(input_filepaths[1], "genomes", "*.fa") )) == 0:
-        print("No Plastid MAGs found. Skipping SeqKit stats!")
-    else:
-        cmd += [
-                "&&",
+    cmd += [
+            "&&",
+            
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(input_filepaths[1], "genomes")),
             
             # Statistics
             os.environ["seqkit"],
@@ -530,7 +551,26 @@ def get_output_cmd(input_filepaths, output_filepaths, output_directory, director
                 "&&",
             
             "rm -rf {}".format(os.path.join(directories["tmp"], "*")),
-        ]
+    
+        "else",
+            "echo 'No Plastid MAGs found. Skipping seqkit!';",
+        "fi",
+    
+    ]
+    
+    ##
+    ## Make sure output files are present
+    ##
+    cmd += [
+            "&&",
+        
+        "touch {} {} {} {}".format(
+            os.path.join(input_filepaths[0], "genomad_results.filtered.tsv"),
+            os.path.join(input_filepaths[1], "genomad_results.filtered.tsv"),
+            os.path.join(input_filepaths[0], "genome_statistics.tsv"),
+            os.path.join(input_filepaths[1], "genome_statistics.tsv"),
+        ),
+    ]
     return cmd
 
 
@@ -626,7 +666,7 @@ def create_pipeline(opts, directories, f_cmds):
 
     output_filenames = [
         "filtered_viral_bins",
-        "filtered_plastid_bins",
+        "filtered_plasmid_bins",
         "unbinned.fasta",
     ]
     output_filepaths = list(map(lambda filename: os.path.join(output_directory, filename), output_filenames))
@@ -671,17 +711,17 @@ def create_pipeline(opts, directories, f_cmds):
     input_filepaths = [
         os.path.join(directories[("intermediate", "2__genomad")], "filtered_viral_bins",   "genomes"),
         os.path.join(directories[("intermediate", "2__genomad")], "filtered_viral_bins",   "scaffolds_to_bins.tsv"),
-        os.path.join(directories[("intermediate", "2__genomad")], "filtered_plastid_bins", "genomes"),
-        os.path.join(directories[("intermediate", "2__genomad")], "filtered_plastid_bins", "scaffolds_to_bins.tsv"),
+        os.path.join(directories[("intermediate", "2__genomad")], "filtered_plasmid_bins", "genomes"),
+        os.path.join(directories[("intermediate", "2__genomad")], "filtered_plasmid_bins", "scaffolds_to_bins.tsv"),
     ]
 
     output_filenames = [
         os.path.join(output_directory, "virus_bins",   "*.gff"),
         os.path.join(output_directory, "virus_bins",   "*.faa"),
         os.path.join(output_directory, "virus_bins",   "*.ffn"),
-        os.path.join(output_directory, "plastid_bins", "*.gff"),
-        os.path.join(output_directory, "plastid_bins", "*.faa"),
-        os.path.join(output_directory, "plastid_bins", "*.ffn"),
+        os.path.join(output_directory, "plasmid_bins", "*.gff"),
+        os.path.join(output_directory, "plasmid_bins", "*.faa"),
+        os.path.join(output_directory, "plasmid_bins", "*.ffn"),
     ]
     output_filepaths = list(map(lambda filename: os.path.join(output_directory, filename), output_filenames))
     
@@ -724,13 +764,13 @@ def create_pipeline(opts, directories, f_cmds):
         input_filepaths = [ 
             opts.fasta,
             os.path.join(directories[("intermediate", "2__genomad")], "filtered_viral_bins",   "genomes"),
-            os.path.join(directories[("intermediate", "2__genomad")], "filtered_plastid_bins", "genomes"),
+            os.path.join(directories[("intermediate", "2__genomad")], "filtered_plasmid_bins", "genomes"),
             *opts.bam,
         ]
 
         output_filenames = [
             "viral.featurecounts.orfs.tsv.gz",
-            "plastid.featurecounts.orfs.tsv.gz",
+            "plasmid.featurecounts.orfs.tsv.gz",
         ]
         output_filepaths = list(map(lambda filename: os.path.join(output_directory, filename), output_filenames))
 
@@ -775,7 +815,7 @@ def create_pipeline(opts, directories, f_cmds):
     # i/o
     input_filenames = [ 
         "filtered_viral_bins", 
-        "filtered_plastid_bins",
+        "filtered_plasmid_bins",
         "unbinned.fasta",
         "unbinned.list",
     ]
@@ -783,7 +823,7 @@ def create_pipeline(opts, directories, f_cmds):
 
     output_filenames =  [
         "filtered_viral_bins", 
-        "filtered_plastid_bins",
+        "filtered_plasmid_bins",
         "unbinned.fasta",
         "unbinned.list",
     ]
@@ -936,7 +976,7 @@ def main(args=None):
     parser_genomad.add_argument("--sensitivity", type=float, default=4.0, help = "MMseqs2 marker search sensitivity. Higher values will annotate more proteins, but the search will be slower and consume more memory. [Default: 4.0; x ≥ 0.0]")
     parser_genomad.add_argument("--splits", type=int, default=0, help = "Split the data for the MMseqs2 search. Higher values will reduce memory usage, but will make the search slower. If the MMseqs2 search is failing, try to increase the number of splits. Also used for VirFinder. [Default: 0; x ≥ 0]")
     parser_genomad.add_argument("--composition", type=str, default="auto", help = "Method for estimating sample composition. (auto|metagenome|virome) [Default: auto]")
-    parser_genomad.add_argument("--minimum_score", type=float, default=0.0, help = "Minimum score to flag a sequence as virus or plasmid. By default, the sequence is classified as virus/plasmid if its virus/plasmid score is higher than its chromosome score, regardless of the value. [Default: 0; 0.0 ≤ x ≤ 1.0]")
+    parser_genomad.add_argument("--minimum_score", type=float, default=0.7, help = "Minimum score to flag a sequence as virus or plasmid. By default, the sequence is classified as virus/plasmid if its virus/plasmid score is higher than its chromosome score, regardless of the value. [Default: 0; 0.0 ≤ x ≤ 1.0]")
     parser_genomad.add_argument("--minimum_plasmid_marker_enrichment", type=float, default=-100, help = "Minimum allowed value for the plasmid marker enrichment score, which represents the total enrichment of plasmid markers in the sequence. Sequences with multiple plasmid markers will have higher values than the ones that encode few or no markers.[Default: -100]")
     parser_genomad.add_argument("--minimum_virus_marker_enrichment", type=float, default=-100, help = "Minimum allowed value for the virus marker enrichment score, which represents the total enrichment of plasmid markers in the sequence. Sequences with multiple plasmid markers will have higher values than the ones that encode few or no markers. [Default: -100]")
     parser_genomad.add_argument("--minimum_plasmid_hallmarks", type=int, default=0, help = "Minimum number of plasmid hallmarks in the identified plasmids.  [Default: 0; x ≥ 0]")
