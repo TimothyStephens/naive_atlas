@@ -67,12 +67,12 @@ def make_plots(bin_info):
 
     add_stats("All", df)
 
-    df.eval("Quality_score = `generic-Complete` - 5* `generic-Multi copy`", inplace=True)
+    df.eval("Quality_score = Best_Completeness - 5* Best_Duplication", inplace=True)
     div[
         "QualityScore"
     ] = "<p>Quality score is calculated as: BUSCO-Complete - 5x BUSCO-Duplicated.</p>"
     add_stats("Quality score >50 ", df.query("Quality_score>50"))
-    add_stats("Good quality", df.query("`generic-Complete`>90 & `generic-Multi copy` <5"))
+    add_stats("Good quality", df.query("Best_Completeness>90 & Best_Duplication <5"))
     add_stats("Quality score >90 ", df.query("Quality_score>90"))
 
     div["table"] = st.to_html()
@@ -83,7 +83,7 @@ def make_plots(bin_info):
     # specific-one_line_summary	specific-Complete	specific-Single copy	specific-Multi copy	specific-Fragmented	specific-Missing	specific-n_markers	specific-dataset_name	specific-creation_date	specific-number_of_busco_markers	specific-number_of_species
     # format  type  num_seqs  sum_len  min_len  avg_len   max_len  Q1       Q2        Q3        sum_gap  N50      Q20(%)  Q30(%)  GC(%)
     hover_data = [
-        "generic-one_line_summary",
+        #"generic-one_line_summary",
         "specific-one_line_summary",
         "specific-dataset_name",
         "N50",
@@ -98,8 +98,8 @@ def make_plots(bin_info):
     logging.info("make 2d plot")
     fig = px.scatter(
         data_frame=df,
-        y="generic-Complete",
-        x="generic-Multi copy",
+        y="Best_Completeness",
+        x="Best_Duplication",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,
@@ -114,8 +114,8 @@ def make_plots(bin_info):
     logging.info("make 2d plot species")
     fig = px.scatter(
         data_frame=df.loc[df.Representative.unique()],
-        y="generic-Complete",
-        x="generic-Multi copy",
+        y="Best_Completeness",
+        x="Best_Duplication",
         color=lineage_name,
         size=size_name,
         hover_data=hover_data,

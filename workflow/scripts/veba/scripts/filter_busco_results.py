@@ -75,8 +75,8 @@ def main(args=None):
     if mag_to_completeness.empty:
         print("No bins had a completeness ≥ {}".format(opts.completeness), file=sys.stderr)
         tmp.to_frame("completeness").to_csv(sys.stderr, sep="\t")
-        sys.exit(1)
-    else: 
+        #sys.exit(0)
+    else:
         del tmp
 
     tmp = mag_to_contamination.copy()
@@ -85,7 +85,7 @@ def main(args=None):
     if mag_to_contamination.empty:
         print("No bins had a contamination < {}".format(opts.contamination), file=sys.stderr)
         tmp.to_frame("contamination").to_csv(sys.stderr, sep="\t")
-        sys.exit(1)
+        #sys.exit(0)
     else: 
         del tmp
 

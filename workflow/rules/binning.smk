@@ -102,7 +102,7 @@ rule binning_prokaryotic:
         "../envs/VEBA-binning-prokaryotic_env.yml"
     threads: config["simplejob_threads"]
     resources:
-        mem=config["large_memory"],
+        mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     shell:
         """
@@ -148,10 +148,10 @@ rule binning_eukaryotic:
         "{sample}/logs/binning/veba/{sample}.eukaryotic.txt",
     conda:
         "../envs/VEBA-binning-eukaryotic_env.yml"
-    threads: config["large_threads"]
+    threads: config["simplejob_threads"]
     resources:
-        mem=config["large_memory"],
-        time=config["large_runtime"],
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
     shell:
         """
         {params.workflow_folder}/scripts/veba/binning-eukaryotic.py \
@@ -306,7 +306,7 @@ rule get_prokaryotic_bins:
         # Load each genome stats file and concat
         data_frames = []
         for file_name in input.genome_stats:
-            if os.path.isfile(file_name):
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
                 t = pd.read_table(file_name, sep='\t', index_col=0)
                 t['Sample'] = file_name.split(os.sep)[0]
                 data_frames.append(t)
@@ -393,7 +393,7 @@ rule get_eukaryotic_bins:
         # Load each genome stats file and concat
         data_frames = []
         for file_name in input.genome_stats:
-            if os.path.isfile(file_name):
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
                 t = pd.read_table(file_name, sep='\t', index_col=0)
                 t['Sample'] = file_name.split(os.sep)[0]
                 data_frames.append(t)
@@ -471,7 +471,7 @@ rule get_viral_bins:
         # Load each genome stats file and concat
         data_frames = []
         for file_name in input.genome_stats:
-            if os.path.isfile(file_name):
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
                 t = pd.read_table(file_name, sep='\t', index_col=0)
                 t['Sample'] = file_name.split(os.sep)[0]
                 data_frames.append(t)
@@ -538,7 +538,7 @@ rule get_plasmid_bins:
         # Load each genome stats file and concat
         data_frames = []
         for file_name in input.genome_stats:
-            if os.path.isfile(file_name):
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
                 t = pd.read_table(file_name, sep='\t', index_col=0)
                 t['Sample'] = file_name.split(os.sep)[0]
                 data_frames.append(t)

@@ -144,12 +144,27 @@ format_int = "sp{:0" + str(n_leading_zeros) + "d}"
 mag2Species["Species"] = mag2Species.SpeciesNr.apply(format_int.format)
 
 
-# calculate quality score
+# cleanup column names
+def select_best_completness(row):
+    if row['specific-Complete'] is None:
+        val = row['generic-Complete']
+    else:
+        val = row['specific-Complete']
+    return val
+Q['Best_Completeness'] = Q.apply(select_best_completness, axis=1)
+
+def select_best_duplication(row):
+    if row['specific-Multi copy'] is None:
+        val = row['generic-Multi copy']
+    else:
+        val = row['specific-Multi copy']
+    return val
+Q['Best_Duplication'] = Q.apply(select_best_duplication, axis=1)
 
 
-logging.info("Define Quality score defined as BUSCO-Complete - 5x BUSCO-Duplicated")
+logging.info("Define Quality score defined as BUSCO-Best_Completeness - 5x BUSCO-Best_Duplication")
 # recalulate quality score as some completeness might be recalibrated.
-Q.eval("Quality_score = `generic-Complete` - 5* `generic-Multi copy`", inplace=True)
+Q.eval("Quality_score = Best_Completeness - 5* Best_Duplication", inplace=True)
 quality_score = Q.Quality_score
 
 assert (

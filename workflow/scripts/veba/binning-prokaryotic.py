@@ -296,7 +296,7 @@ def get_concoct_null_cmd(input_filepaths, output_filepaths, output_directory, di
 # DAS_Tool
 def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directories, opts):
     cmd = [
-        opts.cmd_opener, # Assumes '&&' at end of command
+        #opts.cmd_opener, # Assumes '&&' at end of command
         
         'export PATH="{}:$PATH"'.format(os.environ["DAS_Tool"].replace('/DAS_Tool', '')),
         "&&"
@@ -333,6 +333,12 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
         "--debug",
         opts.dastool_options,
         
+            ";",#"&&",
+        "echo 'DASTools Done' &&",
+        # Check if any bins were found.
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(os.path.join(output_directory, "__DASTool_bins")),
+        #opts.cmd_opener, # Assumes '&&' at end of command
+        "echo 'Found bins from DASTools'",
             "&&",
         
         # Eukaryotic
@@ -369,6 +375,8 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
         "-o {}".format(os.path.join(output_directory, "consensus_domain_classification")),
         "--logit_transform {}".format(opts.logit_transform),
         
+        "&& echo 'FINISHED 1!!'",
+        
             "&&",
         
         # Move eukaryota
@@ -377,6 +385,8 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
             os.path.join(output_directory, "__DASTool_bins"),
             os.path.join(output_directory, "__DASTool_bins", "eukaryota"),
         ),
+        
+        "&& echo 'FINISHED 2!!'",
         
             "&&",
         
@@ -393,6 +403,8 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
         ">",
         os.path.join(output_directory, "__DASTool_bins", "eukaryota", "eukaryota.scaffolds.list"),
         
+        "&& echo 'FINISHED 3!!'",
+        
             "&&",
         
         # Remove eukaryotic scaffolds
@@ -405,6 +417,8 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
         ">",
         os.path.join(output_directory, "__DASTool_scaffolds2bin.no_eukaryota.txt"),
         
+        "; echo 'FINISHED 4!!'",
+        
             "&&",
         
         # Partition
@@ -413,7 +427,11 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
         os.path.join(output_directory, "__DASTool_scaffolds2bin.no_eukaryota.txt"),
         ">",
         os.path.join(output_directory, "binned.list"),
+
+        "&& echo 'FINISHED 5!!'",
+
             "&&",
+        
         os.environ["partition_gene_models.py"],
         "-i {}".format(os.path.join(output_directory, "__DASTool_scaffolds2bin.no_eukaryota.txt")),
         "-g {}".format(os.path.join(directories[("intermediate",  "2__pyrodigal")], "gene_models.gff")),
@@ -422,12 +440,22 @@ def get_dastool_cmd(input_filepaths, output_filepaths, output_directory, directo
         "-o {}".format(os.path.join(output_directory, "__DASTool_bins")),
         "--use_mag_as_description",
         
+        "&& echo 'FINISHED 6!!'",
+        
             "&&",
         
         "rm -rf {} {}".format(
             os.path.join(output_directory, "_.seqlength"), 
             os.path.join(directories["tmp"], "scaffolds.binned.gte{}.fasta".format(opts.tiara_minimum_length)),
         ),
+        
+        "&& echo 'FINISHED 7'",
+        
+        "; else",
+        
+            "echo 'Found ZERO bins from DASTools'",
+        
+        "; fi"
     ]
     return cmd
 
@@ -440,6 +468,13 @@ def get_mdmcleaner_cmd(input_filepaths, output_filepaths, output_directory, dire
         "touch {}".format(input_filepaths[1]),
         
             "&&",
+        
+        "mkdir -p {} {}".format(output_filepaths[0], output_filepaths[1]),
+        
+            "&&",
+        
+        # Check if any bins were found.
+        "if ls {} 1> /dev/null 2>&1; then".format(input_filepaths[0]),
         
         'echo -e "db_type\tgtdb\ndb_basedir\t{}" > {}'.format(
             os.path.join(opts.veba_database, "Classify", "MDMcleaner"),
@@ -457,10 +492,6 @@ def get_mdmcleaner_cmd(input_filepaths, output_filepaths, output_directory, dire
         "--blacklistfile {}".format(input_filepaths[1]),
         "--outblacklist {}".format(input_filepaths[1]),
         "{}".format(opts.mdmcleaner_options) if bool(opts.mdmcleaner_options) else "",
-
-            "&&",
-        
-        "mkdir -p {}".format(output_filepaths[1]),
         
             "&&",
         
@@ -470,8 +501,25 @@ def get_mdmcleaner_cmd(input_filepaths, output_filepaths, output_directory, dire
             "&&",
             "gunzip -c $F > $P.fa",
             "&&",
-            "prodigal -a $P.faa -d $P.ffn -f gff -p meta -q < $P.fa | grep -v '#' > $P.gff;",
+            "prodigal -a $P.faa -d $P.ffn -f gff -p meta -q < $P.fa | grep -v '#' > $P.gff.tmp",
+            "&&",
+            "cat",
+            "$P.gff.tmp",
+            "|",
+            os.environ["append_geneid_to_prodigal_gff.py"],
+            "-a gene_id",
+            ">",
+            "$P.gff",
+            "&&",
+            "rm -f $P.gff.tmp",
+            ";",
         "done",
+        
+        "; else",
+        
+        "echo 'Skipping MDMcleaner becuase DASTools found no bins!'",
+        
+        "; fi"
     ]
     return cmd
 
@@ -485,6 +533,9 @@ def get_checkm2_cmd(input_filepaths, output_filepaths, output_directory, directo
         "mkdir -p {}".format(os.path.join(directories["tmp"], "checkm2")),
         
             "&&",
+        
+        # Check if any bins were found.
+        "if ls {}/*.fa 1> /dev/null 2>&1; then".format(input_filepaths[0]),
         
         os.environ["checkm2"],
         "predict",
@@ -542,6 +593,20 @@ def get_checkm2_cmd(input_filepaths, output_filepaths, output_directory, directo
             "&&",
         
         "rm -rf {}".format(os.path.join(output_directory, "protein_files")),
+        
+        "; else",
+        
+        "echo 'Skipping CheckM2 becuase DASTools found no bins!'",
+        
+            "&&",
+        
+        "mkdir -p {}".format(os.path.join(output_directory, "filtered", "genomes")),
+        
+            "&&",
+        
+        "cat {} > {}".format(input_filepaths[1], output_filepaths[-1]),
+        
+        "; fi",
     ]
     return cmd
 
@@ -551,10 +616,15 @@ def get_barrnap_cmd(input_filepaths, output_filepaths, output_directory, directo
     cmd = [
         opts.cmd_opener, # Assumes '&&' at end of command
         
-        "cat",
-        input_filepaths[0],
-        ">",
-        os.path.join(directories["tmp"], "genomes_to_domain.tsv"),
+        # Check if any bins were found.
+        "if ls {} 1> /dev/null 2>&1; then".format(input_filepaths[0]),
+            "cat",
+            input_filepaths[0],
+            ">",
+            os.path.join(directories["tmp"], "genomes_to_domain.tsv"),
+        "; else",
+            "touch {}".format(directories["tmp"], "genomes_to_domain.tsv"),
+        "; fi",
 
 """
 OUTPUT_DIRECTORY={}
@@ -609,10 +679,15 @@ def get_trnascan_cmd(input_filepaths, output_filepaths, output_directory, direct
     cmd = [
         opts.cmd_opener, # Assumes '&&' at end of command
         
-        "cat",
-        input_filepaths[0],
-        ">",
-        os.path.join(directories["tmp"], "genomes_to_domain.tsv"),
+        # Check if any bins were found.
+        "if ls {} 1> /dev/null 2>&1; then".format(input_filepaths[0]),
+            "cat",
+            input_filepaths[0],
+            ">",
+            os.path.join(directories["tmp"], "genomes_to_domain.tsv"),
+        "; else",
+            "touch {}".format(directories["tmp"], "genomes_to_domain.tsv"),
+        "; fi",
 
 """
 OUTPUT_DIRECTORY={}
@@ -689,15 +764,42 @@ def get_featurecounts_cmd(input_filepaths, output_filepaths, output_directory, d
 
 def get_consolidate_cmd(input_filepaths, output_filepaths, output_directory, directories, opts, step):
     cmd = [
-        opts.cmd_opener, # Assumes '&&' at end of command
+        #opts.cmd_opener, # Assumes '&&' at end of command
         
         """
 mkdir -p {}
-S2B=$(ls {}) || (echo 'No genomes have been detected' && exit 1)
+if ls {} 1> /dev/null 2>&1; then
+  echo 'Genomes found! Consolidating everything together.'
+else
+  echo 'No genomes have been detected. Creating empty files.' \
+  && touch '{}' '{}' '{}' \
+  && cat '{}' > '{}' \
+  && echo -e 'file\tformat\ttype\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len\tQ1\tQ2\tQ3\tsum_gap\tN50\tQ20(%)\tQ30(%)\tGC(%)' > '{}' \
+  && echo -e 'file\tformat\ttype\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len\tQ1\tQ2\tQ3\tsum_gap\tN50\tQ20(%)\tQ30(%)\tGC(%)' > '{}' \
+  && echo -e 'file\tformat\ttype\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len\tQ1\tQ2\tQ3\tsum_gap\tN50\tQ20(%)\tQ30(%)\tGC(%)' > '{}' \
+  && echo -e 'file\tformat\ttype\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len\tQ1\tQ2\tQ3\tsum_gap\tN50\tQ20(%)\tQ30(%)\tGC(%)' > '{}' \
+  && echo -e 'Name\tCompleteness\tContamination\tCompleteness_Model_Used\tAdditional_Notes' > '{}' \
+  && exit 0
+fi
 
 """.format(
         os.path.join(output_directory, "genomes"),
         os.path.join(directories["intermediate"], "*__checkm2",  "filtered", "scaffolds_to_bins.tsv"),
+        ## Create expected output files for Snakemake
+        # Mag info files
+        os.path.join(output_directory, "scaffolds_to_bins.tsv"),
+        os.path.join(output_directory, "bins.list"),
+        os.path.join(output_directory, "binned.list"),
+        # Unbinned scaffolds (i.e., all scaffolds)
+        opts.fasta,
+        os.path.join(output_directory,"unbinned.fasta"),
+        # Genome stats
+        os.path.join(output_directory,"gene_statistics.cds.tsv"),
+        os.path.join(output_directory,"gene_statistics.rRNA.tsv"),
+        os.path.join(output_directory,"gene_statistics.tRNA.tsv"),
+        os.path.join(output_directory,"genome_statistics.tsv"),
+        # CheckM2 results
+        os.path.join(output_directory, "checkm2_results.filtered.tsv"),
         ),
     ]
 
@@ -1438,7 +1540,7 @@ def create_pipeline(opts, directories, f_cmds):
         # i/o
         input_filepaths = [
             opts.fasta,
-            os.path.join(directories[("intermediate",  "2__pyrodigal")], "gene_models.gff"),
+            os.path.join(directories[("intermediate", "{}__mdmcleaner".format(steps["mdmcleaner"], "bins"))], "gene_models.gff"),
             *opts.bam,
         ]
 
@@ -1649,7 +1751,7 @@ def create_pipeline(opts, directories, f_cmds):
             input_filepaths = input_filepaths,
             output_filepaths = output_filepaths,
             validate_inputs=True,
-            validate_outputs=True,
+            validate_outputs=False,#True,
             log_prefix=program_label,
     )
 

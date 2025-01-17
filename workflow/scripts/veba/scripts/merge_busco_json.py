@@ -110,7 +110,11 @@ def main(argv=None):
         df_output = pd.concat(dataframes, axis=1)
     else:
         print("Neither generic nor specific json were available. This likely means no markers were found via BUSCO. Please check the BUSCO log files", file=sys.stderr)
-        sys.exit(1)
+        with open(opts.output, 'w') as f:
+            f.write("\tspecific\tspecific\tspecific\tspecific\tspecific\tspecific\tspecific\tspecific\tspecific\tSpecific\tspecific\n")
+            f.write("\tone_line_summary\tComplete\tSingle copy\tMulti copy\tFragmented\tMissing\tn_markers\tdataset_name\tcreation_date\tnumber_of_busco_markers\tnumber_of_species\n")
+            f.write("id_genome\t\t\t\t\t\t\t\t\t\t\t\n")
+        sys.exit(0)
     if not df_output.empty:
         df_output.index.name = "id_genome"
     

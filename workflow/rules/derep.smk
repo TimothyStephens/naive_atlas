@@ -1,4 +1,3 @@
-binned_lineages = ['prokaryotic', 'eukaryotic', 'viral', 'plasmid']
 
 rule run_skani:
     input:

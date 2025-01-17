@@ -22,7 +22,7 @@
 #Threads and Memory for all executions
 
 # BBMAPs tools threads and memory - needs relatively high amount of memory: normalize_reads, error_correction, merge_pairs
-large_memory: 150 #GB
+large_memory: 200 #GB
 large_threads: 46
 large_runtime: 24 #hr
 # Assembly threads and memory: run_megahit, run_spades
@@ -89,10 +89,10 @@ error_correction_overlapping_pairs: true
 contaminant_references:
   PhiX: 
     /user/project/dir/databases/phiX174_virus.fa
-  Host_A:
-    /user/project/host_refs/Host_A.fa
-  Host_B:
-    /user/project/host_refs/Host_B.fa
+#  Host_A:
+#    /user/project/host_refs/Host_A.fa
+#  Host_B:
+#    /user/project/host_refs/Host_B.fa
 contaminant_max_indel: 20
 contaminant_min_ratio: 0.65
 contaminant_kmer_length: 13

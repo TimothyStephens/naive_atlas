@@ -8,3 +8,4 @@ do
     echo "Moving: $dir"
     mv "$dir"/* "${snakemake_output[dir]}"
 done
+mv -f tmp/genomes/*.genome_quality.tsv "${snakemake_output[dir]}/"

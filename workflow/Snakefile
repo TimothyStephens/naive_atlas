@@ -129,9 +129,9 @@ rule binning:
 rule genomes:
     input:
         "finished_binning",
-        expand("reports/bin_report_{lineage}.html", lineage=binned_lineages),
         "genomes/genomes",
         "genomes/unbinned",
+        expand("reports/bin_report_{lineage}.html", lineage=get_binned_lineages()),
     output:
         temp(touch("finished_genomes")),
 

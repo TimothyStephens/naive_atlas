@@ -77,7 +77,6 @@ rule DRAM_annotate:
 
 def get_all_dram(wildcards):
     all_genomes = get_all_genomes(wildcards)
-
     return expand(rules.DRAM_annotate.output.outdir, genome=all_genomes)
 
 

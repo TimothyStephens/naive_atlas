@@ -373,7 +373,7 @@ def get_eukaryotic_gene_modeling_cmd(input_filepaths, output_filepaths, output_d
 
 def get_busco_cmd(input_filepaths, output_filepaths, output_directory, directories, opts):
     cmd = [
-        opts.cmd_opener, # Assumes '&&' at end of command
+        #opts.cmd_opener, # Assumes '&&' at end of command
         
 """
 export PYTHONPATH="%s"
@@ -423,6 +423,8 @@ rm -rf $TMP_BUSCO_DIRECTORY/*
             opts.n_jobs,
             opts.busco_evalue,
         ),
+        
+        opts.cmd_opener, # Assumes '&&' at end of command
         
         os.environ["merge_busco_json.py"],
         "-i {}".format(os.path.join(output_directory, "busco_output")),
@@ -639,7 +641,7 @@ def create_pipeline(opts, directories, f_cmds):
                 input_filepaths = input_filepaths,
                 output_filepaths = output_filepaths,
                 validate_inputs=True,
-                validate_outputs=True,
+                validate_outputs=False,
                 errors_ok=False,
                 acceptable_returncodes={0},                    
                 log_prefix=program_label,
@@ -698,8 +700,8 @@ def create_pipeline(opts, directories, f_cmds):
                 cmd=cmd,
                 input_filepaths = input_filepaths,
                 output_filepaths = output_filepaths,
-                validate_inputs=True,
-                validate_outputs=True,
+                validate_inputs=False,
+                validate_outputs=False,
                 errors_ok=False,
                 log_prefix=program_label,
 
@@ -755,8 +757,8 @@ def create_pipeline(opts, directories, f_cmds):
                 cmd=cmd,
                 input_filepaths = input_filepaths,
                 output_filepaths = output_filepaths,
-                validate_inputs=True,
-                validate_outputs=True,
+                validate_inputs=False,
+                validate_outputs=False,
                 errors_ok=False,
                 log_prefix=program_label,
 
@@ -884,8 +886,8 @@ def create_pipeline(opts, directories, f_cmds):
             cmd=cmd,
             input_filepaths = input_filepaths,
             output_filepaths = output_filepaths,
-            validate_inputs=True,
-            validate_outputs=True,
+            validate_inputs=False,
+            validate_outputs=False,
             log_prefix=program_label,
 
     )

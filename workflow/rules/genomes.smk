@@ -1,5 +1,16 @@
 
 
+
+def get_binned_lineages():
+    binned_lineages = []
+    for lineage in ['prokaryotic', 'eukaryotic', 'viral', 'plasmid']:
+        file_name = f"Binning/raw_bins/{lineage}.genome.paths.tsv"
+        if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+            binned_lineages.append(lineage)
+    return binned_lineages
+
+
+
 #################################
 ####                         ####
 #### Rename and move genomes ####
@@ -19,7 +30,7 @@ checkpoint rename_genomes:
         mapping_file="Binning/{lineage}.bins2species.tsv",
         genome_info="Binning/{lineage}.bin_info.tsv",
     output:
-        dir=temp(directory("tmp/genomes/{lineage}")),
+        dir=directory("tmp/genomes/{lineage}"),
         mapfile_contigs="genomes/clustering/{lineage}.contig2genome.tsv",
         mapfile_old2mag="genomes/clustering/{lineage}.old2newID.tsv",
         mapfile_allbins2mag="genomes/clustering/{lineage}.allbins2genome.tsv",
@@ -39,7 +50,7 @@ checkpoint rename_unbinned:
     input:
         unbinned="{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta",
     output:
-        dir=temp(directory("tmp/unbinned/{sample}")),
+        dir=directory("tmp/unbinned/{sample}"),
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="Unbinned_{sample}",
@@ -54,7 +65,7 @@ checkpoint rename_unbinned:
 rule move_genomes:
     input:
         dirs=expand("tmp/genomes/{lineage}",
-            lineage=binned_lineages
+            lineage=get_binned_lineages()
         ),
     output:
         dir=directory("genomes/genomes"),
@@ -109,14 +120,15 @@ genome_dir = get_genome_dir()
 
 def get_all_genomes(wildcards):
     global genome_dir
-
+    
     if genome_dir == "genomes/genomes":
+        binned_lineages = get_binned_lineages()
         for lineage in binned_lineages:
             checkpoints.rename_genomes.get(lineage=lineage)
-
+    
     # check if genomes are present
     genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
-
+    
     if len(genomes) == 0:
         logger.error(
             f"No genomes found with fa extension in {genome_dir} "
@@ -130,6 +142,7 @@ def get_all_genomes(wildcards):
 
 
 def get_all_unbinned(wildcards):
+    # TODO: This always retriggers renaming if you run 'genomes' then 'all' - Fix so that it only happens once.
     for sample in SAMPLES:
         checkpoints.rename_unbinned.get(sample=sample)
     
