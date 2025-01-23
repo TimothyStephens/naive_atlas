@@ -56,10 +56,10 @@ def handle_max_mem(max_mem, profile):
 @click.version_option(__version__)
 @click.pass_context
 def cli(obj):
-    """ATLAS - workflows for assembly, annotation, and genomic binning of
+    """naive_ATLAS - workflows for assembly, annotation, and genomic binning of
     metagenomic and metatranscriptomic data.
 
-    For updates and reporting issues, see: https://github.com/metagenome-atlas/atlas
+    For updates and reporting issues, see: https://github.com/TimothyStephens/naive_atlas
     """
 
 
@@ -149,13 +149,13 @@ def get_snakefile(file="workflow/Snakefile"):
 def run_workflow(
     workflow, working_dir, config_file, jobs, max_mem, profile, dryrun, snakemake_args
 ):
-    """Runs the ATLAS pipline
-
+    """Runs the naive_ATLAS pipline
+    
     By default all steps are executed but a sub-workflow can be specified.
     Needs a config-file and expects to find a sample table in the working-directory. Both can be generated with 'atlas init'
-
+    
     Most snakemake arguments can be appended to the command for more info see 'snakemake --help'
-
+    
     For more details, see: https://metagenome-atlas.readthedocs.io
     """
 
