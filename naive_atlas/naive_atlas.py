@@ -157,6 +157,14 @@ def run_workflow(
     Most snakemake arguments can be appended to the command for more info see 'snakemake --help'
     
     For more details, see: https://metagenome-atlas.readthedocs.io
+    
+    \b
+    # OPTIONS:
+    | qc -> assembly -> binning -> genomes -> quantify_genomes -> genome_annotation -> gene_annotation |-> strains
+    +-------------------------------------------------all----------------------------------------------+
+    # Independent of other steps:
+    screen
+
     """
 
     logger.info(f"Atlas version: {__version__}")
