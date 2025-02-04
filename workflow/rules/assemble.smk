@@ -347,8 +347,10 @@ if config.get("assembler", "megahit") == "megahit":
             "{sample}/assembly/megahit/{sample}_prefilter.contigs.fa",
         output:
             temp("{sample}/assembly/{sample}_raw_contigs.fasta"),
+        conda:
+            "../envs/seqkit.yaml"
         shell:
-            "cp {input} {output}"
+            "seqkit sort -l -r -w 0 {input} > {output}"
 
 else:
     if PAIRED_END:
@@ -462,8 +464,10 @@ else:
             ),
         output:
             temp("{sample}/assembly/{sample}_raw_contigs.fasta"),
+        conda:
+            "../envs/seqkit.yaml"
         shell:
-            "cp {input} {output}"
+            "seqkit sort -l -r -w 0 {input} > {output}"
 
 
 # standardizes header labels within contig FASTAs

@@ -1,0 +1,9 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - maxbin2=2.2.7
+    - python=3.11.4
+    - pandas=2.0.2
+    - tqdm=4.65.0

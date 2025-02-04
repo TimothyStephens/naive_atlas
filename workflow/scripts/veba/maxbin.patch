@@ -1,0 +1,11 @@
+--- /home/timothy/miniforge3/envs/test_maxbin/bin/run_MaxBin.pl	2025-01-29 07:07:06.401398200 -0500
++++ /scratch/timothy/tmp/naive_atlas_CYBD/databases/conda_envs/774f5008b5063d1ce3e4fc6632654e66_/bin/run_MaxBin.pl	2025-02-03 17:46:31.034550747 -0500
+@@ -498,7 +498,7 @@
+ 			{
+ 				writeLOG("Marker gene search reveals that the dataset cannot be binned (the medium of marker gene number <= 1). Program stop.\n");
+ 				closeLOG("$out_f.log");
+-				exit(-1);
++				exit(0);
+ 			}
+ 		}
+ 		elsif ($currbin ne $contig_f && $j >= $RECURSION_MAX)

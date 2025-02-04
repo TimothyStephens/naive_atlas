@@ -1,13 +1,385 @@
 
 
 
-def get_binned_lineages():
-    binned_lineages = []
-    for lineage in ['prokaryotic', 'eukaryotic', 'viral', 'plasmid']:
-        file_name = f"Binning/raw_bins/{lineage}.genome.paths.tsv"
-        if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
-            binned_lineages.append(lineage)
-    return binned_lineages
+#################################
+####                         ####
+#### Combine binning results ####
+####                         ####
+#################################
+
+def get_list_of_files(dirs, pattern):
+    from utils import io
+    fasta_files = []
+    
+    # searh for fasta files (.f*) in all bin folders
+    for dir in dirs:
+        dir = Path(dir)
+        fasta_files += list(dir.glob(pattern))
+        
+        filenames = pd.DataFrame(fasta_files, columns=["Filename"])
+        filenames.index = filenames.Filename.apply(io.simplify_path)
+        filenames.index.name = "Bin"
+        
+        filenames.sort_index(inplace=True)
+
+    return filenames
+
+
+# Combine Prokaryotic bin paths and completness stats
+localrules:
+    get_prokaryotic_bins,
+
+rule get_prokaryotic_bins:
+    input:
+        dirs=expand(
+            rules.binning_prokaryotic_checkm2.output.bins,
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            rules.binning_prokaryotic_genome_stats.output.stats,
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            rules.binning_prokaryotic_checkm2.output.quality,
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="Binning/raw_bins/prokaryotic.paths.tsv",
+        genome_names="Binning/raw_bins/prokaryotic.genome.paths.tsv",
+        stats="Binning/raw_bins/prokaryotic.statistics.tsv",
+    log:
+        "logs/Binning/raw_bins/get_prokaryotic_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os, os.path
+        
+        genome_filenames = get_list_of_files(input.dirs, "*.fa")
+        if genome_filenames.empty:
+            print("[WARNING] No Bacterial bins found!")
+            Path(output.filenames).touch()
+            Path(output.genome_names).touch()
+            Path(output.stats).touch()
+            return
+        
+        genome_filenames.columns  = ["Genome"]
+        filenames = genome_filenames
+        filenames.to_csv(output.filenames, sep="\t")
+        filenames['Genome'].to_csv(output.genome_names, index=False, header=False)
+        
+        # Load each genome stats file and concat
+        data_frames = []
+        for file_name in input.genome_stats:
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+                t = pd.read_table(file_name, sep='\t', index_col=0)
+                t['Sample'] = file_name.split(os.sep)[0]
+                data_frames.append(t)
+        df_merged_1 = pd.concat(data_frames, axis=0)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.completness_stats if os.path.isfile(file_name) and os.stat(file_name).st_size != 0 ]
+        df_merged_2 = pd.concat(data_frames, axis=0)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=True, na_rep=0.0)
+
+
+## Combine Eukaryotic bin paths and completness stats
+localrules:
+    get_eukaryotic_bins,
+
+rule get_eukaryotic_bins:
+    input:
+        dirs=expand(
+            rules.binning_eukaryotic_filter.output.bins,
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            rules.binning_eukaryotic_genome_stats.output.stats,
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            rules.binning_eukaryotic_filter.output.quality,
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="Binning/raw_bins/eukaryotic.paths.tsv",
+        genome_names="Binning/raw_bins/eukaryotic.genome.paths.tsv",
+        stats="Binning/raw_bins/eukaryotic.statistics.tsv",
+    log:
+        "logs/Binning/raw_bins/get_eukaryotic_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os, os.path
+        
+        genome_filenames  = get_list_of_files(input.dirs, "*.fa")
+        if genome_filenames.empty:
+            print("[WARNING] No Eukaryotic bins found!")
+            Path(output.filenames).touch()
+            Path(output.genome_names).touch()
+            Path(output.stats).touch()
+            return
+        
+        genome_filenames.columns  = ["Genome"]
+        filenames = genome_filenames
+        filenames.to_csv(output.filenames, sep="\t")
+        filenames['Genome'].to_csv(output.genome_names, index=False, header=False)
+        
+        # Load each genome stats file and concat
+        data_frames = []
+        for file_name in input.genome_stats:
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+                t = pd.read_table(file_name, sep='\t', index_col=0)
+                t['Sample'] = file_name.split(os.sep)[0]
+                data_frames.append(t)
+        df_merged_1 = pd.concat(data_frames, axis=0)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0, header=[0,1]) for file_name in input.completness_stats if os.path.isfile(file_name) and os.stat(file_name).st_size != 0 ]
+        df_merged_2 = pd.concat(data_frames, axis=0)
+        # Needed since the BUSCO results have two row header (join into one line)
+        df_merged_2.columns = df_merged_2.columns.map('-'.join)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=True, na_rep=0.0)
+
+
+## Combine Virus and Plasmid bin paths and completness stats
+localrules:
+    get_viral_bins,
+    get_plasmid_bins,
+
+rule get_viral_bins:
+    input:
+        dirs=expand(
+            rules.binning_viral_filter.output.viral_bins,
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            rules.binning_viral_genome_stats.output.viral_stats,
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            rules.binning_viral_filter.output.viral_completness,
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="Binning/raw_bins/viral.paths.tsv",
+        genome_names="Binning/raw_bins/viral.genome.paths.tsv",
+        stats="Binning/raw_bins/viral.statistics.tsv",
+    log:
+        "logs/Binning/raw_bins/get_viral_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os, os.path
+        
+        genome_filenames = get_list_of_files(input.dirs, "*.fa")
+        if genome_filenames.empty:
+            print("[WARNING] No Viral bins found!")
+            Path(output.filenames).touch()
+            Path(output.genome_names).touch()
+            Path(output.stats).touch()
+            return
+        
+        genome_filenames.columns  = ["Genome"]
+        filenames = genome_filenames
+        filenames.to_csv(output.filenames, sep="\t")
+        filenames['Genome'].to_csv(output.genome_names, index=False, header=False)
+        
+        # Load each genome stats file and concat
+        data_frames = []
+        for file_name in input.genome_stats:
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+                t = pd.read_table(file_name, sep='\t', index_col=0)
+                t['Sample'] = file_name.split(os.sep)[0]
+                data_frames.append(t)
+        df_merged_1 = pd.concat(data_frames, axis=0)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.completness_stats if os.path.isfile(file_name) and os.stat(file_name).st_size != 0 ]
+        df_merged_2 = pd.concat(data_frames, axis=0)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=True, na_rep=0.0)
+
+
+rule get_plasmid_bins:
+    input:
+        dirs=expand(
+            rules.binning_viral_filter.output.plasmid_bins,
+            sample=SAMPLES,
+        ),
+        genome_stats=expand(
+            rules.binning_viral_genome_stats.output.plasmid_stats,
+            sample=SAMPLES,
+        ),
+        completness_stats=expand(
+            rules.binning_viral_filter.output.plasmid_completness,
+            sample=SAMPLES,
+        ),
+    output:
+        filenames="Binning/raw_bins/plasmid.paths.tsv",
+        genome_names="Binning/raw_bins/plasmid.genome.paths.tsv",
+        stats="Binning/raw_bins/plasmid.statistics.tsv",
+    log:
+        "logs/Binning/raw_bins/get_plasmid_bins.log",
+    run:
+        import pandas as pd
+        from pathlib import Path
+        from utils import io
+        import os, os.path
+        
+        genome_filenames = get_list_of_files(input.dirs, "*.fa")
+        if genome_filenames.empty:
+            print("[WARNING] No Plasmid bins found!")
+            Path(output.filenames).touch()
+            Path(output.genome_names).touch()
+            Path(output.stats).touch()
+            return
+        
+        genome_filenames.columns  = ["Genome"]
+        filenames = genome_filenames
+        filenames.to_csv(output.filenames, sep="\t")
+        filenames['Genome'].to_csv(output.genome_names, index=False, header=False)
+        
+        # Load each genome stats file and concat
+        data_frames = []
+        for file_name in input.genome_stats:
+            if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+                t = pd.read_table(file_name, sep='\t', index_col=0)
+                t['Sample'] = file_name.split(os.sep)[0]
+                data_frames.append(t)
+        df_merged_1 = pd.concat(data_frames, axis=0)
+        
+        # Load each completness stats file and concat
+        data_frames = [ pd.read_table(file_name, sep='\t', index_col=0) for file_name in input.completness_stats if os.path.isfile(file_name) and os.stat(file_name).st_size != 0 ]
+        df_merged_2 = pd.concat(data_frames, axis=0)
+        
+        df_merged = pd.merge(df_merged_1, df_merged_2, how='outer', left_index=True, right_index=True)
+        df_merged.to_csv(output.stats, sep='\t', index=True, na_rep=0.0)
+
+
+
+
+
+#################################
+####                         ####
+####       DeReplicate       ####
+####                         ####
+#################################
+
+rule run_skani:
+    input:
+        paths="Binning/raw_bins/{lineage}.genome.paths.tsv",
+    output:
+        "Binning/raw_bins/{lineage}.distance_matrix.txt",
+    log:
+        "logs/Binning/dereplication/{lineage}.skani_calculation.log",
+    resources:
+        mem_mb=config["simplejob_memory"] * 1000,
+        time_min=60 * config["simplejob_runtime"],
+    params:
+        #preset= "medium", # fast, medium or slow
+        min_af=config["genome_dereplication"]["overlap"] * 100,
+        extra="",
+    threads: config["simplejob_threads"]
+    conda:
+        "../envs/skani.yaml"
+    shell:
+        "skani triangle "
+        " {params.extra} "
+        " -l {input.paths} "
+        " -o {output} "
+        " -t {threads} "
+        " --sparse --ci "
+        " --min-af {params.min_af} "
+        " &> {log} "
+
+
+rule skani_2_parquet:
+    input:
+        rules.run_skani.output,
+    output:
+        "Binning/raw_bins/{lineage}.genome_similarities.parquet",
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    log:
+        "logs/Binning/dereplication/{lineage}.skani_2_parquet.log",
+    run:
+        try:
+            skani_column_dtypes = {
+                "Ref_file": "category",
+                "Query_file": "category",
+                "ANI": float,
+                "Align_fraction_ref": float,
+                "Align_fraction_query": float,
+                "ANI_5_percentile": float,
+                "ANI_95_percentile": float,
+            }  # Ref_name        Query_name
+
+            import pandas as pd
+            from utils.io import simplify_path
+            
+            df = pd.read_table(input[0])
+            df = pd.read_table(
+                input[0],
+                usecols=list(skani_column_dtypes.keys()),
+                dtype=skani_column_dtypes,
+            )
+            
+            df["Ref"] = df.Ref_file.cat.rename_categories(simplify_path)
+            df["Query"] = df.Query_file.cat.rename_categories(simplify_path)
+            df.to_parquet(output[0])
+        
+        except Exception as e:
+            import traceback
+            with open(log[0], "w") as logfile:
+                traceback.print_exc(file=logfile)
+            raise e
+
+
+rule cluster_species:
+    input:
+        dist="Binning/raw_bins/{lineage}.genome_similarities.parquet",
+        bin_info="Binning/raw_bins/{lineage}.statistics.tsv",
+    params:
+        linkage_method="average",
+        pre_cluster_threshold=0.925,
+        threshold=config["genome_dereplication"]["ANI"],
+        script="../scripts/cluster_{lineage}_species.py"
+    conda:
+        "../envs/species_clustering.yaml"
+    log:
+        "logs/Binning/dereplication/{lineage}.species_clustering.log",
+    output:
+        bin_info="Binning/{lineage}.bin_info.tsv",
+        bins2species="Binning/{lineage}.bins2species.tsv",
+    script:
+        "{params.script}"
+
+
+rule build_bin_report:
+    input:
+        bin_info="Binning/{lineage}.bin_info.tsv",
+        bins2species="Binning/{lineage}.bins2species.tsv",
+    output:
+        report="reports/bin_report_{lineage}.html",
+    params:
+        script="../report/bin_report_{lineage}.py"
+    conda:
+        "../envs/report.yaml"
+    log:
+        "logs/Binning/report_{lineage}.log",
+    script:
+        "{params.script}"
+
+
 
 
 
@@ -48,7 +420,7 @@ checkpoint rename_genomes:
 
 checkpoint rename_unbinned:
     input:
-        unbinned="{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta",
+        unbinned="{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
     output:
         dir=directory("tmp/unbinned/{sample}"),
     params:
@@ -62,8 +434,20 @@ checkpoint rename_unbinned:
         "../scripts/rename_unbinned.py"
 
 
+def get_binned_lineages():
+    binned_lineages = []
+    for lineage in ['prokaryotic', 'eukaryotic', 'viral', 'plasmid']:
+        file_name = f"Binning/raw_bins/{lineage}.genome.paths.tsv"
+        if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+            binned_lineages.append(lineage)
+    return binned_lineages
+
 rule move_genomes:
     input:
+        prokaryotic_filenames=rules.get_prokaryotic_bins.output.filenames,
+        eukaryotic_filenames=rules.get_eukaryotic_bins.output.filenames,
+        viral_filenames=rules.get_viral_bins.output.filenames,
+        plasmid_filenames=rules.get_plasmid_bins.output.filenames,
         dirs=expand("tmp/genomes/{lineage}",
             lineage=get_binned_lineages()
         ),
@@ -86,284 +470,6 @@ rule move_unbinned:
         "logs/genomes/move_unbinned.log",
     script:
         "../scripts/move_unbinned.sh"
-
-
-
-#####################################
-####                             ####
-#### Genome mapping and coverage ####
-####                             ####
-#####################################
-
-def get_genome_dir():
-    if ("genome_dir" in config) and (config["genome_dir"] is not None):
-        genome_dir = config["genome_dir"]
-        assert os.path.exists(genome_dir), f"{genome_dir} Doesn't exists"
-
-        logger.info(f"Set genomes from {genome_dir}.")
-
-        # check if genomes are present
-        genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
-
-        if len(genomes) == 0:
-            logger.error(f"No genomes found with fa extension in {genome_dir} ")
-            exit(1)
-
-    else:
-        genome_dir = "genomes/genomes"
-
-    return genome_dir
-
-
-genome_dir = get_genome_dir()
-
-
-def get_all_genomes(wildcards):
-    global genome_dir
-    
-    if genome_dir == "genomes/genomes":
-        binned_lineages = get_binned_lineages()
-        for lineage in binned_lineages:
-            checkpoints.rename_genomes.get(lineage=lineage)
-    
-    # check if genomes are present
-    genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
-    
-    if len(genomes) == 0:
-        logger.error(
-            f"No genomes found with fa extension in {genome_dir} "
-            "You don't have any Metagenome assembled genomes with sufficient quality. "
-            "You may want to change the assembly, binning or filtering parameters. "
-            "Or focus on the genecatalog workflow only."
-        )
-        exit(1)
-
-    return genomes
-
-
-def get_all_unbinned(wildcards):
-    # TODO: This always retriggers renaming if you run 'genomes' then 'all' - Fix so that it only happens once.
-    for sample in SAMPLES:
-        checkpoints.rename_unbinned.get(sample=sample)
-    
-    # check if genomes are present
-    genomes = glob_wildcards(os.path.join("genomes/unbinned", "{genome}.fa")).genome
-
-    if len(genomes) == 0:
-        logger.error(
-            f"No genomes found with fasta extension in genomes/genomes/unbinned "
-            "You don't have any Metagenome assembled genomes with sufficient quality. "
-            "You may want to change the assembly, binning or filtering parameters. "
-            "Or focus on the genecatalog workflow only."
-        )
-        exit(1)
-
-    return genomes
-
-
-rule get_contig2genomes:
-    input:
-        genome_dir,
-    output:
-        c2g="genomes/clustering/contig2genome.tsv",
-        g2c="genomes/clustering/genome2contig.tsv",
-    run:
-        from glob import glob
-
-        fasta_files = glob(input[0] + "/*.fa")
-
-        with open(output["c2g"], "w") as out_c2g, open(output["g2c"], "w") as out_g2c:
-            for fasta in fasta_files:
-                bin_name, ext = os.path.splitext(os.path.split(fasta)[-1])
-                # if gz remove also fasta extension
-                if ext == ".gz":
-                    bin_name = os.path.splitext(bin_name)[0]
-
-                    # write names of contigs in mapping file
-                with open(fasta) as f:
-                    for line in f:
-                        if line[0] == ">":
-                            header = line[1:].strip().split()[0]
-                            out_c2g.write(f"{header}\t{bin_name}\n")
-                            out_g2c.write(f"{bin_name}\t{header}\n")
-
-# alternative way to get to contigs2genomes for quantification with external genomes
-ruleorder: get_contig2genomes > rename_genomes
-
-
-### Quantification
-
-localrules:
-    concat_genomes,
-
-rule concat_genomes:
-    input:
-        genome_dir,
-    output:
-        "genomes/alignments/all_contigs.fa",
-    params:
-        ext="fa",
-    shell:
-        "cat {input}/*{params.ext} > {output}"
-
-
-if config["genome_aligner"] == "minimap":
-
-    rule index_genomes:
-        input:
-            target=rules.concat_genomes.output,
-            timestamp=genome_dir,
-        output:
-            "ref/genomes.mmi",
-        log:
-            "logs/genomes/alignmentsindex.log",
-        params:
-            index_size="12G",
-        threads: 3
-        resources:
-            mem=config["simplejob_memory"],
-        wrapper:
-            "v1.19.0/bio/minimap2/index"
-
-    rule align_reads_to_genomes:
-        input:
-            target=rules.index_genomes.output,
-            query=get_quality_controlled_reads,
-        output:
-            "genomes/alignments/bams/{sample}.bam",
-        log:
-            "logs/genomes/alignments/{sample}_map.log",
-        params:
-            extra="-x sr",
-            sorting="coordinate",
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-        wrapper:
-            "v1.19.0/bio/minimap2/aligner"
-
-elif config["genome_aligner"] == "bwa":
-
-    rule index_genomes:
-        input:
-            rules.concat_genomes.output,
-            timestamp=genome_dir,
-        output:
-            multiext("ref/genomes", ".amb", ".ann", ".bwt.2bit.64", ".pac"),
-        log:
-            "logs/genomes/alignments/bwa_index.log",
-        threads: 4
-        resources:
-            mem=config["simplejob_memory"],
-        wrapper:
-            "v1.19.0/bio/bwa-mem2/index"
-
-    rule align_reads_to_genomes:
-        input:
-            idx=rules.index_genomes.output,
-            reads=get_quality_controlled_reads,
-        output:
-            "genomes/alignments/bams/{sample}.bam",
-        log:
-            "logs/genomes/alignments/{sample}_bwa.log",
-        params:
-            extra=r"-R '@RG\tID:{sample}\tSM:{sample}'",
-            sort="samtools",
-            sort_order="coordinate",
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-            mem_mb=config["simplejob_memory"] * 1000,
-        wrapper:
-            "v1.19.0/bio/bwa-mem2/mem"
-
-else:
-    raise Exception(
-        "'genome_aligner' not understood, it should be 'minimap' or 'bwa', not '{genome_aligner}'. check config file".format(
-            **config
-        )
-    )
-
-
-# path change for bam file
-localrules:
-    move_old_bam,
-
-
-ruleorder: move_old_bam > align_reads_to_genomes
-
-
-rule move_old_bam:
-    input:
-        "genomes/alignments/{sample}.bam",
-    output:
-        "genomes/alignments/bams/{sample}.bam",
-    log:
-        "logs/genomes/alignments/{sample}_move.log",
-    shell:
-        "mv {input} {output} > {log}"
-
-
-rule mapping_stats_genomes:
-    input:
-        bam="genomes/alignments/bams/{sample}.bam",
-    output:
-        "genomes/alignments/stats/{sample}.stats",
-    log:
-        "logs/genomes/alignments/{sample}_stats.log",
-    resources:
-        mem=config["simplejob_memory"],
-    wrapper:
-        "v1.19.0/bio/samtools/stats"
-
-
-rule multiqc_mapping_genome:
-    input:
-        expand("genomes/alignments/stats/{sample}.stats", sample=SAMPLES),
-    output:
-        "reports/genome_mapping/results.html",
-    log:
-        "logs/genomes/alignment/multiqc.log",
-    wrapper:
-        "v3.3.6/bio/multiqc"
-
-
-rule mapping_coverm_coverage:
-    input:
-        g2c="genomes/clustering/genome2contig.tsv",
-        bams=expand("genomes/alignments/bams/{sample}.bam", sample=SAMPLES),
-    output:
-        cov="genomes/coverage/coverage.tsv.gz",
-        read_stats="genomes/coverage/read_stats.tsv",
-    params:
-        extra=config["coverm_params"],
-        stats=config["coverm_stats"],
-    log:
-        general="logs/coverage/coverage.log",
-        coverm="logs/coverage/coverm.log",
-    threads: config["simplejob_threads"]
-    conda:
-        "../envs/coverm.yaml"
-    shell:
-        "("
-        "coverm genome"
-        "  {params.extra}"
-        "  --output-format sparse --methods {params.stats}"
-        "  --genome-definition {input.g2c}"
-        "  -t {threads}"
-        "  -b {input.bams}"
-        " 2>{log.coverm}"
-        " | sed -e 's/\.coordSorted//g'"
-        " | gzip -c"
-        " > {output.cov}; "
-        "cat {log.coverm}"
-        " | grep 'In sample'"
-        " | sed -e \"s/.* '\([^']*\).*found \([^ ]*\) reads mapped out of \([^ ]*\) total (\(.*\))/\\1\\t\\2\\t\\3\\t\\4/\""
-        " | sort"
-        " | awk 'BEGIN{{print \"sample_id\\tmapped_reads\\ttotal_reads\\tpercent_mapped\"}}{{print}}'"
-        " > {output.read_stats}"
-        ")"
-        " 1>{log.general} 2>&1"
 
 
 

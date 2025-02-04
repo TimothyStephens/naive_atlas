@@ -153,23 +153,6 @@ build_target_to_source_dictionary.py -i ${DATABASE_DIRECTORY}/MicroEuk_v3/identi
 rm -rf ${DATABASE_DIRECTORY}/MicroEuk_v3/
 rm -rf ${DATABASE_DIRECTORY}/MicroEuk_v3.tar.gz
 
-# MDMcleaner 
-echo ". .. ... ..... ........ ............."
-echo " * Processing MDMcleaner database"
-echo ". .. ... ..... ........ ............."
-mdmcleaner makedb --outdir ${DATABASE_DIRECTORY}/MDMcleaner
-
-echo " * Patching MDMcleaner bugs from conda install"
-(
-D=$(which mdmcleaner | xargs dirname)
-cd $D/../lib/python3.8/site-packages/mdmcleaner
-
-set +eu
-patch -N < $SCRIPT_DIRECTORY/mdmcleaner.patch
-set -eu
-)
-echo "   - Done"
-
 echo -e " _    _ _______ ______  _______\n  \  /  |______ |_____] |_____|\n   \/   |______ |_____] |     |"
 echo -e "...................................................."
 echo -e "     (classify) Database Configuration Complete     "

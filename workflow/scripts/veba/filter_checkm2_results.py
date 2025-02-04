@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys, os, glob, argparse
+from pathlib import Path
 from shutil import copyfile
 from typing import OrderedDict
 # from collections import OrderedDict
@@ -59,8 +60,11 @@ def main(args=None):
 
     # Output filtered 
     os.makedirs(opts.output_directory, exist_ok=True)
-
-    df_quality_report.loc[mags,:].to_csv(os.path.join(opts.output_directory,"checkm2_results.filtered.tsv"), sep="\t") # Change to checkm_results to stay consistent with busco_results or other way aorund
+    
+    if len(mags) == 0:
+        Path(os.path.join(opts.output_directory,"checkm2_results.filtered.tsv")).touch()
+    else:
+        df_quality_report.loc[mags,:].to_csv(os.path.join(opts.output_directory,"checkm2_results.filtered.tsv"), sep="\t") # Change to checkm_results to stay consistent with busco_results or other way aorund
 
     if opts.bin_directory:
         # Output MAGs
@@ -76,9 +80,9 @@ def main(args=None):
 
         binned_contigs = list() 
         scaffold_to_mag = OrderedDict()
-
+        
         for id_mag in tqdm(mags, "Copying fasta files and writing binned contigs", unit=" MAG"):
-
+            print(id_mag)
             for src in glob.glob(os.path.join(opts.bin_directory, "{}.*".format(id_mag))):
                 fn = os.path.split(src)[1]
                 dst = os.path.join(opts.output_directory,"genomes", fn)

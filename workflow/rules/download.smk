@@ -4,10 +4,6 @@ import os
 
 # this values are incuded in the snakefile
 DBDIR = os.path.realpath(config["database_dir"])
-CHECKMDIR = os.path.join(DBDIR, "checkm")
-CHECKM_ARCHIVE = "checkm_data_v1.0.9.tar.gz"
-CAT_DIR = os.path.join(DBDIR, "CAT")
-CAT_flag_downloaded = os.path.join(CAT_DIR, "downloaded")
 
 ZENODO_ARCHIVE = "1134890"
 EGGNOG_VERSION = "5"
@@ -39,44 +35,7 @@ FILES = {
     "silva_rfam_all_rRNAs.fa": "f102e35d9f48eabeb0efe9058559bc66",
     "eggnog.db": "7923d3bb7eca8e0e8f122be4b5ca6997",
     "eggnog_proteins.dmnd": "64fefa838833a6f3e220a06fb9d403cd",
-    CHECKM_ARCHIVE: "631012fa598c43fdeb88c619ad282c4d",
 }
-
-
-CHECKMFILES = [
-    "%s/taxon_marker_sets.tsv" % CHECKMDIR,
-    "%s/selected_marker_sets.tsv" % CHECKMDIR,
-    "%s/pfam/tigrfam2pfam.tsv" % CHECKMDIR,
-    "%s/pfam/Pfam-A.hmm.dat" % CHECKMDIR,
-    "%s/img/img_metadata.tsv" % CHECKMDIR,
-    "%s/hmms_ssu/SSU_euk.hmm" % CHECKMDIR,
-    "%s/hmms_ssu/SSU_bacteria.hmm" % CHECKMDIR,
-    "%s/hmms_ssu/SSU_archaea.hmm" % CHECKMDIR,
-    "%s/hmms_ssu/createHMMs.py" % CHECKMDIR,
-    "%s/hmms/phylo.hmm.ssi" % CHECKMDIR,
-    "%s/hmms/phylo.hmm" % CHECKMDIR,
-    "%s/hmms/checkm.hmm.ssi" % CHECKMDIR,
-    "%s/hmms/checkm.hmm" % CHECKMDIR,
-    "%s/genome_tree/missing_duplicate_genes_97.tsv" % CHECKMDIR,
-    "%s/genome_tree/missing_duplicate_genes_50.tsv" % CHECKMDIR,
-    "%s/genome_tree/genome_tree.taxonomy.tsv" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_reduced.refpkg/phylo_modelJqWx6_.json" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_reduced.refpkg/genome_tree.tre" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_reduced.refpkg/genome_tree.log" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_reduced.refpkg/genome_tree.fasta" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_reduced.refpkg/CONTENTS.json" % CHECKMDIR,
-    "%s/genome_tree/genome_tree.metadata.tsv" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_full.refpkg/phylo_modelEcOyPk.json" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_full.refpkg/genome_tree.tre" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_full.refpkg/genome_tree.log" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_full.refpkg/genome_tree.fasta" % CHECKMDIR,
-    "%s/genome_tree/genome_tree_full.refpkg/CONTENTS.json" % CHECKMDIR,
-    "%s/genome_tree/genome_tree.derep.txt" % CHECKMDIR,
-    "%s/.dmanifest" % CHECKMDIR,
-    "%s/distributions/td_dist.txt" % CHECKMDIR,
-    "%s/distributions/gc_dist.txt" % CHECKMDIR,
-    "%s/distributions/cd_dist.txt" % CHECKMDIR,
-]
 
 
 def get_eggnog_db_file():
@@ -89,34 +48,41 @@ def get_eggnog_db_file():
     )
 
 
-localrules:
-    download,
-    download_eggNOG_files,
-    download_atlas_files,
-    download_checkm_data,
-
-
 ruleorder: download_eggNOG_files > download_atlas_files
 
 
+localrules:
+    download,
+
 rule download:
     input:
-        expand(
-            "{dir}/{filename}", dir=DBDIR, filename=["adapters.fa", "phiX174_virus.fa"]
-        ),
+        expand("{dir}/{filename}", dir=DBDIR, filename=["adapters.fa", "phiX174_virus.fa"]),
         get_eggnog_db_file(),
-        f"{DBDIR}/CheckM2",
         os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
+        f"{DBDIR}/CheckM2",
+        f"{DBDIR}/MDMcleaner",
+        f"{DBDIR}/busco_lineages",
+        f"{DBDIR}/geNomad",
+        f"{DBDIR}/MicroEuk",
+        f"{DBDIR}/bakta/db",
 
 
 rule download_eggNOG_files:
     output:
         f"{EGGNOG_DIR}/eggnog.db",
         f"{EGGNOG_DIR}/eggnog_proteins.dmnd",
+    params:
+        eggnog_dir=f"{EGGNOG_DIR}",
+    log:
+        "logs/download/download_eggNOG_files.log",
+    benchmark:
+        "logs/benchmarks/download/download_eggNOG_files.tsv"
     conda:
         "../envs/eggNOG.yaml"
     shell:
-        f"download_eggnog_data.py -yf --data_dir {EGGNOG_DIR} "
+        """
+        download_eggnog_data.py -yf --data_dir {params.eggnog_dir} &> {log}
+        """
 
 
 rule download_atlas_files:
@@ -124,6 +90,10 @@ rule download_atlas_files:
         f"{DBDIR}/{{filename}}",
     wildcard_constraints:
         filename="[A-Za-z0-9_.]+",
+    log:
+        "logs/download/download_atlas_file_{filename}.log",
+    benchmark:
+        "logs/benchmarks/download/download_atlas_file_{filename}.tsv"
     run:
         shell(
             "wget -O {output} 'https://zenodo.org/record/{ZENODO_ARCHIVE}/files/{wildcards.filename}' "
@@ -132,108 +102,144 @@ rule download_atlas_files:
             raise OSError(2, "Invalid checksum", output[0])
 
 
-rule download_checkm_data:
-    output:
-        tar=temp(CHECKM_ARCHIVE),
-        files=CHECKMFILES,
-    params:
-        path=CHECKMDIR,
-    run:
-        shell(
-            "wget -O {output.tar} 'https://zenodo.org/record/{ZENODO_ARCHIVE}/files/{CHECKM_ARCHIVE}' "
-        )
-        if not FILES[CHECKM_ARCHIVE] == md5(output.tar):
-            raise OSError(2, "Invalid checksum", CHECKM_ARCHIVE)
-
-        shell("tar -zxf {output.tar} --directory {params.path}")
-
-
-localrules:
-    initialize_checkm,
-
-
-rule initialize_checkm:
-    input:
-        ancient(CHECKMFILES),
-    output:
-        touched_output=touch("logs/checkm_init.txt"),
-    params:
-        database_dir=CHECKMDIR,
-    conda:
-        "../envs/checkm.yaml"
-    log:
-        "logs/initialize_checkm.log",
-    shell:
-        "checkm data setRoot {params.database_dir} &> {log} "
-
-
-localrules:
-    download_gtdb,
-
-
-rule download_gtdb:
+rule gtdb_download_db:
     output:
         temp(f"{GTDBTK_DATA_PATH}/gtdb_data.tar.gz"),
-    conda:
-        "../envs/gtdbtk.yaml"
-    resources:
-        time=config["simplejob_runtime"],
+    params:
+        gtdb_data_url=f"{GTDB_DATA_URL}",
     log:
         "logs/download/gtdbtk.log",
+    benchmark:
+        "logs/benchmarks/download/gtdbtk.tsv"
+    conda:
+        "../envs/gtdbtk.yaml"
     shell:
-        "wget --no-check-certificate {GTDB_DATA_URL} -O {output} &> {log} "
+        """
+        wget --no-check-certificate {params.gtdb_data_url} -O {output} &> {log}
+        """
 
 
-rule extract_gtdb:
+rule gtdb_extract:
     input:
-        rules.download_gtdb.output,
+        rules.gtdb_download_db.output,
     output:
         touch(os.path.join(GTDBTK_DATA_PATH, "downloaded_success")),
     conda:
         "../envs/gtdbtk.yaml"
-    resources:
-        time=config["simplejob_runtime"],
     log:
         "logs/download/gtdbtk_untar.log",
+    benchmark:
+        "logs/benchmarks/download/gtdbtk_untar.tsv"
     shell:
-        'tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 2> {log}; '
+        """
+        tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 &> {log}
+        """
 
 
 rule checkm2_download_db:
     output:
-        directory(f"{DBDIR}/CheckM2"),
+        dbdir=directory(f"{DBDIR}/CheckM2"),
     conda:
         "../envs/checkm2.yaml"
     log:
         "logs/download/checkm2.log",
-    resources:
-        time=config["simplejob_runtime"],
-    shell:
-        " checkm2 database --download --path {output} "
-        " &>> {log}"
-
-
-localrules:
-    veba_download,
-
-rule veba_download:
-    output:
-        dbdir=directory(f"{DBDIR}/veba"),
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-    log:
-        "logs/Binning/download_veba_binning_database.log",
     benchmark:
-        "logs/benchmarks/Binning/download_veba_binning_database.tsv"
-    conda:
-        "../envs/VEBA-database_env.yml"
+        "logs/benchmarks/download/checkm2.tsv"
     shell:
-        f"bash {workflow_folder}/scripts/veba/download_databases-classify.sh"
-        " {output.dbdir}"
-        " {threads}"
-        " &> {log}"
+        """
+        checkm2 database --download --path {output} &> {log}
+        """
+
+
+rule mdmcleaner_download_db:
+    output:
+        dbdir=directory(f"{DBDIR}/MDMcleaner"),
+    log:
+        "logs/download/mdmcleaner_database.log",
+    benchmark:
+        "logs/benchmarks/download/mdmcleaner_database.tsv"
+    conda:
+        "../envs/mdmcleaner.yaml"
+    shell:
+        """
+        mdmcleaner makedb --outdir {output.dbdir} &> {log}
+        """
+
+
+rule busco_download_db:
+    output:
+        dbdir=directory(f"{DBDIR}/busco_lineages"),
+    log:
+        "logs/download/busco_lineages.log",
+    benchmark:
+        "logs/benchmarks/download/busco_lineages.tsv"
+    conda:
+        "../envs/busco.yaml"
+    shell:
+        """
+        export PATH="$CONDA_PREFIX/bin:$PATH"
+        export PYTHONPATH="$CONDA_PREFIX/lib/python3.7/site-packages"
+        busco -q --download_path {output} --download all &> {log}
+        """
+
+
+rule genomad_download_db:
+    output:
+        dbdir=directory(f"{DBDIR}/geNomad"),
+    params:
+        db_version="v1.2",
+    log:
+        "logs/download/genomad_lineages.log",
+    benchmark:
+        "logs/benchmarks/download/genomad_lineages.tsv"
+    conda:
+        "../envs/genomad.yaml"
+    shell:
+        """
+        (
+        mkdir -p {output.dbdir}
+        wget -v -O {output.dbdir}/genomad_db_{params.db_version}.tar.gz https://zenodo.org/record/7586412/files/genomad_db_{params.db_version}.tar.gz?download=1
+        tar xvzf {output.dbdir}/genomad_db_{params.db_version}.tar.gz -C {output.dbdir} --strip-components=1
+        rm -rf {output.dbdir}/genomad_db_{params.db_version}.tar.gz
+        ) &> {log}
+        """
+
+
+rule microeukaryotic_mmseqs2_db:
+    output:
+        dbdir=directory(f"{DBDIR}/MicroEuk"),
+    params:
+        workflow_folder=os.path.dirname(os.path.abspath(workflow.snakefile)),
+    log:
+        "logs/download/microeukaryotic_mmseqs2.log",
+    benchmark:
+        "logs/benchmarks/download/microeukaryotic_mmseqs2.tsv"
+    conda:
+        "../envs/MicroEuk.yaml"
+    shell:
+        """
+        {params.workflow_folder}/../scripts/veba/download_MicroEuk_databases.sh {output.dbdir} &> {log}
+        """
+
+
+rule bakta_download_db:
+    output:
+        dbdir=directory(f"{DBDIR}/bakta/db"),
+    params:
+        wd=f"{DBDIR}/bakta",
+    log:
+        "logs/download/bakta.log",
+    benchmark:
+        "logs/benchmarks/download/bakta.tsv"
+    conda:
+        "../envs/gene_prediction_bacteria.yaml"
+    shell:
+        """
+        (
+        mkdir -p {params.wd}; cd {params.wd}/
+        bakta_db download --type full
+        ) &> {log}
+        """
 
 
 onsuccess:

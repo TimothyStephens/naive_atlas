@@ -25,23 +25,6 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         )
     )
 
-def rename_fasta_file(fasta_in, fasta_out, name_mapping_o2n):
-    with open(fasta_in) as ffi, open(fasta_out, "w") as ffo:
-        for line in ffi:
-           if line[0] == ">":
-                for oldvalue, newvalue in name_mapping_o2n:
-                    line = line.replace(oldvalue, newvalue)
-                ffo.write(f"{line}")
-           else:
-                ffo.write(line)
-
-def rename_text_file(text_in, text_out, name_mapping_o2n):
-    with open(text_in) as tfi, open(text_out, "w") as tfo:
-        for line in tfi:
-            for oldvalue, newvalue in name_mapping_o2n:
-                line = line.replace(oldvalue, newvalue)
-            tfo.write(f"{line}")
-
 
 # Install exception handler
 sys.excepthook = handle_exception
@@ -87,19 +70,18 @@ mapfile_contigs = snakemake.output.mapfile_contigs
 rename_contigs = snakemake.params.rename_contigs
 
 
-# Bin     Filename        Proteins
+# Bin     Genome
 paths = pd.read_csv(snakemake.input.paths, sep="\t", index_col=0)
 
 
 os.makedirs(output_dir)
 
-with open(mapfile_contigs, "w") as out_contigs:
+with open(mapfile_contigs, "w") as mapfile_contigs_fh:
     for rep in representatives:
         new_name = old2new.loc[rep]
-        name_mapping_o2n = []
         
         ## Genome
-        fasta_in  = paths.loc[rep].Filename
+        fasta_in  = paths.loc[rep].Genome
         fasta_out = os.path.join(output_dir, f"{new_name}.fa")
         
         # write names of contigs in mapping file
@@ -116,51 +98,11 @@ with open(mapfile_contigs, "w") as out_contigs:
                         new_header = line[1:].strip().split()[0]
                     
                     # write to contig to mapping file
-                    out_contigs.write(f"{new_header}\t{new_name}\n")
-                    name_mapping_o2n.append((line[1:].strip().split()[0], new_header))
+                    mapfile_contigs_fh.write(f"{new_header}\t{new_name}\n")
                     # write to fasta file
                     ffo.write(f">{new_header}\n")
                 else:
                     ffo.write(line)
-        
-        # Add MAG name to list of renaming pairs - Needs to be last so that we rename scaffolds first, then remaining old MAG names (mostly an issue in GFF)
-        name_mapping_o2n.append((rep, new_name))
-        
-        ## Rename using name mappings
-        rename_fasta_file(
-            paths.loc[rep].Proteins,
-            os.path.join(output_dir, f"{new_name}.faa"),
-            name_mapping_o2n,
-        )
-        rename_fasta_file(
-            paths.loc[rep].CDS,
-            os.path.join(output_dir, f"{new_name}.fna"),
-            name_mapping_o2n,
-        )
-        if 'rRNA' in paths.columns:
-            rename_fasta_file(
-                paths.loc[rep].rRNA,
-                os.path.join(output_dir, f"{new_name}.rRNA.fna"),
-                name_mapping_o2n,
-            )
-        if 'tRNA' in paths.columns:
-            rename_fasta_file(
-                paths.loc[rep].tRNA,
-                os.path.join(output_dir, f"{new_name}.tRNA.fna"),
-                name_mapping_o2n,
-            )
-        
-        rename_text_file(
-            paths.loc[rep].GFF,
-            os.path.join(output_dir, f"{new_name}.gff"),
-            name_mapping_o2n,
-        )
-        if 'seq_type' in paths.columns:
-            rename_text_file(
-                paths.loc[rep].seq_type,
-                os.path.join(output_dir, f"{new_name}.seq_type.tsv"),
-                name_mapping_o2n,
-            )
 
 
 # rename quality

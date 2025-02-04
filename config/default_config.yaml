@@ -185,7 +185,6 @@ veba_prokaryotic:
   checkm2_completeness: 50 # CheckM2 completeness threshold.
   checkm2_contamination: 10 # CheckM2 contamination threshold.
   mdmcleaner_options: '' # MDMcleaner commandline options. e.g., '--fast_run'
-  n_iter: 3 # Number of iterations to run binning.
 
 veba_eukaryotic:
   minimum_contig_length: 1500 # Minimum contig length. Anything under 2500 will default to 2500 for MetaBat2.

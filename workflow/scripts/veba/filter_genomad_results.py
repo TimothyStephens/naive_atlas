@@ -102,6 +102,7 @@ def main(args=None):
     else:
         f_unbinned_fasta = open(os.devnull, "w")
     if df_genomad.empty:
+        print("No MAGs remain after filtering.")
         with open(opts.fasta, "r") as f_fasta: # Use stdin?
             for header, seq in tqdm(SimpleFastaParser(f_fasta), "Extracting viral and unbinned contigs", unit=" contig"):
                 id_scaffold = header.split(" ")[0]
@@ -110,6 +111,7 @@ def main(args=None):
         df_genomad = pd.DataFrame(columns=["id_contig"] + df_genomad.columns.tolist())
 
     else:
+        print("MAGs remain after filtering.")
         # Quality assessment on MAGs
         scaffold_to_bin = dict()
         with open(opts.scaffolds_to_bins, "r") as f_s2b:
@@ -120,6 +122,7 @@ def main(args=None):
                 if b in df_genomad.index:
                     scaffold_to_bin[s] = b
         
+        print(scaffold_to_bin)
         with open(opts.fasta, "r") as f_fasta: # Use stdin?
             for header, seq in tqdm(SimpleFastaParser(f_fasta), "Extracting viral and unbinned contigs", unit=" contig"):
                 id_scaffold = header.split(" ")[0]

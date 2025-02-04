@@ -160,8 +160,10 @@ def run_workflow(
     
     \b
     # OPTIONS:
-    | qc -> assembly -> binning -> genomes -> quantify_genomes -> genome_annotation -> gene_annotation |-> strains
-    +-------------------------------------------------all----------------------------------------------+
+    | qc -> assembly -> binning -> genomes -> quantify_genomes ---------------------------------------|-> strains
+    |                                    +-> genome_annotation -------------------------------------->|
+    |                                                        +-> gene_prediction -> gene_annotation ->|
+    +-----------------------------------------------all-----------------------------------------------+
     # Independent of other steps:
     screen
 
@@ -216,7 +218,7 @@ def run_workflow(
         conda_prefix="--conda-prefix " + os.path.join(db_dir, "conda_envs"),
         max_mem_string=handle_max_mem(max_mem, profile),
     )
-    logger.debug("Executing: %s" % cmd)
+    logger.info("Executing: %s" % cmd)
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
@@ -232,7 +234,7 @@ def run_workflow(
 @cli.command(
     "download",
     context_settings=dict(ignore_unknown_options=True),
-    short_help="download reference files (need ~500GB)",
+    short_help="download reference files (need ~600GB for all databases, ~1.1TB during download)",
 )
 @click.option(
     "-d",
@@ -271,7 +273,7 @@ def run_download(db_dir, jobs, snakemake_args):
         add_args="" if snakemake_args and snakemake_args[0].startswith("-") else "--",
         args=" ".join(snakemake_args),
     )
-    logger.debug("Executing: " + cmd)
+    logger.info("Executing: " + cmd)
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:

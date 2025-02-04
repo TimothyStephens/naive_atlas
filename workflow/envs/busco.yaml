@@ -4,3 +4,4 @@ channels:
 - defaults
 dependencies:
 - busco=5.4
+- biopython=1.79

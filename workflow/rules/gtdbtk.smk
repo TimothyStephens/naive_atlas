@@ -1,5 +1,5 @@
 gtdb_dir = "genomes/annotations/genomes/taxonomy/gtdb"
-GTDBTK_DATA_PATH = os.path.join(rules.veba_download.output.dbdir, 'Classify', 'GTDB')
+#GTDBTK_DATA_PATH = os.path.join(rules.gtdb_download_db.output.dbdir, 'Classify', 'GTDB')
 
 
 rule copy_prokaryotic_genomes:
@@ -15,7 +15,7 @@ rule copy_prokaryotic_genomes:
 
 rule identify:
     input:
-        flag=rules.veba_download.output.dbdir,
+        flag=rules.gtdb_extract.output,
         #flag=rules.extract_gtdb.output,
         genes_flag=rules.copy_prokaryotic_genomes.output,
     output:

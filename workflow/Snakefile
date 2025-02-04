@@ -43,8 +43,8 @@ include: "rules/qc.smk"
 include: "rules/screen.smk"  # expects function get_input_fastq defined in qc
 include: "rules/assemble.smk"
 include: "rules/binning.smk"
-include: "rules/derep.smk"
 include: "rules/genomes.smk"
+include: "rules/quantify_genomes.smk"
 include: "rules/dram.smk"
 include: "rules/metaeuk.smk"
 include: "rules/annotation_genes.smk"
@@ -120,7 +120,10 @@ rule assembly:
 rule binning:
     input:
         "finished_assembly",
-        expand("{sample}/binning/veba/3_viral/{sample}/output/unbinned.fasta", sample=SAMPLES),
+        expand(rules.binning_prokaryotic_genome_stats.output.stats, sample=SAMPLES),
+        expand(rules.binning_eukaryotic_genome_stats.output.stats, sample=SAMPLES),
+        expand(rules.binning_viral_genome_stats.output.viral_stats, sample=SAMPLES),
+        expand(rules.binning_viral_genome_stats.output.plasmid_stats, sample=SAMPLES),
     output:
         temp(touch("finished_binning")),
 

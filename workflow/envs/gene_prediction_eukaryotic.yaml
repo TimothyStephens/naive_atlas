@@ -1,0 +1,11 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+  - barrnap=0.9
+  - metaeuk=5.34c21f2
+  - pyrodigal=2.1.0
+  - seqkit=2.4.0
+  - tiara=1.0.3
+  - trnascan-se=2.0.9

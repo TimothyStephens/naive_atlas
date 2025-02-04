@@ -314,7 +314,7 @@ if not SKIP_QC:
                     )
                 ),
                 stats="{sample}/sequence_quality_control/{sample}_decontamination_reference_stats.txt",
-                contaminant_folder= directory("Intermediate/qc/decontamination/{sample}")
+                contaminant_folder= directory("{sample}/sequence_quality_control/decontamination")
             benchmark:
                 "logs/benchmarks/QC/decontamination/{sample}.txt"
             params:

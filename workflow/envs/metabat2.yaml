@@ -1,0 +1,10 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - metabat2 =2.15
+    - python=3.11.4
+    - pandas=2.0.2
+    - tqdm=4.65.0
+    - seqkit=2.4.0
