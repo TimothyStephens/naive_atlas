@@ -33,7 +33,7 @@ rule eggNOG_homology_search:
         """
         emapper.py -m diamond --no_annot --no_file_comments \
             --data_dir {params.data_dir} --cpu {threads} -i {input.faa} \
-            -o {params.prefix} --override 2> {log}
+            -o {params.prefix} --override &> {log}
         """
 
 
@@ -69,20 +69,20 @@ rule eggNOG_annotation:
         if [ {params.copyto_shm} == "t" ] ; then
             # Check if the files exist before copying
             if [ ! -e "{params.data_dir}/eggnog.db" ]; then
-                cp {EGGNOG_DIR}/eggnog.db {params.data_dir}/eggnog.db 2> {log}
+                cp {EGGNOG_DIR}/eggnog.db {params.data_dir}/eggnog.db &> {log}
             else
-                echo "File {params.data_dir}/eggnog.db already exists. Skipping copy." >> {log}
+                echo "File {params.data_dir}/eggnog.db already exists. Skipping copy." &>> {log}
             fi
 
             if [ ! -e "{params.data_dir}/eggnog_proteins.dmnd" ]; then
-                cp {EGGNOG_DIR}/eggnog_proteins.dmnd {params.data_dir}/eggnog_proteins.dmnd 2>> {log}
+                cp {EGGNOG_DIR}/eggnog_proteins.dmnd {params.data_dir}/eggnog_proteins.dmnd &>> {log}
             else
-                echo "File {params.data_dir}/eggnog_proteins.dmnd already exists. Skipping copy." >> {log}
+                echo "File {params.data_dir}/eggnog_proteins.dmnd already exists. Skipping copy." &>> {log}
             fi
         fi
 
         emapper.py --annotate_hits_table {input.seed} --no_file_comments \
-          --override -o {params.prefix} --cpu {threads} --data_dir {params.data_dir} 2>> {log}
+          --override -o {params.prefix} --cpu {threads} --data_dir {params.data_dir} &>> {log}
 
         """
 
@@ -195,6 +195,77 @@ rule combine_dram_genecatalog_annotations:
         "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
     script:
         "../scripts/combine_dram_gene_annotations.py"
+
+
+
+
+
+######################
+####              ####
+####   MMSEQS2    ####
+####              ####
+######################
+
+rule mmseqs2_annotation:
+    input:
+        faa="genomes/genes/{dataset}/{genome}.faa",
+        database=rules.mmseqs2_download.output.database,
+    output:
+        results="genomes/annotations/{dataset}/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4.gz",
+        tmp=temp(directory("Intermediate/annotations/{dataset}/mmseqs2/{genome}.faa.mmseqs2_{database_name}.tmp")),
+    params:
+        mmseqs2_opts=config["mmseqs2_opts"],
+        mem=int(config["simplejob_memory"]*0.8),
+        results="genomes/annotations/{dataset}/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    conda:
+        "../envs/mmseqs2.yaml"
+    log:
+        "logs/genomes/annotations/{dataset}/mmseqs2/{database_name}/{genome}.log",
+    benchmark:
+        "logs/benchmarks/genomes/annotations/{dataset}/mmseqs2/{database_name}/{genome}.tsv"
+    shell:
+        """
+        (
+        mmseqs easy-search \
+            --threads {threads} \
+            --split-memory-limit {params.mem}G \
+            --compressed 1 \
+            --format-mode 4 \
+            --format-output query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader \
+            {params.mmseqs2_opts} \
+            {input.faa} \
+            {input.database} \
+            {params.results} \
+            {output.tmp} \
+          && pigz -11 -p {threads} {params.results}
+        ) &> {log}
+        """
+
+
+def get_all_mmseqs2_annotation(wildcards):
+    if wildcards.dataset == "genomes":
+        all_genomes = get_all_genomes(wildcards)
+    else:
+        all_genomes = get_all_unbinned(wildcards)
+    return(expand(rules.mmseqs2_annotation.output.results,
+                        dataset=wildcards.dataset,
+                        database_name=config["mmseqs2_database_name"],
+                        genome=all_genomes
+            )
+    )
+
+localrules:
+    all_mmseqs2,
+
+rule all_mmseqs2:
+    input:
+        get_all_mmseqs2_annotation,
+    output:
+        touch("genomes/annotations/{dataset}/mmseqs2/finished"),
 
 
 

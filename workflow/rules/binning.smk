@@ -137,6 +137,8 @@ rule binning_prokaryotic_metabat:
 rule patch_maxbin:
     output:
         "Binning/patch/maxbin.done"
+    params:
+        workflow_folder=f"{workflow_folder}",
     log:
         "logs/patch/maxbin.log",
     conda:
@@ -398,6 +400,8 @@ rule binning_prokaryotic_whokaryote:
 rule patch_mdmcleaner:
     output:
         "Binning/patch/mdmcleaner.done"
+    params:
+        workflow_folder=f"{workflow_folder}",
     log:
         "logs/patch/mdmcleaner.log",
     conda:

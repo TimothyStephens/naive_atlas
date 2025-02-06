@@ -239,6 +239,10 @@ metaeuk_reduceredundancy: ""
 metaeuk_unitesetstofasta: ""
 metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
 
+mmseqs2_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
+mmseqs2_database_name: "SwissProt"
+mmseqs2_opts: ""
+
 
 
 

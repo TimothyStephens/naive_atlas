@@ -203,9 +203,9 @@ rule metaeuk_download:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     log:
-        "logs/genomes/annotations/genomes/metaeuk/download_MetaEuk_database.log",
+        "logs/download/download_MetaEuk_database.log",
     benchmark:
-        "logs/benchmarks/metaeuk/download_MetaEuk_database.tsv"
+        "logs/benchmarks/download/download_MetaEuk_database.tsv"
     conda:
         "../envs/metaeuk.yaml"
     shell:
@@ -272,6 +272,29 @@ rule gtdb_extract:
         """
         tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 &> {log}
         """
+
+
+rule mmseqs2_download:
+    output:
+        dbdir=directory(f"{DBDIR}/MMseqs2"),
+        database=os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
+    params:
+        mmseqs2_database=config["mmseqs2_database"],
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    log:
+        "logs/download/download_MMseqs2_database.log",
+    benchmark:
+        "logs/benchmarks/download/download_MetaEuk_database.tsv"
+    conda:
+        "../envs/mmseqs2.yaml"
+    shell:
+        "mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp "
+        " --compressed 1 "
+        " --threads {threads} "
+        " &> {log}"
 
 
 

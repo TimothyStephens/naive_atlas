@@ -78,5 +78,8 @@ gene_annotations:
 - eggNOG_unbinned
 - dram
 - dram_unbinned
+- mmseqs2
+- mmseqs2_unbinned
+
 
 

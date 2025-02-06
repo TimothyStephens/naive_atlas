@@ -38,21 +38,18 @@ wildcard_constraints:
 
 
 include: "rules/sample_table.smk"
+include: "rules/sra.smk"
 include: "rules/download.smk"  # contains hard coded variables
 include: "rules/qc.smk"
-include: "rules/screen.smk"  # expects function get_input_fastq defined in qc
 include: "rules/assemble.smk"
 include: "rules/binning.smk"
 include: "rules/genomes.smk"
 include: "rules/quantify_genomes.smk"
-include: "rules/dram.smk"
-include: "rules/metaeuk.smk"
+include: "rules/genome_annotation.smk"
 include: "rules/gene_prediction.smk"
-include: "rules/annotation_genes.smk"
-include: "rules/sra.smk"
-include: "rules/gtdbtk.smk"
+include: "rules/gene_annotation.smk"
 include: "rules/strains.smk"
-include: "rules/patch.smk"
+include: "rules/screen.smk"  # expects function get_input_fastq defined in qc
 
 
 CONDAENV = "envs"  # overwrite definition in download.smk
@@ -68,6 +65,7 @@ localrules:
     genomes,
     quantify_genomes,
     genome_annotation,
+    gene_prediction,
     gene_annotation,
     strains,
     screen,
@@ -204,10 +202,12 @@ rule gene_prediction:
 ## ---- ##
 def get_gene_annotations():
     annotation_file_names = {
-        "eggNOG":          expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="genomes"),
-        "eggNOG_unbinned": expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="unbinned"),
-        "dram":            expand("genomes/annotations/{dataset}/genes/dram", dataset="genomes"),
-        "dram_unbinned":   expand("genomes/annotations/{dataset}/genes/dram", dataset="unbinned"),
+        "eggNOG":           expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="genomes"),
+        "eggNOG_unbinned":  expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="unbinned"),
+        "dram":             expand("genomes/annotations/{dataset}/genes/dram", dataset="genomes"),
+        "dram_unbinned":    expand("genomes/annotations/{dataset}/genes/dram", dataset="unbinned"),
+        "mmseqs2":          expand("genomes/annotations/{dataset}/genes/mmseqs2/finished", dataset="genomes"),
+        "mmseqs2_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2/finished", dataset="unbinned"),
     }
     annotations_requested = config.get("gene_annotations", [])
 
