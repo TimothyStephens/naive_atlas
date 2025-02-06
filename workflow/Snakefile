@@ -47,6 +47,7 @@ include: "rules/genomes.smk"
 include: "rules/quantify_genomes.smk"
 include: "rules/dram.smk"
 include: "rules/metaeuk.smk"
+include: "rules/gene_prediction.smk"
 include: "rules/annotation_genes.smk"
 include: "rules/sra.smk"
 include: "rules/gtdbtk.smk"
@@ -59,6 +60,7 @@ CONDAENV = "envs"  # overwrite definition in download.smk
 
 localrules:
     all,
+    download,
     qc,
     assembly_one_sample,
     assembly,
@@ -74,6 +76,7 @@ localrules:
 
 rule all:
     input:
+        "finished_download",
         "finished_QC",
         "finished_assembly",
         "finished_binning",
@@ -81,6 +84,14 @@ rule all:
         "finished_quantify_genomes",
         "finished_genome_annotation",
         "finished_gene_annotation",
+
+
+## ---- ##
+rule download:
+    input:
+        os.path.join(os.path.realpath(config["database_dir"]), "finished"),
+    output:
+        touch("finished_download"),
 
 
 ## ---- ##
@@ -154,7 +165,8 @@ def get_genome_annotations():
     annotation_file_names = {
         "gtdb_tree":        "genomes/annotations/genomes/tree/finished_gtdb_trees",
         "gtdb_taxonomy":    "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
-        "dram":             "genomes/annotations/genomes/dram/finished",
+        "dram":             expand("genomes/annotations/{dataset}/dram/finished", dataset="genomes"),
+        "dram_unbinned":    expand("genomes/annotations/{dataset}/dram/finished", dataset="unbinned"),
         "metaeuk":          expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="genomes"),
         "metaeuk_unbinned": expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="unbinned"),
     }
@@ -180,10 +192,22 @@ rule genome_annotation:
 
 
 ## ---- ##
+rule gene_prediction:
+    input:
+        "finished_genome_annotation",
+        "genomes/genes/genomes",
+        "genomes/genes/unbinned"
+    output:
+        temp(touch("finished_gene_prediction")),
+
+
+## ---- ##
 def get_gene_annotations():
     annotation_file_names = {
-        "eggNOG": "genomes/annotations/genes/eggNOG.tsv.gz",
-        "dram": "genomes/annotations/genes/dram",
+        "eggNOG":          expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="genomes"),
+        "eggNOG_unbinned": expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="unbinned"),
+        "dram":            expand("genomes/annotations/{dataset}/genes/dram", dataset="genomes"),
+        "dram_unbinned":   expand("genomes/annotations/{dataset}/genes/dram", dataset="unbinned"),
     }
     annotations_requested = config.get("gene_annotations", [])
 

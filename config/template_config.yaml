@@ -69,11 +69,14 @@ genome_annotations:
 - gtdb_tree
 - gtdb_taxonomy
 - dram
+- dram_unbinned
 - metaeuk
 - metaeuk_unbinned
 
 gene_annotations:
 - eggNOG
+- eggNOG_unbinned
 - dram
+- dram_unbinned
 
 

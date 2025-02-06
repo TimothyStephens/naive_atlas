@@ -88,12 +88,14 @@ def get_snakefile(file="workflow/Snakefile"):
     "workflow",
     type=click.Choice(
         [
+            "download",
             "qc",
             "assembly",
             "binning",
             "genomes",
             "quantify_genomes",
             "genome_annotation",
+            "gene_prediction",
             "gene_annotation",
             "strains",
             "screen",
@@ -166,6 +168,7 @@ def run_workflow(
     +-----------------------------------------------all-----------------------------------------------+
     # Independent of other steps:
     screen
+    download (download reference files (need ~920GB for all databases, ~1.5TB during download))
 
     """
 
@@ -219,61 +222,6 @@ def run_workflow(
         max_mem_string=handle_max_mem(max_mem, profile),
     )
     logger.info("Executing: %s" % cmd)
-    try:
-        subprocess.check_call(cmd, shell=True)
-    except subprocess.CalledProcessError as e:
-        # removes the traceback
-        logger.critical(e)
-        exit(1)
-
-
-################### Download function #################
-
-
-# Download
-@cli.command(
-    "download",
-    context_settings=dict(ignore_unknown_options=True),
-    short_help="download reference files (need ~600GB for all databases, ~1.1TB during download)",
-)
-@click.option(
-    "-d",
-    "--db-dir",
-    help="location to store databases",
-    type=click.Path(dir_okay=True, writable=True, resolve_path=True),
-    required=True,
-)
-@click.option(
-    "-j",
-    "--jobs",
-    default=1,
-    type=int,
-    show_default=True,
-    help="number of simultaneous downloads",
-)
-@click.argument("snakemake_args", nargs=-1, type=click.UNPROCESSED)
-def run_download(db_dir, jobs, snakemake_args):
-    """Executes a snakemake workflow to download reference database files and validate based on
-    their MD5 checksum.
-    """
-
-    cmd = (
-        "snakemake --snakefile {snakefile} "
-        "--jobs {jobs} --rerun-incomplete "
-        "--conda-frontend mamba --scheduler greedy "
-        "--nolock  --use-conda  --conda-prefix {conda_prefix} "
-        " --show-failed-logs "
-        "--config database_dir='{db_dir}' {add_args} "
-        "{args}"
-    ).format(
-        snakefile=get_snakefile("workflow/rules/download.smk"),
-        jobs=jobs,
-        db_dir=db_dir,
-        conda_prefix=os.path.join(db_dir, "conda_envs"),
-        add_args="" if snakemake_args and snakemake_args[0].startswith("-") else "--",
-        args=" ".join(snakemake_args),
-    )
-    logger.info("Executing: " + cmd)
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:

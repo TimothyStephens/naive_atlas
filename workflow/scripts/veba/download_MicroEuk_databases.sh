@@ -3,6 +3,11 @@
 # MICROEUKAYROTIC_DATABASE_VERSION = "MicroEuk_v3"
 # usage: bash download_MicroEuk_databases.sh /path/to/veba_database_destination/
 
+# Absolute path to this script, e.g. /home/user/bin/foo.sh
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+SCRIPTPATH=$(dirname "$SCRIPT")
+
 # Create database
 DATABASE_DIRECTORY=${1:-"."}
 REALPATH_DATABASE_DIRECTORY=$(realpath $DATABASE_DIRECTORY)
@@ -55,10 +60,10 @@ seqkit grep -f ${DATABASE_DIRECTORY}/MicroEuk_v3/MicroEuk50.list ${DATABASE_DIRE
     | mmseqs createdb --compressed 1 stdin ${DATABASE_DIRECTORY}/MicroEuk50
 
 # source_to_lineage.dict.pkl.gz
-build_source_to_lineage_dictionary.py -i ${DATABASE_DIRECTORY}/MicroEuk_v3/source_taxonomy.tsv.gz -o ${DATABASE_DIRECTORY}/source_to_lineage.dict.pkl.gz
+python "$SCRIPTPATH/build_source_to_lineage_dictionary.py" -i ${DATABASE_DIRECTORY}/MicroEuk_v3/source_taxonomy.tsv.gz -o ${DATABASE_DIRECTORY}/source_to_lineage.dict.pkl.gz
 
 # target_to_source.dict.pkl.gz
-build_target_to_source_dictionary.py -i ${DATABASE_DIRECTORY}/MicroEuk_v3/identifier_mapping.proteins.tsv.gz -o ${DATABASE_DIRECTORY}/target_to_source.dict.pkl.gz
+python "$SCRIPTPATH/build_target_to_source_dictionary.py" -i ${DATABASE_DIRECTORY}/MicroEuk_v3/identifier_mapping.proteins.tsv.gz -o ${DATABASE_DIRECTORY}/target_to_source.dict.pkl.gz
 
 # Remove intermediate files
 rm -rf ${DATABASE_DIRECTORY}/MicroEuk_v3

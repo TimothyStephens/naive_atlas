@@ -28,12 +28,12 @@ rule identify:
         f"{gtdb_dir}/gtdbtk.log",
     params:
         outdir=gtdb_dir,
-        extension="faa",
+        extension="fa",
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk identify "
-        "--genes --genome_dir {input.genes_flag} "
-        " --out_dir {params.outdir} "
+        "--genome_dir {input.genes_flag} "
+        "--out_dir {params.outdir} "
         "--extension {params.extension} "
         "--cpus {threads} &> {log[0]}"
 
@@ -79,9 +79,9 @@ rule classify:
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk classify --genome_dir {input.genome_dir} --align_dir {params.outdir} "
-        " --mash_db {params.mashdir} "
+        "--mash_db {params.mashdir} "
         "--out_dir {params.outdir} "
-        " --tmpdir {resources.tmpdir} "
+        "--tmpdir {resources.tmpdir} "
         "--extension {params.extension} "
         "--cpus {threads} &> {log[0]}"
 

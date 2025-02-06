@@ -3,27 +3,50 @@
 
 #################################
 ####                         ####
-####      Predict Genes      ####
+####  Predict Genes (Genome) ####
 ####                         ####
 #################################
 
 def get_genomes_for_gene_prediction(lineage):
+    import pandas as pd
+    
     genome_dir = 'genomes/genomes'
     
-    if lineage == 'prokaryotic':
+    if lineage == 'bacteria':
         fasta_files = glob(os.path.join(genome_dir, "MAG_prokaryotic_*.fa"))
         if len(fasta_files) == 0:
             print(f"No Prokaryotic genomes found with fa extension in {genome_dir} ")
             return([])
         
+        file_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
+        annot = pd.read_table(file_name, sep='\t', index_col=0)
+        
         genomes = []
         for file_path in fasta_files:
             file_name = os.path.basename(file_path)  # "file.txt"
             file_name_without_ext = os.path.splitext(file_name)[0]  # "file"
-            genomes.append(file_name_without_ext)
+            if annot.loc[file_name_without_ext, "Domain"] == "Bacteria":
+                genomes.append(file_name_without_ext)
         return(genomes)
     
-    if lineage == 'eukaryotic':
+    if lineage == 'archaea':
+        fasta_files = glob(os.path.join(genome_dir, "MAG_prokaryotic_*.fa"))
+        if len(fasta_files) == 0:
+            print(f"No Prokaryotic genomes found with fa extension in {genome_dir} ")
+            return([])
+
+        file_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
+        annot = pd.read_table(file_name, sep='\t', index_col=0)
+
+        genomes = []
+        for file_path in fasta_files:
+            file_name = os.path.basename(file_path)  # "file.txt"
+            file_name_without_ext = os.path.splitext(file_name)[0]  # "file"
+            if annot.loc[file_name_without_ext, "Domain"] == "Archaea":
+                genomes.append(file_name_without_ext)
+        return(genomes)
+    
+    if lineage == 'eukaryote':
         fasta_files = glob(os.path.join(genome_dir, "MAG_eukaryotic_*.fa"))
         if len(fasta_files) == 0:
             print(f"No Eukaryotic genomes found with fa extension in {genome_dir} ")
@@ -36,7 +59,7 @@ def get_genomes_for_gene_prediction(lineage):
             genomes.append(file_name_without_ext)
         return(genomes)
     
-    if lineage == 'viral':
+    if lineage == 'virus':
         fasta_files = glob(os.path.join(genome_dir, "MAG_viral_*.fa"))
         if len(fasta_files) == 0:
             print(f"No Viral genomes found with fa extension in {genome_dir} ")
@@ -69,18 +92,14 @@ rule gene_prediction_bacteria:
         dbdir=rules.bakta_download_db.output.dbdir,
     output:
         faa="Predict_Genes/genomes/bacteria/{genome}.faa",
-        fna="Predict_Genes/genomes/bacteria/{genome}.fna",
-        gff="Predict_Genes/genomes/bacteria/{genome}.gff",
-        rrna="Predict_Genes/genomes/bacteria/{genome}.rRNA.fna",
-        trna="Predict_Genes/genomes/bacteria/{genome}.tRNA.fna",
     params:
         workflow_folder=f"{workflow_folder}",
         wd="Predict_Genes/genomes/bacteria",
         genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/bacteria/{genome}.txt"
+        "logs/benchmarks/gene_prediction/genomes/bacteria/{genome}.txt"
     log:
-        "logs/gene_prediction/bacteria/{genome}.txt",
+        "logs/gene_prediction/genomes/bacteria/{genome}.txt",
     conda:
         "../envs/gene_prediction_bacteria.yaml"
     threads: config["simplejob_threads"]
@@ -95,10 +114,12 @@ rule gene_prediction_bacteria:
         bakta \
             --db {input.dbdir} \
             --prefix {params.genome} \
+            --locus {params.genome} \
+            --locus-tag {params.genome} \
             --output {params.wd} --force \
             --meta \
-            --threads {threads} \
             --keep-contig-headers \
+            --threads {threads} \
             {input.fasta}
         ) &> {log}
         """
@@ -109,16 +130,14 @@ rule gene_prediction_archaea:
         fasta="genomes/genomes/{genome}.fa",
     output:
         faa="Predict_Genes/genomes/archaea/{genome}.faa",
-        fna="Predict_Genes/genomes/archaea/{genome}.fna",
-        gff="Predict_Genes/genomes/archaea/{genome}.gff",
-        rrna="Predict_Genes/genomes/archaea/{genome}.rRNA.fna",
-        trna="Predict_Genes/genomes/archaea/{genome}.tRNA.fna",
     params:
         workflow_folder=f"{workflow_folder}",
+        wd="Predict_Genes/genomes/archaea",
+        genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/archaea/{genome}.txt"
+        "logs/benchmarks/gene_prediction/genomes/archaea/{genome}.txt"
     log:
-        "logs/gene_prediction/archaea/{genome}.txt",
+        "logs/gene_prediction/genomes/archaea/{genome}.txt",
     conda:
         "../envs/gene_prediction_archaea.yaml"
     threads: config["simplejob_threads"]
@@ -128,7 +147,14 @@ rule gene_prediction_archaea:
     shell:
         """
         (
-        prokka --outdir tmp --force --prefix MAG_prokaryotic_03 --cpus 8 --addgenes --addmrna --kingdom Archaea  MAG_prokaryotic_03.fa
+        prokka \
+            --outdir {params.wd} --force \
+            --prefix {params.genome} \
+            --locustag {params.genome} \
+            --cpus {threads} \
+            --addgenes --addmrna --metagenome \
+            --kingdom Archaea \
+            {input.fasta}
         ) &> {log}
         """
 
@@ -138,16 +164,14 @@ rule gene_prediction_virus:
         fasta="genomes/genomes/{genome}.fa",
     output:
         faa="Predict_Genes/genomes/virus/{genome}.faa",
-        fna="Predict_Genes/genomes/virus/{genome}.fna",
-        gff="Predict_Genes/genomes/virus/{genome}.gff",
-        rrna="Predict_Genes/genomes/virus/{genome}.rRNA.fna",
-        trna="Predict_Genes/genomes/virus/{genome}.tRNA.fna",
     params:
         workflow_folder=f"{workflow_folder}",
+        wd="Predict_Genes/genomes/virus",
+        genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/virus/{genome}.txt"
+        "logs/benchmarks/gene_prediction/genomes/virus/{genome}.txt"
     log:
-        "logs/gene_prediction/virus/{genome}.txt",
+        "logs/gene_prediction/genomes/virus/{genome}.txt",
     conda:
         "../envs/gene_prediction_virus.yaml"
     threads: config["simplejob_threads"]
@@ -157,7 +181,15 @@ rule gene_prediction_virus:
     shell:
         """
         (
-        prokka --outdir tmp --force --prefix MAG_viral_001      --cpus 8 --addgenes --addmrna --kingdom Viruses  MAG_viral_001.fa
+        export PERL5LIB="$CONDA_PREFIX/lib/site_perl/5.26.2"
+        prokka \
+            --outdir {params.wd} --force \
+            --prefix {params.genome} \
+            --locustag {params.genome} \
+            --cpus {threads} \
+            --addgenes --addmrna --metagenome \
+            --kingdom Viruses \
+            {input.fasta}
         ) &> {log}
         """
 
@@ -165,18 +197,17 @@ rule gene_prediction_virus:
 rule gene_prediction_plasmid:
     input:
         fasta="genomes/genomes/{genome}.fa",
+        dbdir=rules.bakta_download_db.output.dbdir,
     output:
         faa="Predict_Genes/genomes/plasmid/{genome}.faa",
-        fna="Predict_Genes/genomes/plasmid/{genome}.fna",
-        gff="Predict_Genes/genomes/plasmid/{genome}.gff",
-        rrna="Predict_Genes/genomes/plasmid/{genome}.rRNA.fna",
-        trna="Predict_Genes/genomes/plasmid/{genome}.tRNA.fna",
     params:
         workflow_folder=f"{workflow_folder}",
+        wd="Predict_Genes/genomes/plasmid",
+        genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/plasmid/{genome}.txt"
+        "logs/benchmarks/gene_prediction/genomes/plasmid/{genome}.txt"
     log:
-        "logs/gene_prediction/plasmid/{genome}.txt",
+        "logs/gene_prediction/genomes/plasmid/{genome}.txt",
     conda:
         "../envs/gene_prediction_plasmid.yaml"
     threads: config["simplejob_threads"]
@@ -186,32 +217,37 @@ rule gene_prediction_plasmid:
     shell:
         """
         (
-        bakta --db tmp/db/db --prefix MAG_plasmid_01     --output tmp --force --meta --threads 8 MAG_plasmid_01.fa
+        bakta \
+            --db {input.dbdir} \
+            --prefix {params.genome} \
+            --locus {params.genome} \
+            --locus-tag {params.genome} \
+            --output {params.wd} --force \
+            --meta \
+            --keep-contig-headers \
+            --threads {threads} \
+            {input.fasta}
         ) &> {log}
         """
 
 
-
-
-
-
-rule gene_prediction_eukaryotic:
+rule gene_prediction_eukaryote:
     input:
-        fasta=expand("genomes/genomes/{genome}.fa", genomes=get_genomes_for_gene_prediction('eukaryotic')),
+        fasta="genomes/genomes/{genome}.fa",
         dbdir=rules.microeukaryotic_mmseqs2_db.output.dbdir,
     output:
-        faa="genomes/genomes/{genome}.faa",
-        fna="genomes/genomes/{genome}.fna",
-        gff="genomes/genomes/{genome}.gff",
-        rrna="genomes/genomes/{genome}.rRNA.fna",
-        trna="genomes/genomes/{genome}.tRNA.fna",
+        faa="Predict_Genes/genomes/eukaryotes/{genome}.faa",
+        fna="Predict_Genes/genomes/eukaryotes/{genome}.fna",
+        gff="Predict_Genes/genomes/eukaryotes/{genome}.gff",
+        rrna="Predict_Genes/genomes/eukaryotes/{genome}.rRNA.fna",
+        trna="Predict_Genes/genomes/eukaryotes/{genome}.tRNA.fna",
     params:
         workflow_folder=f"{workflow_folder}",
         outdir="Gene_Prediction/eukaryotic/{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/{genome}.txt"
+        "logs/benchmarks/gene_prediction/genomes/{genome}.txt"
     log:
-        "logs/gene_prediction/{genome}.txt",
+        "logs/gene_prediction/genomes/{genome}.txt",
     conda:
         "../envs/gene_prediction_eukaryotic.yaml"
     threads: config["simplejob_threads"]
@@ -244,7 +280,145 @@ rule gene_prediction_eukaryotic:
         """
 
 
+rule move_genome_predicted_genes:
+    input:
+        bacteria=expand(rules.gene_prediction_bacteria.output.faa,
+                    genome=get_genomes_for_gene_prediction("bacteria")),
+        archaea=expand(rules.gene_prediction_archaea.output.faa,
+                    genome=get_genomes_for_gene_prediction("archaea")),
+        eukaryote=expand(rules.gene_prediction_eukaryote.output.faa,
+                    genome=get_genomes_for_gene_prediction("eukaryote")),
+        viral=expand(rules.gene_prediction_virus.output.faa,
+                    genome=get_genomes_for_gene_prediction("virus")),
+        plasmid=expand(rules.gene_prediction_plasmid.output.faa,
+                    genome=get_genomes_for_gene_prediction("plasmid")),
+    output:
+        outdir=directory("genomes/genes/genomes"),
+    params:
+        workflow_folder=f"{workflow_folder}",
+        prokaryotic_stats="genomes/genes/genomes/MAG_prokaryotic.gene_stats.tsv",
+        eukaryotic_stats="genomes/genes/genomes/MAG_eukaryotic.gene_stats.tsv",
+        viral_stats="genomes/genes/genomes/MAG_viral.gene_stats.tsv",
+        plasmid_stats="genomes/genes/genomes/MAG_plasmid.gene_stats.tsv",
+    log:
+        "logs/gene_prediction/genomes/move_predicted_genes.txt",
+    conda:
+        "../envs/python.yaml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    shell:
+        """
+        (
+        rm -fr {output.outdir}; mkdir -p {output.outdir}
+        
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \
+            -i {input.archaea} \
+            -o {output.outdir} \
+            -s {params.prokaryotic_stats}
+        
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \
+            -i {input.bacteria} \
+            -o {output.outdir} \
+            -s {params.prokaryotic_stats}
+        
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \
+            -i {input.viral} \
+            -o {output.outdir} \
+            -s {params.viral_stats}
+        
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \
+            -i {input.plasmid} \
+            -o {output.outdir} \
+            -s {params.plasmid_stats}
+        
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_EUK.py \
+            -i {input.eukaryote} \
+            -o {output.outdir} \
+            -s {params.eukaryotic_stats}
+        
+        ) &> {log}
+        """
 
 
+
+
+
+#################################
+####                         ####
+#### Predict Genes (Unbinned)####
+####                         ####
+#################################
+
+rule gene_prediction_unbinned:
+    input:
+        fasta="genomes/unbinned/{genome}.fa",
+    output:
+        faa="Predict_Genes/unbinned/{genome}.faa",
+    params:
+        workflow_folder=f"{workflow_folder}",
+        wd="Predict_Genes/unbinned",
+        genome="{genome}",
+    benchmark:
+        "logs/benchmarks/gene_prediction/unbinned/{genome}.txt"
+    log:
+        "logs/gene_prediction/unbinned/{genome}.txt",
+    conda:
+        "../envs/prodigal.yaml"
+    threads: 1
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    shell:
+        """
+        (
+        rm -fr {params.wd}/{params.genome}*
+        
+        prodigal \
+            -a {params.wd}/{params.genome}.faa \
+            -d {params.wd}/{params.genome}.fna \
+            -f gff \
+            -o {params.wd}/{params.genome}.gff3 \
+            -p meta \
+            < {input.fasta}
+        ) &> {log}
+        """
+
+def get_all_unbinned_genes(wildcards):
+    all_genomes = get_all_unbinned(wildcards)
+    return(
+        expand(rules.gene_prediction_unbinned.output.faa,
+               genome=all_genomes)
+    )
+
+rule move_unbinned_predicted_genes:
+    input:
+        unbinned=get_all_unbinned_genes,
+    output:
+        outdir=directory("genomes/genes/unbinned"),
+    params:
+        workflow_folder=f"{workflow_folder}",
+        unbinned_stats="genomes/genes/unbinned/Unbinned.gene_stats.tsv",
+    log:
+        "logs/gene_prediction/unbinned/move_predicted_genes.txt",
+    conda:
+        "../envs/python.yaml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    shell:
+        """
+        (
+        rm -fr {output.outdir}; mkdir -p {output.outdir}
+        
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PRODIGAL.py \
+            -i {input.unbinned} \
+            -o {output.outdir} \
+            -s {params.unbinned_stats}
+        
+        ) &> {log}
+        """
 
 

@@ -34,12 +34,6 @@ genome_dir = get_genome_dir()
 
 def get_all_genomes(wildcards):
     global genome_dir
-    
-    if genome_dir == "genomes/genomes":
-        binned_lineages = get_binned_lineages()
-        for lineage in binned_lineages:
-            checkpoints.rename_genomes.get(lineage=lineage)
-    
     # check if genomes are present
     genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
     
@@ -56,10 +50,6 @@ def get_all_genomes(wildcards):
 
 
 def get_all_unbinned(wildcards):
-    # TODO: This always retriggers renaming if you run 'genomes' then 'all' - Fix so that it only happens once.
-    for sample in SAMPLES:
-        checkpoints.rename_unbinned.get(sample=sample)
-    
     # check if genomes are present
     genomes = glob_wildcards(os.path.join("genomes/unbinned", "{genome}.fa")).genome
 

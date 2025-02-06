@@ -11,44 +11,12 @@ def get_dram_config(wildcards):
     return config.get("dram_config_file", f"{DBDIR}/DRAM/DRAM.config")
 
 
-localrules:
-    dram_download,
-    concat_annotations,
-
-
-rule dram_download:
-    output:
-        dbdir=directory(f"{DBDIR}/DRAM/db/"),
-        config=f"{DBDIR}/DRAM/DRAM.config",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-    log:
-        "logs/dram/download_dram.log",
-    benchmark:
-        "logs/benchmarks/dram/download_dram.tsv"
-    conda:
-        "../envs/dram.yaml"
-    shell:
-        " DRAM-setup.py prepare_databases "
-        " --output_dir {output.dbdir} "
-        " --threads {threads} "
-        " --verbose "
-        " --skip_uniref "
-        " &> {log} "
-        " ; "
-        " DRAM-setup.py export_config --output_file {output.config}"
-
-
 rule DRAM_annotate:
     input:
-        fasta="genomes/genomes/{genome}.fa",
-        #checkm= "genomes/checkm/completeness.tsv",
-        #gtdb_dir= "genomes/taxonomy/gtdb/classify",
+        fasta="genomes/{dataset}/{genome}.fa",
         config=get_dram_config,
     output:
-        outdir=directory("genomes/annotations/genomes/dram/intermediate_files/{genome}"),
+        outdir=directory("genomes/annotations/{dataset}/dram/intermediate_files/{genome}"),
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -59,9 +27,9 @@ rule DRAM_annotate:
         extra=config.get("dram_extra", ""),
         min_contig_size=config.get("minimum_contig_length", "1000"),
     log:
-        "logs/dram/run_dram/{genome}.log",
+        "logs/annotations/{dataset}/dram/run_dram/{genome}.log",
     benchmark:
-        "logs/benchmarks/dram/run_dram/{genome}.tsv"
+        "logs/benchmarks/annotations/{dataset}/dram/run_dram/{genome}.tsv"
     shell:
         " DRAM.py annotate "
         " --config_loc {input.config} "
@@ -76,24 +44,28 @@ rule DRAM_annotate:
 
 
 def get_all_dram(wildcards):
-    all_genomes = get_all_genomes(wildcards)
-    return expand(rules.DRAM_annotate.output.outdir, genome=all_genomes)
+    if wildcards.dataset == "genomes":
+        all_genomes = get_all_genomes(wildcards)
+    else:
+        all_genomes = get_all_unbinned(wildcards)
+    return expand(rules.DRAM_annotate.output.outdir,
+            dataset=wildcards.dataset, genome=all_genomes)
 
 
-DRAM_ANNOTATON_FILES = ["annotations.tsv"]
-
+localrules:
+    concat_annotations,
 
 rule concat_annotations:
     input:
         get_all_dram,
     output:
-        expand("genomes/annotations/genomes/dram/{annotation}", annotation=DRAM_ANNOTATON_FILES),
+        "genomes/annotations/{dataset}/dram/annotations.tsv",
     resources:
         time=config["simplejob_runtime"],
     run:
         from utils import io
 
-        for i, annotation_file in enumerate(DRAM_ANNOTATON_FILES):
+        for i, annotation_file in enumerate(["annotations.tsv"]):
             input_files = [
                 os.path.join(dram_folder, annotation_file) for dram_folder in input
             ]
@@ -108,14 +80,14 @@ rule DRAM_destill:
         rules.concat_annotations.output,
         config=get_dram_config,
     output:
-        outdir=directory("genomes/annotations/genomes/dram/distil"),
+        outdir=directory("genomes/annotations/{dataset}/dram/distil"),
     resources:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     conda:
         "../envs/dram.yaml"
     log:
-        "logs/dram/distil.log",
+        "logs/annotations/{dataset}/dram/distil.log",
     shell:
         " DRAM.py distill "
         " --config_loc {input.config} "
@@ -126,24 +98,26 @@ rule DRAM_destill:
 
 rule get_all_modules:
     input:
-        annotations="genomes/annotations/genomes/dram/annotations.tsv",
+        annotations="genomes/annotations/{dataset}/dram/annotations.tsv",
         config=get_dram_config,
     output:
-        "genomes/annotations/genomes/dram/kegg_modules.tsv",
+        "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
     resources:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
     conda:
         "../envs/dram.yaml"
     log:
-        "logs/dram/get_all_modules.log",
+        "logs/annotations/{dataset}/dram/get_all_modules.log",
     script:
         "../scripts/DRAM_get_all_modules.py"
 
 
 rule dram:
     input:
-        "genomes/annotations/genomes/dram/distil",
-        "genomes/annotations/genomes/dram/kegg_modules.tsv",
+        "genomes/annotations/{dataset}/dram/distil",
+        "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
     output:
-        touch("genomes/annotations/genomes/dram/finished"),
+        touch("genomes/annotations/{dataset}/dram/finished"),
+
+

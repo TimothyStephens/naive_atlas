@@ -1,31 +1,5 @@
 
 
-localrules:
-    metaeuk_download,
-
-
-rule metaeuk_download:
-    output:
-        dbdir=directory(f"{DBDIR}/MetaEuk"),
-        database=os.path.join(f"{DBDIR}/MetaEuk", config["metaeuk_database_name"]),
-    params:
-        metaeuk_database=config["metaeuk_database"],
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-    log:
-        "logs/genomes/annotations/genomes/metaeuk/download_MetaEuk_database.log",
-    benchmark:
-        "logs/benchmarks/metaeuk/download_MetaEuk_database.tsv"
-    conda:
-        "../envs/metaeuk.yaml"
-    shell:
-        "metaeuk databases {params.metaeuk_database} {output.database} {output.dbdir}/tmp "
-        " --compressed 1 "
-        " --threads {threads} "
-        " &> {log}"
-
 
 rule metaeuk_annotation:
     input:

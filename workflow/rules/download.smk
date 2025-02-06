@@ -52,37 +52,26 @@ ruleorder: download_eggNOG_files > download_atlas_files
 
 
 localrules:
-    download,
+    all_downloads,
 
-rule download:
+rule all_downloads:
     input:
         expand("{dir}/{filename}", dir=DBDIR, filename=["adapters.fa", "phiX174_virus.fa"]),
-        get_eggnog_db_file(),
-        os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
+        # Binning
         f"{DBDIR}/CheckM2",
         f"{DBDIR}/MDMcleaner",
         f"{DBDIR}/busco_lineages",
         f"{DBDIR}/geNomad",
+        # Annotation
+        get_eggnog_db_file(),
+        os.path.join(f"{DBDIR}/MetaEuk", config["metaeuk_database_name"]),
+        f"{DBDIR}/DRAM/db/",
+        os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
+        # Gene Prediction
         f"{DBDIR}/MicroEuk",
         f"{DBDIR}/bakta/db",
-
-
-rule download_eggNOG_files:
     output:
-        f"{EGGNOG_DIR}/eggnog.db",
-        f"{EGGNOG_DIR}/eggnog_proteins.dmnd",
-    params:
-        eggnog_dir=f"{EGGNOG_DIR}",
-    log:
-        "logs/download/download_eggNOG_files.log",
-    benchmark:
-        "logs/benchmarks/download/download_eggNOG_files.tsv"
-    conda:
-        "../envs/eggNOG.yaml"
-    shell:
-        """
-        download_eggnog_data.py -yf --data_dir {params.eggnog_dir} &> {log}
-        """
+        touch(f"{DBDIR}/finished")
 
 
 rule download_atlas_files:
@@ -102,39 +91,12 @@ rule download_atlas_files:
             raise OSError(2, "Invalid checksum", output[0])
 
 
-rule gtdb_download_db:
-    output:
-        temp(f"{GTDBTK_DATA_PATH}/gtdb_data.tar.gz"),
-    params:
-        gtdb_data_url=f"{GTDB_DATA_URL}",
-    log:
-        "logs/download/gtdbtk.log",
-    benchmark:
-        "logs/benchmarks/download/gtdbtk.tsv"
-    conda:
-        "../envs/gtdbtk.yaml"
-    shell:
-        """
-        wget --no-check-certificate {params.gtdb_data_url} -O {output} &> {log}
-        """
 
-
-rule gtdb_extract:
-    input:
-        rules.gtdb_download_db.output,
-    output:
-        touch(os.path.join(GTDBTK_DATA_PATH, "downloaded_success")),
-    conda:
-        "../envs/gtdbtk.yaml"
-    log:
-        "logs/download/gtdbtk_untar.log",
-    benchmark:
-        "logs/benchmarks/download/gtdbtk_untar.tsv"
-    shell:
-        """
-        tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 &> {log}
-        """
-
+###############################
+####                       ####
+####        Binning        ####
+####                       ####
+###############################
 
 rule checkm2_download_db:
     output:
@@ -205,6 +167,120 @@ rule genomad_download_db:
         """
 
 
+
+###############################
+####                       ####
+####       Annotation      ####
+####                       ####
+###############################
+
+rule download_eggNOG_files:
+    output:
+        f"{EGGNOG_DIR}/eggnog.db",
+        f"{EGGNOG_DIR}/eggnog_proteins.dmnd",
+    params:
+        eggnog_dir=f"{EGGNOG_DIR}",
+    log:
+        "logs/download/download_eggNOG_files.log",
+    benchmark:
+        "logs/benchmarks/download/download_eggNOG_files.tsv"
+    conda:
+        "../envs/eggNOG.yaml"
+    shell:
+        """
+        download_eggnog_data.py -yf --data_dir {params.eggnog_dir} &> {log}
+        """
+
+
+rule metaeuk_download:
+    output:
+        dbdir=directory(f"{DBDIR}/MetaEuk"),
+        database=os.path.join(f"{DBDIR}/MetaEuk", config["metaeuk_database_name"]),
+    params:
+        metaeuk_database=config["metaeuk_database"],
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    log:
+        "logs/genomes/annotations/genomes/metaeuk/download_MetaEuk_database.log",
+    benchmark:
+        "logs/benchmarks/metaeuk/download_MetaEuk_database.tsv"
+    conda:
+        "../envs/metaeuk.yaml"
+    shell:
+        "metaeuk databases {params.metaeuk_database} {output.database} {output.dbdir}/tmp "
+        " --compressed 1 "
+        " --threads {threads} "
+        " &> {log}"
+
+
+rule dram_download:
+    output:
+        dbdir=directory(f"{DBDIR}/DRAM/db/"),
+        config=f"{DBDIR}/DRAM/DRAM.config",
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    log:
+        "logs/dram/download_dram.log",
+    benchmark:
+        "logs/benchmarks/dram/download_dram.tsv"
+    conda:
+        "../envs/dram.yaml"
+    shell:
+        " DRAM-setup.py prepare_databases "
+        " --output_dir {output.dbdir} "
+        " --threads {threads} "
+        " --verbose "
+        " --skip_uniref "
+        " &> {log} "
+        " ; "
+        " DRAM-setup.py export_config --output_file {output.config}"
+
+
+rule gtdb_download_db:
+    output:
+        temp(f"{GTDBTK_DATA_PATH}/gtdb_data.tar.gz"),
+    params:
+        gtdb_data_url=f"{GTDB_DATA_URL}",
+    log:
+        "logs/download/gtdbtk.log",
+    benchmark:
+        "logs/benchmarks/download/gtdbtk.tsv"
+    conda:
+        "../envs/gtdbtk.yaml"
+    shell:
+        """
+        wget --no-check-certificate {params.gtdb_data_url} -O {output} &> {log}
+        """
+
+
+rule gtdb_extract:
+    input:
+        rules.gtdb_download_db.output,
+    output:
+        touch(os.path.join(GTDBTK_DATA_PATH, "downloaded_success")),
+    conda:
+        "../envs/gtdbtk.yaml"
+    log:
+        "logs/download/gtdbtk_untar.log",
+    benchmark:
+        "logs/benchmarks/download/gtdbtk_untar.tsv"
+    shell:
+        """
+        tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 &> {log}
+        """
+
+
+
+###############################
+####                       ####
+####    Gene Prediction    ####
+####                       ####
+###############################
+
 rule microeukaryotic_mmseqs2_db:
     output:
         dbdir=directory(f"{DBDIR}/MicroEuk"),
@@ -240,6 +316,7 @@ rule bakta_download_db:
         bakta_db download --type full
         ) &> {log}
         """
+
 
 
 onsuccess:

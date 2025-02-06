@@ -442,7 +442,7 @@ def get_binned_lineages():
             binned_lineages.append(lineage)
     return binned_lineages
 
-rule move_genomes:
+checkpoint move_genomes:
     input:
         prokaryotic_filenames=rules.get_prokaryotic_bins.output.filenames,
         eukaryotic_filenames=rules.get_eukaryotic_bins.output.filenames,
@@ -459,7 +459,7 @@ rule move_genomes:
         "../scripts/move_genomes.sh"
 
 
-rule move_unbinned:
+checkpoint move_unbinned:
     input:
         dirs=expand("tmp/unbinned/{sample}",
             sample=SAMPLES

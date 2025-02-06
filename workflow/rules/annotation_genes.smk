@@ -12,10 +12,10 @@ import os
 rule eggNOG_homology_search:
     input:
         eggnog_db_files=get_eggnog_db_file(),
-        faa="genomes/genomes/{genome}.faa",
+        faa="genomes/genes/{dataset}/{genome}.faa",
     output:
         temp(
-            "Intermediate/genecatalog/annotation/eggNOG/{genome}.emapper.seed_orthologs"
+            "Intermediate/genecatalog/annotations/{dataset}/genes/eggNOG/{genome}.emapper.seed_orthologs"
         ),
     params:
         data_dir=EGGNOG_DIR,
@@ -28,7 +28,7 @@ rule eggNOG_homology_search:
     conda:
         "../envs/eggNOG.yaml"
     log:
-        "logs/genecatalog/annotation/eggnog/{genome}_homology_search_diamond.log",
+        "logs/genecatalog/annotations/{dataset}/genes/eggnog/{genome}_homology_search_diamond.log",
     shell:
         """
         emapper.py -m diamond --no_annot --no_file_comments \
@@ -48,7 +48,7 @@ rule eggNOG_annotation:
         eggnog_db_files=get_eggnog_db_file(),
         seed=rules.eggNOG_homology_search.output,
     output:
-        temp("Intermediate/genecatalog/annotation/eggNOG/{genome}.emapper.annotations"),
+        temp("Intermediate/genecatalog/annotations/{dataset}/genes/eggNOG/{genome}.emapper.annotations"),
     params:
         data_dir=(
             config["virtual_disk"] if config["eggNOG_use_virtual_disk"] else EGGNOG_DIR
@@ -63,7 +63,7 @@ rule eggNOG_annotation:
     conda:
         "../envs/eggNOG.yaml"
     log:
-        "logs/genecatalog/annotation/eggnog/{genome}_annotate_hits_table.log",
+        "logs/genecatalog/annotations/{dataset}/genes/eggnog/{genome}_annotate_hits_table.log",
     shell:
         """
         if [ {params.copyto_shm} == "t" ] ; then
@@ -88,17 +88,21 @@ rule eggNOG_annotation:
 
 
 def get_all_gene_eggnog(wildcards):
-    all_genomes = get_all_genomes(wildcards)
-    return expand(rules.eggNOG_annotation.output, genome=all_genomes)
+    if wildcards.dataset == "genomes":
+        all_genomes = get_all_genomes(wildcards)
+    else:
+        all_genomes = get_all_unbinned(wildcards)
+    return expand(rules.eggNOG_annotation.output,
+            dataset=wildcards.dataset, genome=all_genomes)
 
 rule combine_egg_nog_annotations:
     input:
         get_all_gene_eggnog,
     output:
-        parquet="genomes/annotations/genes/eggNOG.parquet",
-        tsv="genomes/annotations/genes/eggNOG.tsv.gz",
+        parquet="genomes/annotations/{dataset}/genes/eggNOG.parquet",
+        tsv="genomes/annotations/{dataset}/genes/eggNOG.tsv.gz",
     log:
-        "logs/genomes/annotations/genes/eggNOG/combine.log",
+        "logs/genomes/annotations/{dataset}/genes/eggNOG/combine.log",
     resources:
         time=config["simplejob_runtime"],
     run:
@@ -140,13 +144,13 @@ rule combine_egg_nog_annotations:
 
 rule DRAM_annotation:
     input:
-        faa="genomes/genomes/{genome}.faa",
+        faa="genomes/genes/{dataset}/{genome}.faa",
         config=get_dram_config,
     output:
         annotations=temp(
-            "Intermediate/genecatalog/annotation/dram/{genome}/annotations.tsv"
+            "Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/annotations.tsv"
         ),
-        genes=temp("Intermediate/genecatalog/annotation/dram/{genome}/genes.faa"),
+        genes=temp("Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/genes.faa"),
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -157,8 +161,8 @@ rule DRAM_annotation:
         extra=config.get("dram_extra", ""),
         outdir=lambda wc, output: Path(output[0]).parent,
     log:
-        "logs/Genecatalog/annotation/dram/{genome}.log",
-        "logs/Genecatalog/annotation/dram/{genome}.logfile",
+        "logs/Genecatalog/annotations/{dataset}/genes/dram/{genome}.log",
+        "logs/Genecatalog/annotations/{dataset}/genes/dram/{genome}.logfile",
     shell:
         " rm -rf {params.outdir} &> {log[0]};"
         "\n"
@@ -173,18 +177,22 @@ rule DRAM_annotation:
 
 
 def get_all_gene_dram(wildcards):
-    all_genomes = get_all_genomes(wildcards)
-    return expand(rules.DRAM_annotation.output.annotations, genome=all_genomes)
+    if wildcards.dataset == "genomes":
+        all_genomes = get_all_genomes(wildcards)
+    else:
+        all_genomes = get_all_unbinned(wildcards)
+    return expand(rules.DRAM_annotation.output.annotations,
+                dataset=wildcards.dataset, genome=all_genomes)
 
 rule combine_dram_genecatalog_annotations:
     input:
         get_all_gene_dram,
     output:
-        directory("genomes/annotations/genes/dram"),
+        directory("genomes/annotations/{dataset}/genes/dram"),
     resources:
         time=config["simplejob_runtime"],
     log:
-        "logs/genomes/annotations/genes/dram/combine.log",
+        "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
     script:
         "../scripts/combine_dram_gene_annotations.py"
 
