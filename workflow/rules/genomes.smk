@@ -264,6 +264,13 @@ rule get_plasmid_bins:
         df_merged.to_csv(output.stats, sep='\t', index=True, na_rep=0.0)
 
 
+checkpoint get_all:
+    input:
+        paths=expand("Binning/raw_bins/{lineage}.genome.paths.tsv", lineage=['prokaryotic', 'eukaryotic', 'viral', 'plasmid']),
+    output:
+        touch("Binning/raw_bins/all.done"),
+
+
 
 
 
@@ -275,6 +282,7 @@ rule get_plasmid_bins:
 
 rule run_skani:
     input:
+        all_done="Binning/raw_bins/all.done",
         paths="Binning/raw_bins/{lineage}.genome.paths.tsv",
     output:
         "Binning/raw_bins/{lineage}.distance_matrix.txt",
@@ -396,7 +404,7 @@ localrules:
     move_unbinned,
 
 
-checkpoint rename_genomes:
+rule rename_genomes:
     input:
         paths="Binning/raw_bins/{lineage}.paths.tsv",
         mapping_file="Binning/{lineage}.bins2species.tsv",
@@ -418,7 +426,7 @@ checkpoint rename_genomes:
         "../scripts/rename_genomes.py"
 
 
-checkpoint rename_unbinned:
+rule rename_unbinned:
     input:
         unbinned="{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
     output:
@@ -442,15 +450,16 @@ def get_binned_lineages():
             binned_lineages.append(lineage)
     return binned_lineages
 
-checkpoint move_genomes:
+def get_genome_to_move(wildcards):
+    return(expand("tmp/genomes/{lineage}", 
+                lineage=get_binned_lineages()
+            )
+    )
+
+rule move_genomes:
     input:
-        prokaryotic_filenames=rules.get_prokaryotic_bins.output.filenames,
-        eukaryotic_filenames=rules.get_eukaryotic_bins.output.filenames,
-        viral_filenames=rules.get_viral_bins.output.filenames,
-        plasmid_filenames=rules.get_plasmid_bins.output.filenames,
-        dirs=expand("tmp/genomes/{lineage}",
-            lineage=get_binned_lineages()
-        ),
+        all_done="Binning/raw_bins/all.done",
+        dirs=get_genome_to_move,
     output:
         dir=directory("genomes/genomes"),
     log:
@@ -459,7 +468,7 @@ checkpoint move_genomes:
         "../scripts/move_genomes.sh"
 
 
-checkpoint move_unbinned:
+rule move_unbinned:
     input:
         dirs=expand("tmp/unbinned/{sample}",
             sample=SAMPLES

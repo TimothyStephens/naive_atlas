@@ -44,7 +44,7 @@ def get_all_genomes(wildcards):
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."
         )
-        exit(1)
+        #exit(1)
 
     return genomes
 
@@ -60,7 +60,7 @@ def get_all_unbinned(wildcards):
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."
         )
-        exit(1)
+        #exit(1)
 
     return genomes
 

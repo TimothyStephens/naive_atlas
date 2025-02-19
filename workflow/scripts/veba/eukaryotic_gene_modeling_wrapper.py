@@ -51,7 +51,7 @@ def get_partition_organelle_sequences_single_cmd(input_filepaths, output_filepat
 OUTPUT_DIRECTORY={}
 INTERMEDIATE_DIRECTORY={}
 cat $OUTPUT_DIRECTORY/*.fa | grep "^>" | cut -c2- | cut -f1 -d " " > $INTERMEDIATE_DIRECTORY/eukaryotic_contigs.list
-cat $OUTPUT_DIRECTORY/mitochondrion/*.fa | grep "^>" | cut -c2- | cut -f1 -d " " > $INTERMEDIATE_DIRECTORY/mitochondria_contigs.list
+cat $OUTPUT_DIRECTORY/mitochondrion/*.fa | grep "^>" | cut -c2- | cut -f1 -d " " > $INTERMEDIATE_DIRECTORY/mitochondrion_contigs.list
 cat $OUTPUT_DIRECTORY/plastid/*.fa | grep "^>" | cut -c2- | cut -f1 -d " " > $INTERMEDIATE_DIRECTORY/plastid_contigs.list
 """.format(
     directories["output"],

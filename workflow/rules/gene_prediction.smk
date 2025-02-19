@@ -147,6 +147,7 @@ rule gene_prediction_archaea:
     shell:
         """
         (
+        export PERL5LIB="$CONDA_PREFIX/lib/perl5/site_perl"
         prokka \
             --outdir {params.wd} --force \
             --prefix {params.genome} \
@@ -181,7 +182,7 @@ rule gene_prediction_virus:
     shell:
         """
         (
-        export PERL5LIB="$CONDA_PREFIX/lib/site_perl/5.26.2"
+        export PERL5LIB="$CONDA_PREFIX/lib/site_perl"
         prokka \
             --outdir {params.wd} --force \
             --prefix {params.genome} \
@@ -236,18 +237,33 @@ rule gene_prediction_eukaryote:
         fasta="genomes/genomes/{genome}.fa",
         dbdir=rules.microeukaryotic_mmseqs2_db.output.dbdir,
     output:
+        seq_type="Predict_Genes/genomes/eukaryotes/{genome}.seq_type.tsv",
+        # Nuclear
         faa="Predict_Genes/genomes/eukaryotes/{genome}.faa",
         fna="Predict_Genes/genomes/eukaryotes/{genome}.fna",
-        gff="Predict_Genes/genomes/eukaryotes/{genome}.gff",
+        gff="Predict_Genes/genomes/eukaryotes/{genome}.gff3",
         rrna="Predict_Genes/genomes/eukaryotes/{genome}.rRNA.fna",
         trna="Predict_Genes/genomes/eukaryotes/{genome}.tRNA.fna",
+        # Mitochondrion
+        mito_faa="Predict_Genes/genomes/eukaryotes/{genome}.mitochondrion.faa",
+        mito_fna="Predict_Genes/genomes/eukaryotes/{genome}.mitochondrion.fna",
+        mito_gff="Predict_Genes/genomes/eukaryotes/{genome}.mitochondrion.gff3",
+        mito_rrna="Predict_Genes/genomes/eukaryotes/{genome}.mitochondrion.rRNA.fna",
+        mito_trna="Predict_Genes/genomes/eukaryotes/{genome}.mitochondrion.tRNA.fna",
+        # Plastid
+        plas_faa="Predict_Genes/genomes/eukaryotes/{genome}.plastid.faa",
+        plas_fna="Predict_Genes/genomes/eukaryotes/{genome}.plastid.fna",
+        plas_gff="Predict_Genes/genomes/eukaryotes/{genome}.plastid.gff3",
+        plas_rrna="Predict_Genes/genomes/eukaryotes/{genome}.plastid.rRNA.fna",
+        plas_trna="Predict_Genes/genomes/eukaryotes/{genome}.plastid.tRNA.fna",
     params:
         workflow_folder=f"{workflow_folder}",
-        outdir="Gene_Prediction/eukaryotic/{genome}",
+        genome="{genome}",
+        outdir="Predict_Genes/genomes/eukaryotes/{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/genomes/{genome}.txt"
+        "logs/benchmarks/gene_prediction/genomes/eukaryotes/{genome}.txt"
     log:
-        "logs/gene_prediction/genomes/{genome}.txt",
+        "logs/gene_prediction/genomes/eukaryotes/{genome}.txt",
     conda:
         "../envs/gene_prediction_eukaryotic.yaml"
     threads: config["simplejob_threads"]
@@ -260,6 +276,7 @@ rule gene_prediction_eukaryote:
         mkdir -p {params.outdir}
         {params.workflow_folder}/scripts/veba/eukaryotic_gene_modeling_wrapper.py \
             --fasta {input.fasta} \
+            --name {params.genome} \
             --metaeuk_database {input.dbdir}/MicroEuk50 \
             --metaeuk_split_memory_limit 36G \
             -o {params.outdir} \
@@ -275,27 +292,92 @@ rule gene_prediction_eukaryote:
             --barrnap_reject 0.25 \
             --barrnap_evalue 1e-06 \
             --trnascan_mitochondrial_searchmode='-O' \
-            --trnascan_plastid_searchmode='-O'
+            --trnascan_plastid_searchmode='-O' \
+        && cp {params.outdir}/output/{params.genome}.faa {output.faa} \
+        && cp {params.outdir}/output/{params.genome}.ffn {output.fna} \
+        && cp {params.outdir}/output/{params.genome}.gff {output.gff} \
+        && cp {params.outdir}/output/{params.genome}.rRNA {output.rrna} \
+        && cp {params.outdir}/output/{params.genome}.tRNA {output.trna} \
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.faa {output.mito_faa} \
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.ffn {output.mito_fna} \
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.gff {output.mito_gff} \
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.rRNA {output.mito_rrna} \
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.tRNA {output.mito_trna} \
+        && cp {params.outdir}/output/plastid/{params.genome}.faa {output.plas_faa} \
+        && cp {params.outdir}/output/plastid/{params.genome}.ffn {output.plas_fna} \
+        && cp {params.outdir}/output/plastid/{params.genome}.gff {output.plas_gff} \
+        && cp {params.outdir}/output/plastid/{params.genome}.rRNA {output.plas_rrna} \
+        && cp {params.outdir}/output/plastid/{params.genome}.tRNA {output.plas_trna} \
+        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tNuclear"}}' \
+            {params.outdir}/output/{params.genome}.fa \
+            >  {output.seq_type} \
+        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tMitochondrion"}}' \
+            {params.outdir}/output/mitochondrion/{params.genome}.fa \
+            >> {output.seq_type} \
+        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tPlastid"}}' \
+            {params.outdir}/output/plastid/{params.genome}.fa \
+            >> {output.seq_type}
         ) &> {log}
         """
 
 
-rule move_genome_predicted_genes:
+def get_bacteria_predicted_genes(wildcards):
+    return(
+        expand(rules.gene_prediction_bacteria.output.faa,
+            genome=get_genomes_for_gene_prediction("bacteria")
+        )
+    )
+
+def get_archaea_predicted_genes(wildcards):
+    return(
+        expand(rules.gene_prediction_archaea.output.faa,
+            genome=get_genomes_for_gene_prediction("archaea")
+        )
+    )
+
+def get_eukaryote_predicted_genes(wildcards):
+    return(
+        expand(rules.gene_prediction_eukaryote.output.faa,
+            genome=get_genomes_for_gene_prediction("eukaryote")
+        )
+    )
+
+def get_virus_predicted_genes(wildcards):
+    return(
+        expand(rules.gene_prediction_virus.output.faa,
+            genome=get_genomes_for_gene_prediction("virus")
+        )
+    )
+
+def get_plasmid_predicted_genes(wildcards):
+    return(
+        expand(rules.gene_prediction_plasmid.output.faa,
+            genome=get_genomes_for_gene_prediction("plasmid")
+        )
+    )
+
+def get_all_output_predicted_genes(wildcards):
+    genomes = []
+    genomes.extend(get_genomes_for_gene_prediction("bacteria"))
+    genomes.extend(get_genomes_for_gene_prediction("archaea"))
+    genomes.extend(get_genomes_for_gene_prediction("eukaryote"))
+    genomes.extend(get_genomes_for_gene_prediction("virus"))
+    genomes.extend(get_genomes_for_gene_prediction("plasmid"))
+    return(genomes)
+
+checkpoint move_genome_predicted_genes:
     input:
-        bacteria=expand(rules.gene_prediction_bacteria.output.faa,
-                    genome=get_genomes_for_gene_prediction("bacteria")),
-        archaea=expand(rules.gene_prediction_archaea.output.faa,
-                    genome=get_genomes_for_gene_prediction("archaea")),
-        eukaryote=expand(rules.gene_prediction_eukaryote.output.faa,
-                    genome=get_genomes_for_gene_prediction("eukaryote")),
-        viral=expand(rules.gene_prediction_virus.output.faa,
-                    genome=get_genomes_for_gene_prediction("virus")),
-        plasmid=expand(rules.gene_prediction_plasmid.output.faa,
-                    genome=get_genomes_for_gene_prediction("plasmid")),
+        bacteria=get_bacteria_predicted_genes,
+        archaea=get_archaea_predicted_genes,
+        eukaryote=get_eukaryote_predicted_genes,
+        viral=get_virus_predicted_genes,
+        plasmid=get_plasmid_predicted_genes,
     output:
-        outdir=directory("genomes/genes/genomes"),
+        faa_files=expand("genomes/genes/genomes/{genome}.faa",
+                    genome=get_all_output_predicted_genes('')),
     params:
         workflow_folder=f"{workflow_folder}",
+        outdir=directory("genomes/genes/genomes"),
         prokaryotic_stats="genomes/genes/genomes/MAG_prokaryotic.gene_stats.tsv",
         eukaryotic_stats="genomes/genes/genomes/MAG_eukaryotic.gene_stats.tsv",
         viral_stats="genomes/genes/genomes/MAG_viral.gene_stats.tsv",
@@ -311,31 +393,31 @@ rule move_genome_predicted_genes:
     shell:
         """
         (
-        rm -fr {output.outdir}; mkdir -p {output.outdir}
+        rm -fr {params.outdir}; mkdir -p {params.outdir}
         
         {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \
             -i {input.archaea} \
-            -o {output.outdir} \
+            -o {params.outdir} \
             -s {params.prokaryotic_stats}
         
         {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \
             -i {input.bacteria} \
-            -o {output.outdir} \
+            -o {params.outdir} \
             -s {params.prokaryotic_stats}
         
         {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \
             -i {input.viral} \
-            -o {output.outdir} \
+            -o {params.outdir} \
             -s {params.viral_stats}
         
         {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \
             -i {input.plasmid} \
-            -o {output.outdir} \
+            -o {params.outdir} \
             -s {params.plasmid_stats}
         
         {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_EUK.py \
             -i {input.eukaryote} \
-            -o {output.outdir} \
+            -o {params.outdir} \
             -s {params.eukaryotic_stats}
         
         ) &> {log}
@@ -392,13 +474,19 @@ def get_all_unbinned_genes(wildcards):
                genome=all_genomes)
     )
 
-rule move_unbinned_predicted_genes:
+def get_all_output_predicted_genes_unbinned(wildcards):
+    genomes = get_all_unbinned(wildcards)
+    return(genomes)
+
+checkpoint move_unbinned_predicted_genes:
     input:
         unbinned=get_all_unbinned_genes,
     output:
-        outdir=directory("genomes/genes/unbinned"),
+        outdir=expand("genomes/genes/unbinned/{genome}.faa",
+                genome=get_all_output_predicted_genes_unbinned('')),
     params:
         workflow_folder=f"{workflow_folder}",
+        outdir=directory("genomes/genes/unbinned"),
         unbinned_stats="genomes/genes/unbinned/Unbinned.gene_stats.tsv",
     log:
         "logs/gene_prediction/unbinned/move_predicted_genes.txt",
@@ -411,11 +499,11 @@ rule move_unbinned_predicted_genes:
     shell:
         """
         (
-        rm -fr {output.outdir}; mkdir -p {output.outdir}
+        rm -fr {params.outdir}; mkdir -p {params.outdir}
         
         {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PRODIGAL.py \
             -i {input.unbinned} \
-            -o {output.outdir} \
+            -o {params.outdir} \
             -s {params.unbinned_stats}
         
         ) &> {log}

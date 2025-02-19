@@ -119,9 +119,10 @@ rule combine_egg_nog_annotations:
             del Tables
 
             combined.columns = EGGNOG_HEADER
-            #combined["Seed_evalue"] = combined["Seed_evalue"].astype("bytes")
-            #combined["Seed_Score"] = combined["Seed_Score"].astype("bytes")
-
+            combined["Seed_evalue"] = combined["Seed_evalue"].astype("bytes")
+            combined["Seed_Score"] = combined["Seed_Score"].astype("bytes")
+            combined = combined.astype(str)
+            
             combined.to_parquet(output["parquet"], index=False)
             combined.to_csv(output["tsv"], sep='\t', index=False)
         except Exception as e:
@@ -211,12 +212,12 @@ rule mmseqs2_annotation:
         faa="genomes/genes/{dataset}/{genome}.faa",
         database=rules.mmseqs2_download.output.database,
     output:
-        results="genomes/annotations/{dataset}/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4.gz",
-        tmp=temp(directory("Intermediate/annotations/{dataset}/mmseqs2/{genome}.faa.mmseqs2_{database_name}.tmp")),
+        results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4.gz",
+        tmp=temp(directory("Intermediate/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.tmp")),
     params:
         mmseqs2_opts=config["mmseqs2_opts"],
         mem=int(config["simplejob_memory"]*0.8),
-        results="genomes/annotations/{dataset}/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
+        results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -224,9 +225,9 @@ rule mmseqs2_annotation:
     conda:
         "../envs/mmseqs2.yaml"
     log:
-        "logs/genomes/annotations/{dataset}/mmseqs2/{database_name}/{genome}.log",
+        "logs/genomes/annotations/{dataset}/genes/mmseqs2/{database_name}/{genome}.log",
     benchmark:
-        "logs/benchmarks/genomes/annotations/{dataset}/mmseqs2/{database_name}/{genome}.tsv"
+        "logs/benchmarks/genomes/annotations/{dataset}/genes/mmseqs2/{database_name}/{genome}.tsv"
     shell:
         """
         (
@@ -265,7 +266,7 @@ rule all_mmseqs2:
     input:
         get_all_mmseqs2_annotation,
     output:
-        touch("genomes/annotations/{dataset}/mmseqs2/finished"),
+        touch("genomes/annotations/{dataset}/genes/mmseqs2/finished"),
 
 
 

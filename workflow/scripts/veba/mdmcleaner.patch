@@ -1,31 +1,5 @@
---- /home/timothy/miniforge3/envs/VEBA-binning-prokaryotic_env_v2/lib/python3.8/site-packages/mdmcleaner/review_refdbcontams.py 2024-11-26 08:08:51.341792033 -0500
-+++ review_refdbcontams.py  2023-01-12 05:33:49.000000000 -0500
-@@ -302,7 +302,7 @@
-            blastrecords = [self.blastxjobs[x].seqrecord[0] for x in self.blastxjobs if len(self.blastxjobs[x].seqrecord[0]) < 100000] #for now skipping reference contigs larger than 100 kb (takes too long to blastx). TODO: in such cases, search for ribosomal & other markergenes to verify classification!
-            sys.stderr.write("\nblasting {} entries with blastx against reference proteins (another {} entries were too long to blastx efficiently\n".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
-            if len(blastrecords) == 0:
-+               return [None]
--               return
-            basic_blastarglist = [ (blastrecords, blastdb, "diamond blastx") for blastdb in self.blastxdbs ]
-            # ~ import pdb; pdb.set_trace()
-            import time
---- /home/timothy/miniforge3/envs/VEBA-binning-prokaryotic_env_v2/lib/python3.8/site-packages/mdmcleaner/getdb.py   2024-11-21 10:01:47.409683731 -0500
-+++ getdb.py    2023-01-12 05:33:49.000000000 -0500
-@@ -47,9 +47,9 @@
- #todo: find common names for gtdb and ncbi dbs to simplify things
- #todo: find actual names for ncbi dbs
- dbfiles = { "gtdb" : { "protblastdbs" : ["gtdbplus_protdb.dmnd"], \
-+                       "nucblastdbs" : ["concat_refgenomes", "SILVA_138.2_SSURef_NR99_tax_silva", "SILVA_138.2_LSURef_NR99_tax_silva"] ,\
-+                       "ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.2_SSURef_NR99_tax_silva"], \
-+                       "lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.2_LSURef_NR99_tax_silva"], \
--                       "nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
--                       "ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva"], \
--                       "lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_LSURef_NR99_tax_silva"], \
-                        "genome_nucblastdbs" : ["concat_refgenomes"], \
-                        "mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
-            "ncbi" : {  "protblastdbs" : ["nr"], \
---- /home/timothy/miniforge3/envs/main/envs/test_mdm/lib/python3.13/site-packages/mdmcleaner/read_gtdb_taxonomy.py	2023-01-12 05:33:49.000000000 -0500
-+++ /scratch/timothy/tmp/naive_atlas_CYBD/databases/conda_envs/caa4cd561c6993965a40b981e22548c9_/lib/python3.13/site-packages/mdmcleaner/read_gtdb_taxonomy.py	2025-02-03 15:26:07.779470307 -0500
+--- read_gtdb_taxonomy.py	2023-01-12 05:33:49.000000000 -0500
++++ read_gtdb_taxonomy.py	2025-02-03 15:26:07.779470307 -0500
 @@ -630,11 +630,11 @@
  			the seqids in their taxid-lookuptables as well as the protein files have a "RS_" or "GB_" prefix, but the genomic files do not.
  			have to remove that prefix here
@@ -49,8 +23,8 @@
  		repcheckfile.write("{}\n".format("\n".join(["{}\t{}".format(x[0], x[1]) for x in reptuple_list]))) #todo: this is only for checking sanity of gtdb downloads (which genomes are considered "representative" and have seqdate provided? which are missing? are all species/genera/phyla covered? which are missing)? comment this out later
  	sys.stderr.write("\r\tassigned {} contigs to {} taxids\n".format(contigcounter, linecounter))
  	sys.stderr.flush()	
---- /home/timothy/miniforge3/envs/main/envs/test_mdm/lib/python3.13/site-packages/mdmcleaner/read_ncbi_taxonomy.py	2023-01-12 05:33:49.000000000 -0500
-+++ /scratch/timothy/tmp/naive_atlas_CYBD/databases/conda_envs/caa4cd561c6993965a40b981e22548c9_/lib/python3.13/site-packages/mdmcleaner/read_ncbi_taxonomy.py	2025-02-03 15:25:48.731321060 -0500
+--- read_ncbi_taxonomy.py	2023-01-12 05:33:49.000000000 -0500
++++ read_ncbi_taxonomy.py	2025-02-03 15:25:48.731321060 -0500
 @@ -64,7 +64,8 @@
  		
  	max_attempts = 10
@@ -61,8 +35,8 @@
  	current_attempts = 0
  	
  	while current_attempts < max_attempts:
---- /home/timothy/miniforge3/envs/main/envs/test_mdm/lib/python3.13/site-packages/mdmcleaner/blasthandler.py	2023-01-12 05:33:49.000000000 -0500
-+++ /scratch/timothy/tmp/naive_atlas_CYBD/databases/conda_envs/caa4cd561c6993965a40b981e22548c9_/lib/python3.13/site-packages/mdmcleaner/blasthandler.py	2025-02-03 15:25:19.731093677 -0500
+--- blasthandler.py	2023-01-12 05:33:49.000000000 -0500
++++ blasthandler.py	2025-02-03 15:25:19.731093677 -0500
 @@ -843,7 +843,8 @@
  	outfmt = re.sub(" std ", " qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore ", outfmt).strip().split() #blast allows "std" keyword in outfmt, diamond doesn't
  	if type(query) == list: #list indicates a list of seqrecords
@@ -73,8 +47,8 @@
  		misc.write_fasta(query, tempname)
  		query = tempname
  	# ~ else:
---- /home/timothy/miniforge3/envs/main/envs/test_mdm/lib/python3.13/site-packages/mdmcleaner/getmarkers.py	2023-01-12 05:33:49.000000000 -0500
-+++ /scratch/timothy/tmp/naive_atlas_CYBD/databases/conda_envs/caa4cd561c6993965a40b981e22548c9_/lib/python3.13/site-packages/mdmcleaner/getmarkers.py	2025-02-03 15:24:53.518887983 -0500
+--- getmarkers.py	2023-01-12 05:33:49.000000000 -0500
++++ getmarkers.py	2025-02-03 15:24:53.518887983 -0500
 @@ -157,7 +157,8 @@
  	subfastas=list(subfastas)
  	for i in range(len(subfastas)):
@@ -85,3 +59,29 @@
  			misc.unixzcat(subfastas[i], outfilename=tempfilename)
  			subfastas[i] = tempfilename
  			tempfilelist.append(tempfilename)
+--- getdb.py	2023-01-12 05:33:49.000000000 -0500
++++ getdb.py	2025-02-11 12:46:03.309350777 -0500
+@@ -47,9 +47,9 @@
+ #todo: find common names for gtdb and ncbi dbs to simplify things
+ #todo: find actual names for ncbi dbs
+ dbfiles = { "gtdb" : {	"protblastdbs" : ["gtdbplus_protdb.dmnd"], \
+-						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
+-						"ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva"], \
+-						"lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_LSURef_NR99_tax_silva"], \
++						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.2_SSURef_NR99_tax_silva", "SILVA_138.2_LSURef_NR99_tax_silva"] ,\
++						"ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.2_SSURef_NR99_tax_silva"], \
++						"lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.2_LSURef_NR99_tax_silva"], \
+ 						"genome_nucblastdbs" : ["concat_refgenomes"], \
+ 						"mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
+ 			"ncbi" : {  "protblastdbs" : ["nr"], \
+--- review_refdbcontams.py	2023-01-12 05:33:49.000000000 -0500
++++ review_refdbcontams.py	2025-02-11 12:50:19.907302186 -0500
+@@ -302,7 +302,7 @@
+ 			blastrecords = [self.blastxjobs[x].seqrecord[0] for x in self.blastxjobs if len(self.blastxjobs[x].seqrecord[0]) < 100000] #for now skipping reference contigs larger than 100 kb (takes too long to blastx). TODO: in such cases, search for ribosomal & other markergenes to verify classification!
+ 			sys.stderr.write("\nblasting {} entries with blastx against reference proteins (another {} entries were too long to blastx efficiently\n".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
+ 			if len(blastrecords) == 0:
+-				return
++				return [None]
+ 			basic_blastarglist = [ (blastrecords, blastdb, "diamond blastx") for blastdb in self.blastxdbs ]
+ 			# ~ import pdb; pdb.set_trace()
+ 			import time

@@ -136,7 +136,7 @@ rule binning_prokaryotic_metabat:
 
 rule patch_maxbin:
     output:
-        "Binning/patch/maxbin.done"
+        touch("Binning/patch/maxbin.done")
     params:
         workflow_folder=f"{workflow_folder}",
     log:
@@ -147,9 +147,15 @@ rule patch_maxbin:
         """
         (
         set +eu
-        D=$(which run_MaxBin.pl | xargs dirname)
+        D=$(which run_MaxBin.pl | xargs readlink -f | xargs dirname)
         cd $D/
-        patch -N < {params.workflow_folder}/scripts/veba/maxbin.patch
+        
+        if [ ! -e "patch.done" ];
+        then
+            patch -N < {params.workflow_folder}/scripts/veba/maxbin.patch \
+                && touch "patch.done"
+        fi
+        
         ) &> {log}
         """
 
@@ -399,7 +405,7 @@ rule binning_prokaryotic_whokaryote:
 
 rule patch_mdmcleaner:
     output:
-        "Binning/patch/mdmcleaner.done"
+        touch("Binning/patch/mdmcleaner.done")
     params:
         workflow_folder=f"{workflow_folder}",
     log:
@@ -410,9 +416,15 @@ rule patch_mdmcleaner:
         """
         (
         set +eu
-        D=$(which mdmcleaner | xargs dirname)
-        cd $D/../lib/python*/site-packages/mdmcleaner
-        patch -N < {params.workflow_folder}/scripts/veba/mdmcleaner.patch
+        D=$(find "$CONDA_PREFIX" -name "mdmcleaner.py" | xargs readlink -f | xargs dirname)
+        cd $D/
+        
+        if [ ! -e "patch.done" ];
+        then
+            patch -N < {params.workflow_folder}/scripts/veba/mdmcleaner.patch \
+                && touch "patch.done"
+        fi
+        
         ) &> {log}
         """
 
@@ -640,7 +652,7 @@ checkpoint binning_eukaryotic_metabat:
         (
         metabat2 \
             -i {input.contigs} \
-            -o {params.output_path}/bins/bin \
+            -o {params.output_path}/bins/{params.output_prefix}bin \
             -a {input.depth_file} \
             -m {params.minimum_contig_length} \
             --minClsSize {params.minimum_genome_length} \

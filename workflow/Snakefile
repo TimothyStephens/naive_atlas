@@ -138,12 +138,19 @@ rule binning:
 
 
 ## ---- ##
+def get_bin_reports(wildcards):
+    return(expand("reports/bin_report_{lineage}.html", 
+                lineage=get_binned_lineages()
+            )
+    )
+
 rule genomes:
     input:
         "finished_binning",
+        "Binning/raw_bins/all.done",
         "genomes/genomes",
         "genomes/unbinned",
-        expand("reports/bin_report_{lineage}.html", lineage=get_binned_lineages()),
+        get_bin_reports,
     output:
         temp(touch("finished_genomes")),
 
