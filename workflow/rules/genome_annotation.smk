@@ -187,7 +187,7 @@ def get_dram_config(wildcards):
     return config.get("dram_config_file", f"{DBDIR}/DRAM/DRAM.config")
 
 
-rule DRAM_annotate:
+rule genome_DRAM_annotate:
     input:
         fasta="genomes/{dataset}/{genome}.fa",
         config=get_dram_config,
@@ -219,12 +219,12 @@ rule DRAM_annotate:
         #" --checkm_quality {input.checkm} "
 
 
-def get_all_dram(wildcards):
+def get_all_genome_dram(wildcards):
     if wildcards.dataset == "genomes":
         all_genomes = get_all_genomes(wildcards)
     else:
         all_genomes = get_all_unbinned(wildcards)
-    return expand(rules.DRAM_annotate.output.outdir,
+    return expand(rules.genome_DRAM_annotate.output.outdir,
             dataset=wildcards.dataset, genome=all_genomes)
 
 
@@ -233,7 +233,7 @@ localrules:
 
 rule concat_annotations:
     input:
-        get_all_dram,
+        get_all_genome_dram,
     output:
         "genomes/annotations/{dataset}/dram/annotations.tsv",
     resources:
@@ -251,7 +251,7 @@ rule concat_annotations:
             )
 
 
-rule DRAM_destill:
+rule genome_DRAM_destill:
     input:
         rules.concat_annotations.output,
         config=get_dram_config,
@@ -272,7 +272,7 @@ rule DRAM_destill:
         "  &> {log}"
 
 
-rule get_all_modules:
+rule get_all_genome_modules:
     input:
         annotations="genomes/annotations/{dataset}/dram/annotations.tsv",
         config=get_dram_config,
@@ -306,10 +306,10 @@ rule dram:
 ####                       ####
 ###############################
 
-rule metaeuk_annotation:
+rule genome_metaeuk_annotation:
     input:
         fasta="genomes/{dataset}/{genome}.fa",
-        database=rules.metaeuk_download.output.database,
+        database=rules.mmseqs2_download.output.database,
     output:
         codon="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.codon.fas",
         fas="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.fas",
@@ -404,41 +404,41 @@ rule metaeuk_annotation:
 
 
 
-def get_all_metaeuk(wildcards):
+def get_all_genome_metaeuk(wildcards):
     if wildcards.dataset == "genomes":
         all_genomes = get_all_genomes(wildcards)
     else:
         all_genomes = get_all_unbinned(wildcards)
     return all_genomes
 
-def get_all_metaeuk_contigs(wildcards):
-    all_genomes = get_all_metaeuk(wildcards)
+def get_all_genome_metaeuk_contigs(wildcards):
+    all_genomes = get_all_genome_metaeuk(wildcards)
     return(expand('genomes/{dataset}/{genome}.fa', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
-def get_all_metaeuk_contig_results(wildcards):
-    all_genomes = get_all_metaeuk(wildcards)
+def get_all_genome_metaeuk_contig_results(wildcards):
+    all_genomes = get_all_genome_metaeuk(wildcards)
     return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
-def get_all_metaeuk_mag_results(wildcards):
-    all_genomes = get_all_metaeuk(wildcards)
+def get_all_genome_metaeuk_mag_results(wildcards):
+    all_genomes = get_all_genome_metaeuk(wildcards)
     return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
-rule combine_metaeuk:
+rule combine_genome_metaeuk:
     input:
-        contig_fasta_files=get_all_metaeuk_contigs,
-        contig_results_files=get_all_metaeuk_contig_results,
-        mag_results_files=get_all_metaeuk_mag_results,
+        contig_fasta_files=get_all_genome_metaeuk_contigs,
+        contig_results_files=get_all_genome_metaeuk_contig_results,
+        mag_results_files=get_all_genome_metaeuk_mag_results,
     output:
         contig_output_table="genomes/annotations/{dataset}/metaeuk_contig_predictions.tsv",
         mag_output_table="genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv",
     params:
-        genomes=get_all_metaeuk,
+        genomes=get_all_genome_metaeuk,
     log:
         "logs/genomes/annotations/{dataset}/metaeuk/combine.log",
     script:
@@ -447,14 +447,85 @@ rule combine_metaeuk:
 
 
 localrules:
-    all_metaeuk,
+    all_genome_metaeuk,
 
-rule all_metaeuk:
+rule all_genome_metaeuk:
     input:
-        rules.combine_metaeuk.output.contig_output_table,
-        rules.combine_metaeuk.output.mag_output_table,
+        rules.combine_genome_metaeuk.output.contig_output_table,
+        rules.combine_genome_metaeuk.output.mag_output_table,
     output:
         touch("genomes/annotations/{dataset}/metaeuk/finished"),
+
+
+
+
+
+###############################
+####                       ####
+####        MMSEQS2        ####
+####                       ####
+###############################
+
+rule genome_mmseqs2_easy_taxonomy:
+    input:
+        fasta="genomes/{dataset}/{genome}.fa",
+        database=rules.mmseqs2_download.output.database,
+    output:
+        result_lca="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_lca.tsv",
+        result_report="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_report",
+        result_tophit_aln="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_tophit_aln",
+        result_tophit_report="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_tophit_report",
+        tmp=temp(directory("genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy.tmp")),
+    params:
+        out="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result",
+        mmseqs2_easy_taxonomy=config["mmseqs2_easy_taxonomy"],
+        mag_id=lambda wildcards: wildcards.genome,
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    container:
+        # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
+        "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
+    log:
+        "logs/genomes/annotations/{dataset}/mmseqs2/{genome}.log",
+    benchmark:
+        "logs/benchmarks/genomes/annotations/{dataset}/mmseqs2/{genome}.tsv"
+    shell:
+        """
+        (
+        mkdir -p {output.tmp}
+        mmseqs easy-taxonomy \
+          {input.fasta} {input.database} \
+          {params.out} {output.tmp} \
+          {params.mmseqs2_easy_taxonomy} \
+          --threads {threads}
+        ) &> {log}
+        """
+
+
+
+def get_all_genome_mmseqs2_easy_taxonomy_results(wildcards):
+    if wildcards.dataset == "genomes":
+        all_genomes = get_all_genomes(wildcards)
+    else:
+        all_genomes = get_all_unbinned(wildcards)
+    
+    return(expand(rules.genome_mmseqs2_easy_taxonomy.output.result_report, 
+                    dataset=wildcards.dataset, genome=all_genomes)
+    )
+
+
+
+localrules:
+    all_genome_mmseqs2_easy_taxonomy,
+
+rule all_genome_mmseqs2_easy_taxonomy:
+    input:
+        get_all_genome_mmseqs2_easy_taxonomy_results,
+    output:
+        touch("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished"),
+
 
 
 

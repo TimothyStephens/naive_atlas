@@ -9,7 +9,7 @@ import os
 
 # output with wildcards "{folder}/{prefix}.emapper.tsv"
 
-rule eggNOG_homology_search:
+rule gene_eggNOG_homology_search:
     input:
         eggnog_db_files=get_eggnog_db_file(),
         faa="genomes/genes/{dataset}/{genome}.faa",
@@ -43,10 +43,10 @@ def calculate_mem_eggnog():
     )
 
 
-rule eggNOG_annotation:
+rule gene_eggNOG_annotation:
     input:
         eggnog_db_files=get_eggnog_db_file(),
-        seed=rules.eggNOG_homology_search.output,
+        seed=rules.gene_eggNOG_homology_search.output,
     output:
         temp("Intermediate/genecatalog/annotations/{dataset}/genes/eggNOG/{genome}.emapper.annotations"),
     params:
@@ -92,10 +92,10 @@ def get_all_gene_eggnog(wildcards):
         all_genomes = get_all_genomes(wildcards)
     else:
         all_genomes = get_all_unbinned(wildcards)
-    return expand(rules.eggNOG_annotation.output,
+    return expand(rules.gene_eggNOG_annotation.output,
             dataset=wildcards.dataset, genome=all_genomes)
 
-rule combine_egg_nog_annotations:
+rule combine_gene_egg_nog_annotations:
     input:
         get_all_gene_eggnog,
     output:
@@ -143,7 +143,7 @@ rule combine_egg_nog_annotations:
 ####              ####
 ######################
 
-rule DRAM_annotation:
+rule gene_DRAM_annotation:
     input:
         faa="genomes/genes/{dataset}/{genome}.faa",
         config=get_dram_config,
@@ -182,10 +182,10 @@ def get_all_gene_dram(wildcards):
         all_genomes = get_all_genomes(wildcards)
     else:
         all_genomes = get_all_unbinned(wildcards)
-    return expand(rules.DRAM_annotation.output.annotations,
+    return expand(rules.gene_DRAM_annotation.output.annotations,
                 dataset=wildcards.dataset, genome=all_genomes)
 
-rule combine_dram_genecatalog_annotations:
+rule combine_gene_dram_genecatalog_annotations:
     input:
         get_all_gene_dram,
     output:
@@ -207,7 +207,7 @@ rule combine_dram_genecatalog_annotations:
 ####              ####
 ######################
 
-rule mmseqs2_annotation:
+rule gene_mmseqs2_annotation:
     input:
         faa="genomes/genes/{dataset}/{genome}.faa",
         database=rules.mmseqs2_download.output.database,
@@ -247,12 +247,12 @@ rule mmseqs2_annotation:
         """
 
 
-def get_all_mmseqs2_annotation(wildcards):
+def get_all_gene_mmseqs2_annotation(wildcards):
     if wildcards.dataset == "genomes":
         all_genomes = get_all_genomes(wildcards)
     else:
         all_genomes = get_all_unbinned(wildcards)
-    return(expand(rules.mmseqs2_annotation.output.results,
+    return(expand(rules.gene_mmseqs2_annotation.output.results,
                         dataset=wildcards.dataset,
                         database_name=config["mmseqs2_database_name"],
                         genome=all_genomes
@@ -264,7 +264,7 @@ localrules:
 
 rule all_mmseqs2:
     input:
-        get_all_mmseqs2_annotation,
+        get_all_gene_mmseqs2_annotation,
     output:
         touch("genomes/annotations/{dataset}/genes/mmseqs2/finished"),
 

@@ -64,7 +64,7 @@ rule all_downloads:
         f"{DBDIR}/geNomad",
         # Annotation
         get_eggnog_db_file(),
-        os.path.join(f"{DBDIR}/MetaEuk", config["metaeuk_database_name"]),
+        os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
         f"{DBDIR}/DRAM/db/",
         os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
         # Gene Prediction
@@ -190,29 +190,6 @@ rule download_eggNOG_files:
         """
         download_eggnog_data.py -yf --data_dir {params.eggnog_dir} &> {log}
         """
-
-
-rule metaeuk_download:
-    output:
-        dbdir=directory(f"{DBDIR}/MetaEuk"),
-        database=os.path.join(f"{DBDIR}/MetaEuk", config["metaeuk_database_name"]),
-    params:
-        metaeuk_database=config["metaeuk_database"],
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-    log:
-        "logs/download/download_MetaEuk_database.log",
-    benchmark:
-        "logs/benchmarks/download/download_MetaEuk_database.tsv"
-    conda:
-        "../envs/metaeuk.yaml"
-    shell:
-        "metaeuk databases {params.metaeuk_database} {output.database} {output.dbdir}/tmp "
-        " --compressed 1 "
-        " --threads {threads} "
-        " &> {log}"
 
 
 rule dram_download:

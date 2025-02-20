@@ -230,18 +230,21 @@ coverm_stats: 'relative_abundance mean trimmed_mean covered_bases variance lengt
 
 genome_annotations: []
 
-metaeuk_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
-metaeuk_database_name: "SwissProt"
-# Extra params to pass to each step of MetaEuk
+mmseqs2_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
+mmseqs2_database_name: "SwissProt"
+
+## mmseqs2 easy-taxonomy
+# Gene annotation
+mmseqs2_opts: ""
+# Genome easy-taxonomy
+mmseqs2_easy_taxonomy: "--compressed 1"
+
+## MetaEuk
 metaeuk_createdb: ""
 metaeuk_predictexons: "--metaeuk-eval 0.0001 -e 100 --min-length 40"
 metaeuk_reduceredundancy: ""
 metaeuk_unitesetstofasta: ""
 metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
-
-mmseqs2_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
-mmseqs2_database_name: "SwissProt"
-mmseqs2_opts: ""
 
 
 

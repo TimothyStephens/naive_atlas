@@ -30,7 +30,7 @@ from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEA
 min_version("6.1")
 
 
-container: "docker://continuumio/miniconda3:4.4.10"
+#container: "docker://continuumio/miniconda3:4.4.10"
 
 
 wildcard_constraints:
@@ -168,12 +168,14 @@ rule quantify_genomes:
 ## ---- ##
 def get_genome_annotations():
     annotation_file_names = {
-        "gtdb_tree":        "genomes/annotations/genomes/tree/finished_gtdb_trees",
-        "gtdb_taxonomy":    "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
-        "dram":             expand("genomes/annotations/{dataset}/dram/finished", dataset="genomes"),
-        "dram_unbinned":    expand("genomes/annotations/{dataset}/dram/finished", dataset="unbinned"),
-        "metaeuk":          expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="genomes"),
-        "metaeuk_unbinned": expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="unbinned"),
+        "gtdb_tree":                      "genomes/annotations/genomes/tree/finished_gtdb_trees",
+        "gtdb_taxonomy":                  "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
+        "dram":                           expand("genomes/annotations/{dataset}/dram/finished", dataset="genomes"),
+        "dram_unbinned":                  expand("genomes/annotations/{dataset}/dram/finished", dataset="unbinned"),
+        "metaeuk":                        expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="genomes"),
+        "metaeuk_unbinned":               expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="unbinned"),
+        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished", dataset="genomes"),
+        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished", dataset="unbinned"),
     }
     annotations_requested = config["genome_annotations"]
 

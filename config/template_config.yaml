@@ -72,6 +72,8 @@ genome_annotations:
 - dram_unbinned
 - metaeuk
 - metaeuk_unbinned
+#- mmseqs2_easy_taxonomy
+- mmseqs2_easy_taxonomy_unbinned
 
 gene_annotations:
 - eggNOG
