@@ -232,6 +232,7 @@ genome_annotations: []
 
 mmseqs2_database: "UniProtKB/Swiss-Prot" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
 mmseqs2_database_name: "SwissProt"
+mmseqs2_memory: 20 #GB of memory for mmseqs2 annotation of genes and genomes - Needs to be bigger if using larger databases (UniRef100, NR, UniProtKB/TrEMBL, GTDB)
 
 ## mmseqs2 easy-taxonomy
 # Gene annotation

@@ -216,11 +216,11 @@ rule gene_mmseqs2_annotation:
         tmp=temp(directory("Intermediate/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.tmp")),
     params:
         mmseqs2_opts=config["mmseqs2_opts"],
-        mem=int(config["simplejob_memory"]*0.8),
+        mem=int(config["mmseqs2_memory"]*0.8),
         results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_memory"],
+        mem=config["mmseqs2_memory"],
         time=config["simplejob_runtime"],
     conda:
         "../envs/mmseqs2.yaml"

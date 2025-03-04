@@ -480,13 +480,13 @@ rule genome_mmseqs2_easy_taxonomy:
         out="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result",
         mmseqs2_easy_taxonomy=config["mmseqs2_easy_taxonomy"],
         mag_id=lambda wildcards: wildcards.genome,
+        mem=int(config["mmseqs2_memory"]*0.8),
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_memory"],
+        mem=config["mmseqs2_memory"],
         time=config["simplejob_runtime"],
-    container:
-        # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
-        "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
+    conda:
+        "../envs/mmseqs2.yaml"
     log:
         "logs/genomes/annotations/{dataset}/mmseqs2/{genome}.log",
     benchmark:
@@ -499,7 +499,8 @@ rule genome_mmseqs2_easy_taxonomy:
           {input.fasta} {input.database} \
           {params.out} {output.tmp} \
           {params.mmseqs2_easy_taxonomy} \
-          --threads {threads}
+          --threads {threads} \
+          --split-memory-limit {params.mem}G
         ) &> {log}
         """
 

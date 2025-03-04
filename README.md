@@ -57,3 +57,72 @@ Here are some ideas I work or want to work on when I have time. If you want to c
 - Implementation of most rules as snakemake wrapper
 - Cloud execution
 - Update to new Snakemake version and use cool reports.
+
+# Output files
+
+Output files will be in `genomes/`.
+Not all annotation files will be present if they are not selected to in the `config.yaml` file.
+The sub result directories:
+
+- `genomes/alignments/` Alignment files.
+  - `all_contigs.fa` All MAG scaffolds used for mapping.
+  - `bams/` Alignment BAM files against `all_contigs.fa`, one per sample.
+
+- `genomes/annotations/` Genome annotation files.
+  - `genomes/annotations/genomes/` Annotation files for each MAG.
+    - `dram/annotations.tsv` DRAM annotations.
+    - `dram/kegg_modules.tsv` DRAM KEGG annotations.
+    - `mmseqs2/` MMSEQS2 annotation of genes from each MAG.
+      - `*.easy_taxonomy_result_report` Kraken-like report from MMSEQS2 easy-taxonomy, can be visualized using [pavian](https://github.com/fbreitwieser/pavian).
+    - `genes/eggNOG.tsv.gz` EggNOG-mapper results.
+    - `genes/dram` DRAM results.
+    - `metaeuk/` MetaEuk taxonomic annotations.
+    - `metaeuk_contig_predictions.tsv` Combined per contig MetaEuk results (from all MAGs).
+    - `metaeuk_mag_predictions.tsv` Combined per MAG MetaEuk results.
+    - `taxonomy/gtdb_taxonomy.tsv` GTDB Taxonomic results.
+    - `tree/` Phylogeny results.
+  - `genomes/annotations/unbinned/` Annotation files for each MAG.
+    - `dram/annotations.tsv` DRAM annotations.
+    - `dram/kegg_modules.tsv` DRAM KEGG annotations.
+    - `genes/mmseqs2/` MMSEQS2 annotation of genes from each sample.
+      - `*.easy_taxonomy_result_report` Kraken-like report from MMSEQS2 easy-taxonomy, can be visualized using [pavian](https://github.com/fbreitwieser/pavian).
+    - `genes/eggNOG.tsv.gz` EggNOG-mapper results.
+    - `genes/dram` DRAM results.
+    - `metaeuk/` MetaEuk taxonomic annotations.
+    - `metaeuk_contig_predictions.tsv` Combined per contig MetaEuk results (from all samples unbinned scaffolds).
+    - `metaeuk_mag_predictions.tsv` Combined per sample MetaEuk results.
+
+- `genomes/clustering/` Results from MAG clustering, can be used to trace the MAGs from each sample back to the final MAGs in `genomes/genomes/`.
+
+- `genomes/coverage/` MAG coverage results. NOTE: Only the full QC reads are used for mapping, so reads filtered becuase they aligned to the supplied "contaminant" datasets will not be present in the results. If you want a host vs. MAG coverage analysis you will have to run it yourself.
+  - `coverage.tsv.gz` Coverage results from `coverm`. This is the main results file for plotting.
+  - `read_stats.tsv` Mapping stats from coverage analysis. Can be used to assess how many reads mapped against your MAGs.
+
+- `genomes/genes/` Predicted coding and non-coding genes.
+  - `genomes/genes/genomes` Predicted genes in each MAG. Some files are specific to prokaryotes vs. eukaryotes.
+    - `*.faa` Predicted gene protein sequences.
+    - `*.fna` Predicted gene nucleotide (CDS) sequences.
+    - `*.gff3` Predicted gene feature coordinates along scaffolds in MAG.
+    - `*.ncRNA.fna` Predicted non-coding genes nucleotide (CDS) sequences.
+    - `*.ncRNA.gff3` Predicted non-coding genes coordinates along scaffolds in MAG.
+    - `*.other.fna` Predicted other features (e.g., crispr repeats) nucleotide (CDS) sequences.
+    - `*.other.gff3` Predicted other features (e.g., crispr repeats) coordinates along scaffolds in MAG.
+    - `*.rRNA.fna` Predicted rRNA genes nucleotide (CDS) sequences.
+    - `*.rRNA.gff3` Predicted rRNA genes coordinates along scaffolds in MAG.
+    - `*.tRNA.fna` Predicted tRNA genes nucleotide (CDS) sequences.
+    - `*.tRNA.gff3` Predicted tRNA genes coordinates along scaffolds in MAG.
+    - `*.tsv` Predicted gene information table.
+    - `*.gene_stats.tsv` Gene stats for each group of MAGs (eukaryotes, prokaryotes, viruses, plasmids)
+
+  - `genomes/genes/unbinned/` Predicted genes in each sample's unbinned scaffolds.
+    - `*.faa` Predicted gene protein sequences.
+    - `*.fna` Predicted gene nucleotide (CDS) sequences.
+    - `*.gff3` Predicted gene feature coordinates along unbinned scaffolds.
+
+- `genomes/genomes/` MAG scaffolds.
+  - `*.fa` MAGs.
+  - `*.genome_quality.tsv` MAG quality metrics.
+
+- `genomes/unbinned/` Unbinned scaffolds from each sample.
+
+
