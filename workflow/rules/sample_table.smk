@@ -128,7 +128,7 @@ def get_files_from_sampleTable(sample, Headers):
 
     if NheadersFound == 0:
         raise FileNotInSampleTableException(
-            f"None of the Files ar in sampleTable, they should be added to the sampleTable later in the workflow"
+            f"None of the Files are in sampleTable, they should be added to the sampleTable later in the workflow"
             + Error_details
         )
     elif NheadersFound < len(Headers):
