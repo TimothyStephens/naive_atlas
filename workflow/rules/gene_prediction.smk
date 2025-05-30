@@ -182,7 +182,7 @@ rule gene_prediction_virus:
     shell:
         """
         (
-        export PERL5LIB="$CONDA_PREFIX/lib/site_perl"
+        export PERL5LIB="$CONDA_PREFIX/lib/perl5/site_perl"
         prokka \
             --outdir {params.wd} --force \
             --prefix {params.genome} \
