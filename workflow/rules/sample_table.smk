@@ -1,10 +1,11 @@
 from naive_atlas.sample_table import load_sample_table, validate_bingroup_size
 
 sampleTable = load_sample_table()
-validate_bingroup_size(sampleTable, config, logger)
+#with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+#    print(sampleTable)
 
 
-def io_params_for_tadpole(io, key="in", allow_singletons=True):
+def io_params_for_tadpole(io, key="in"):
     """This function generates the input flag needed for bbwrap/tadpole for all cases
     possible for get_quality_controlled_reads.
 
@@ -13,8 +14,7 @@ def io_params_for_tadpole(io, key="in", allow_singletons=True):
         key 'in' or 'out'
 
         if io contains attributes:
-            se -> in={se}
-            R1,R2,se -> in1={R1},se in2={R2}
+            R1 -> in={R1/LR}
             R1,R2 -> in1={R1} in2={R2}
 
     """
@@ -23,13 +23,6 @@ def io_params_for_tadpole(io, key="in", allow_singletons=True):
         flag = f"{key}1={io[0]}"
     elif N == 2:
         flag = f"{key}1={io[0]} {key}2={io[1]}"
-    elif N == 3:
-        flag = f"{key}1={io[0]},{io[2]} {key}2={io[1]}"
-        logger.error("Using singletons reads will be deprecated.")
-        if not allow_singletons:
-            raise IOError(
-                "Got an input object with 3 files, but allow_singletons is False"
-            )
 
     else:
         logger.error(
@@ -51,19 +44,15 @@ def input_params_for_bbwrap(input):
         return io_params_for_tadpole(input)
 
 
-# if config.get("workflow") != "download":
-
-#    config = update_config_file_paths(config)
-
 SAMPLES = sampleTable.index.values
 SKIP_QC = False
 
 
-# GROUPS = sampleTable.BinGroup.unique()
+# GROUPS = sampleTable.Bin_group.unique()
 def get_alls_samples_of_group(wildcards):
-    group_of_sample = sampleTable.loc[wildcards.sample, "BinGroup"]
+    group_of_sample = sampleTable.loc[wildcards.sample, "Bin_group"]
 
-    return list(sampleTable.loc[sampleTable.BinGroup == group_of_sample].index)
+    return list(sampleTable.loc[sampleTable.Bin_group == group_of_sample].index)
 
 
 PAIRED_END = sampleTable.columns.str.contains("R2").any() or config.get(
@@ -115,7 +104,10 @@ def get_files_from_sampleTable(sample, Headers):
     It checks various possibilities for errors and throws either a
     FileNotInSampleTableException or a IOError, when something went really wrong.
     """
-
+    
+    if not (sample in sampleTable.index):
+        raise IOError(f"Sample name {sample} is not in sampleTable")
+    
     if not (sample in sampleTable.index):
         raise IOError(f"Sample name {sample} is not in sampleTable")
 

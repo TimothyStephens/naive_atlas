@@ -8,8 +8,7 @@ from ..make_config import make_config, validate_config
 from .create_sample_table import get_samples_from_fastq, simplify_sample_names
 from ..sample_table import (
     validate_sample_table,
-    validate_bingroup_size_cobinning,
-    validate_bingroup_size_metabat,
+    validate_bingroup_size,
     BinGroupSizeError,
 )
 
@@ -154,24 +153,10 @@ def run_init(
 
     # Set default binner depending on number of samples
     n_samples = sample_table.shape[0]
-    if n_samples <= 7:
-        logger.info(
-            "You don't have many samples in your dataset. " "I set 'metabat' as binner"
-        )
-        binner = "metabat"
-
-        try:
-            validate_bingroup_size_metabat(sample_table, logger)
-        except BinGroupSizeError:
-            pass
-
-    else:
-        binner = "vamb"
-        try:
-            validate_bingroup_size_cobinning(sample_table, logger)
-
-        except BinGroupSizeError:
-            pass
+    try:
+        validate_bingroup_size(sample_table)
+    except BinGroupSizeError:
+        pass
 
     make_config(
         db_dir,

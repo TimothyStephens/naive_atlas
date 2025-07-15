@@ -75,9 +75,9 @@ def get_read_stats(fraction, params_in):
     return int(n_reads), int(n_bases)
 
 
-if len(snakemake.input) >= 2:
+if len(snakemake.params.inputs) >= 2:
     n_reads_pe, n_bases_pe = get_read_stats(
-        "pe", "in1={0} in2={1}".format(*snakemake.input)
+        "pe", "in1={0} in2={1}".format(*snakemake.params.inputs)
     )
 
     n_reads_pe = n_reads_pe / 2
@@ -119,7 +119,7 @@ else:
         "Bases",
         "Timestamp",
     ]
-    values = 2 * get_read_stats("", "in=" + snakemake.input[0])
+    values = 2 * get_read_stats("", "in=" + snakemake.params.inputs[0])
 
 with open(snakemake.output.read_counts, "w") as f:
     f.write("\t".join(headers) + "\n")
