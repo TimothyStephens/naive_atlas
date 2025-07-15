@@ -461,7 +461,7 @@ def get_qc_and_lr_reads(wildcards):
 
 rule copy_qc_reads:
     input:
-        unpack(get_qc_reads_and_scaffolding_lr),
+        unpack(get_qc_and_lr_reads),
     output:
         directory("QC/reads/{sample}"),
     run:
