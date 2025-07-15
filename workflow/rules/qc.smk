@@ -630,7 +630,7 @@ rule combine_read_counts:
 rule build_qc_report:
     input:
         zipfiles_QC=expand(
-            "{sample}/sequence_quality_control/read_stats/QC.zip", sample=SAMPLES
+            "{sample}/sequence_quality_control/read_stats/5_QC.zip", sample=SAMPLES
         ),
         read_counts="stats/read_counts.tsv",
         read_length_stats=(
