@@ -435,20 +435,63 @@ rule qcreads:
                             shutil.copyfileobj(infile2, outFile)
 
 
+def get_qc_and_lr_reads(wildcards):
+    """
+    Returns a named dictionary of paths to QC'd reads. If R1, R2, and LR are all
+    provided for a sample, the dictionary also contains the path to the long
+    reads file for scaffolding. This can be unpacked by a rule.
+    """
+    inputs = {
+        "qc_reads_dir": "{sample}/sequence_quality_control/5_QC".format(
+            sample=wildcards.sample
+        )
+    }
+
+    sample_info = sampleTable.loc[wildcards.sample,].dropna()
+
+    if (
+        "Reads_raw_R1" in sample_info
+        and "Reads_raw_R2" in sample_info
+        and "Reads_raw_Long" in sample_info
+    ):
+        inputs["long_reads_for_scaffolding"] = sample_info["Reads_raw_Long"]
+
+    return inputs
+
+
+rule copy_qc_reads:
+    input:
+        unpack(get_qc_reads_and_scaffolding_lr),
+    output:
+        directory("QC/reads/{sample}"),
+    run:
+        import shutil, os
+        from glob import glob
+
+        os.makedirs(str(output[0]), exist_ok=True)
+
+        for f_in in glob(os.path.join(input.qc_reads_dir, "*.fastq.gz")):
+            new_basename = os.path.basename(f_in).replace("_5_QC", "")
+            shutil.copy(f_in, os.path.join(str(output[0]), new_basename))
+
+        if hasattr(input, "long_reads_for_scaffolding"):
+            shutil.copy(input.long_reads_for_scaffolding, str(output[0]))
+
+
 def get_quality_controlled_path(wildcards):
     """
     Gets path to quality controlled reads.
      - Just short hand for the final filtering step.
     """
-    return("{sample}/sequence_quality_control/5_QC")
+    return("QC/reads/{sample}")
 
 def get_quality_controlled_reads(wildcards):
-    """
-    Gets quality controlled reads.
-     - Just short hand for the final filtering step.
-    """
-    return(get_output_fastq(wildcards, "5_QC"))
-
+    files = expand(
+        "QC/reads/{sample}/{sample}_{fraction}.fastq.gz",
+        sample=wildcards.sample,
+        fraction=get_fractions(wildcards.sample),
+    )
+    return(files)
 
 
 ####
@@ -484,7 +527,7 @@ rule get_read_stats:
 
 rule calculate_insert_size:
     input:
-        get_quality_controlled_path,
+        "{sample}/sequence_quality_control/5_QC",
     output:
         ihist=(
             "{sample}/sequence_quality_control/read_stats/QC_insert_size_hist.txt"
@@ -578,7 +621,7 @@ rule combine_insert_stats:
 
         for insert_file in input:
             sample = insert_file.split(os.path.sep)[0]
-            if os.path.isfile(file_path) and os.path.getsize(file_path) == 0:
+            if os.path.isfile(insert_file) and os.path.getsize(insert_file) == 0:
                 continue
             data = parse_comments(insert_file)
             data = pd.Series(data)[
