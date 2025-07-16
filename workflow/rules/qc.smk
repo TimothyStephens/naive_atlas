@@ -55,7 +55,7 @@ def get_input_fastq(wildcards):
 def get_output_fastq(wildcards, step):
     #print(f"wildcards: {wildcards}; step: {step}")
     files = expand(
-        "{sample}/sequence_quality_control/{step}/{sample}_{step}_{fraction}.fastq.gz",
+        "{sample}/sequence_quality_control/{step}/{sample}_{fraction}.fastq.gz",
         sample=wildcards.sample,
         step=step,
         fraction=get_fractions(wildcards.sample),
@@ -88,7 +88,10 @@ def get_fractions(sample):
     if 'Reads_raw_R1' in sampleTable_info and 'Reads_raw_R2' in sampleTable_info: 
         fractions = ["R1", "R2"]
     elif 'Reads_raw_R1' in sampleTable_info and not 'Reads_raw_R2' in sampleTable_info:
-        fractions = ["SE"]
+        if sampleTable.loc[sample, "Interleaved"]:
+            fractions = ["R1", "R2"]
+        else:
+            fractions = ["SE"]
     elif not 'Reads_raw_R1' in sampleTable_info and not 'Reads_raw_R2' in sampleTable_info and 'Reads_raw_Long' in sampleTable_info:
         fractions = ["LR"]
     
@@ -471,8 +474,7 @@ rule copy_qc_reads:
         os.makedirs(str(output[0]), exist_ok=True)
 
         for f_in in glob(os.path.join(input.qc_reads_dir, "*.fastq.gz")):
-            new_basename = os.path.basename(f_in).replace("_5_QC", "")
-            shutil.copy(f_in, os.path.join(str(output[0]), new_basename))
+            shutil.copy(f_in, str(output[0]))
 
         if hasattr(input, "long_reads_for_scaffolding"):
             shutil.copy(input.long_reads_for_scaffolding, str(output[0]))
@@ -700,10 +702,7 @@ rule build_qc_report:
 
 rule finalize_sample_qc:
     input:
-        reads=expand(
-            "QC/reads/{{sample}}_{fraction}.fastq.gz",
-            fraction=MULTIFILE_FRACTIONS,
-        ),
+        reads="QC/reads/{sample}",
         reads_stats_zip=expand(
             "{{sample}}/sequence_quality_control/read_stats/{step}.zip",
             step=PROCESSED_STEPS,

@@ -90,7 +90,9 @@ rule test:
     input:
         #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=SAMPLES, step="raw")
         #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=["N10", "N10longread"], step=["1_raw", "2_deduplicated", "3_quality_filtered", "4_decontamination", "5_QC"]),
-        expand("{sample}/sequence_quality_control/finished_QC", sample=["N10", "N10longread"]),
+        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=["N10hybrid"], step=["1_raw", "2_deduplicated", "3_quality_filtered", "4_decontamination", "5_QC"]),
+        #expand("QC/reads/{sample}", sample=["N10hybrid"])
+        expand("{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
         #expand("{sample}/finished_assembly", sample=["N10", "N10longread"]),
     output:
         touch("finished_test"),
