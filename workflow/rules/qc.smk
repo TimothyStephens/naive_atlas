@@ -109,13 +109,13 @@ PROCESSED_STEPS.append("1_raw")
 
 rule initialize_qc:
     input:
-        get_input_fastq,
+        reads=get_input_fastq,
     output:
-        temp(directory("{sample}/sequence_quality_control/1_raw")),
+        reads=temp(lambda wc: get_output_fastq(wc, "1_raw")),
     priority: 80
     params:
-        inputs =lambda wc: io_params_for_tadpole(get_input_fastq(wc), "in"),
-        outputs=lambda wc: io_params_for_tadpole(get_output_fastq(wc, "1_raw"), "out"),
+        inputs =lambda wc, input:  io_params_for_tadpole(input.reads,  "in"),
+        outputs=lambda wc, output: io_params_for_tadpole(output.reads, "out"),
         interleaved=lambda wc: "t" if check_interleaved(wc.sample) else "f",
         verifypaired=lambda wc: "t" if check_paired(wc.sample) or check_interleaved(wc.sample) else "f",
         extra=config["importqc_params"],
@@ -124,6 +124,8 @@ rule initialize_qc:
     conda:
         "../envs/required_packages.yaml"
     threads: config["simplejob_threads"]
+    benchmark:
+        "logs/benchmarks/QC/1_raw/{sample}.txt"
     resources:
         mem=config["simplejob_memory"],
         java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
@@ -147,26 +149,23 @@ PROCESSED_STEPS.append("2_deduplicated")
 
 rule deduplicate_reads:
     input:
-        "{sample}/sequence_quality_control/1_raw",
+        reads=lambda wc: get_output_fastq(wc, "1_raw"),
     output:
-        temp(directory("{sample}/sequence_quality_control/2_deduplicated")),
-    benchmark:
-        "logs/benchmarks/QC/2_deduplicated/{sample}.txt"
+        reads=temp(lambda wc: get_output_fastq(wc, "2_deduplicated")),
     params:
-        inputs =lambda wc: io_params_for_tadpole(get_output_fastq(wc, "1_raw"         ), "in"),
-        outputs=lambda wc: io_params_for_tadpole(get_output_fastq(wc, "2_deduplicated"), "out"),
-        pairs=lambda wc: " ".join(",".join(x) for x in list(zip(
-            get_output_fastq(wc, "1_raw"),
-            get_output_fastq(wc, "2_deduplicated")
-        ))),
+        inputs =lambda wc, input: io_params_for_tadpole(input.reads,   "in"),
+        outputs=lambda wc, output: io_params_for_tadpole(output.reads, "out"),
+        pairs=lambda wc, input, output: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+        run_step=lambda wc: "t" if check_bool(wc, "DeDuplicate") else "f",
         dupesubs=config["duplicates_allow_substitutions"],
         only_optical=("t" if config.get("duplicates_only_optical") else "f"),
-        run_step=lambda wc: "t" if check_bool(wc, "DeDuplicate") else "f",
     log:
         "{sample}/logs/QC/2_deduplicated.log",
     conda:
         "../envs/required_packages.yaml"
     threads: config["simplejob_threads"]
+    benchmark:
+        "logs/benchmarks/QC/2_deduplicated/{sample}.txt"
     resources:
         mem=config["simplejob_memory"],
         java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
@@ -204,14 +203,16 @@ PROCESSED_STEPS.append("3_quality_filtered")
 
 rule apply_quality_filter:
     input:
-        "{sample}/sequence_quality_control/2_deduplicated",
+        reads=lambda wc: get_output_fastq(wc, "2_deduplicated"),
         adapters=ancient(config["preprocess_adapters"]),
     output:
-        reads=temp(directory("{sample}/sequence_quality_control/3_quality_filtered")),
+        reads=temp(lambda wc: get_output_fastq(wc, "3_quality_filtered")),
         stats="{sample}/logs/{sample}_quality_filtering_stats.txt",
-    benchmark:
-        "logs/benchmarks/QC/3_quality_filtered/{sample}.txt"
     params:
+        inputs =lambda wc, input:  io_params_for_tadpole(input.reads,  "in"),
+        outputs=lambda wc, output: io_params_for_tadpole(output.reads, "out"),
+        pairs=lambda wc, input, output: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+        run_step=lambda wc: "t" if check_bool(wc, "Quality_filter") else "f",
         ref=(
             "ref=%s" % config["preprocess_adapters"]
             if (config["preprocess_adapters"] is not None)
@@ -234,18 +235,13 @@ rule apply_quality_filter:
         interleaved="f",
         maxns=config["preprocess_max_ns"],
         prealloc=config["preallocate_ram"],
-        inputs =lambda wc: io_params_for_tadpole(get_output_fastq(wc, "2_deduplicated"    ), "in"),
-        outputs=lambda wc: io_params_for_tadpole(get_output_fastq(wc, "3_quality_filtered"), "out"),
-        pairs=lambda wc: " ".join(",".join(x) for x in list(zip(
-            get_output_fastq(wc, "2_deduplicated"),
-            get_output_fastq(wc, "3_quality_filtered")
-        ))),
-        run_step=lambda wc: "t" if check_bool(wc, "Quality_filter") else "f",
     log:
         "{sample}/logs/QC/3_quality_filtered.log",
     conda:
         "../envs/required_packages.yaml"
     threads: config["large_threads"]
+    benchmark:
+        "logs/benchmarks/QC/3_quality_filtered/{sample}.txt"
     resources:
         mem=config["large_memory"],
         java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
@@ -301,14 +297,6 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             ancient(config["contaminant_references"].values()),
         output:
             "ref/genome/1/summary.txt",
-        threads: config["large_threads"]
-        resources:
-            mem=config["large_memory"],
-            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        log:
-            "logs/QC/4_decontamination_build_db.log",
-        conda:
-            "../envs/required_packages.yaml"
         params:
             k=config["contaminant_kmer_length"],
             refs_in=" ".join(
@@ -317,6 +305,14 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                     for n, fa in config["contaminant_references"].items()
                 ]
             ),
+        log:
+            "logs/QC/4_decontamination_build_db.log",
+        conda:
+            "../envs/required_packages.yaml"
+        threads: config["large_threads"]
+        resources:
+            mem=config["large_memory"],
+            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
         shell:
             "bbsplit.sh"
             " -Xmx{resources.java_mem}G "
@@ -328,33 +324,30 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
 
     rule run_decontamination:
         input:
-            reads="{sample}/sequence_quality_control/3_quality_filtered",
+            reads=lambda wc: get_output_fastq(wc, "3_quality_filtered"),
             db="ref/genome/1/summary.txt",
         output:
-            reads=temp(directory("{sample}/sequence_quality_control/4_decontamination")),
+            reads=temp(lambda wc: get_output_fastq(wc, "4_decontamination")),
             stats="{sample}/sequence_quality_control/4_decontamination_reference_stats.txt",
             contaminant_folder=directory("{sample}/sequence_quality_control/4_contaminants")
-        benchmark:
-            "logs/benchmarks/QC/4_decontamination/{sample}.txt"
         params:
+            inputs =lambda wc, input:  io_params_for_tadpole(input.reads,  "in"),
+            outputs=lambda wc, output: io_params_for_tadpole(output.reads, "outu"),
+            pairs=lambda wc: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            run_step=lambda wc: "t" if check_bool(wc, "Remove_contaminants") else "f",
+            paired="true" if PAIRED_END else "false",
             maxindel=config["contaminant_max_indel"],
             minratio=config["contaminant_min_ratio"],
             minhits=config["contaminant_minimum_hits"],
             ambiguous=config["contaminant_ambiguous"],
             k=config["contaminant_kmer_length"],
-            paired="true" if PAIRED_END else "false",
-            inputs =lambda wc: io_params_for_tadpole(get_output_fastq(wc, "3_quality_filtered"), "in"),
-            outputs=lambda wc: io_params_for_tadpole(get_output_fastq(wc, "4_decontamination" ), "outu"),
-            pairs=lambda wc: " ".join(",".join(x) for x in list(zip(
-                get_output_fastq(wc, "3_quality_filtered"),
-                get_output_fastq(wc, "4_decontamination")
-            ))),
-            run_step=lambda wc: "t" if check_bool(wc, "Remove_contaminants") else "f",
         log:
             "{sample}/logs/QC/4_decontamination.log",
         conda:
             "../envs/required_packages.yaml"
         threads: config["large_threads"]
+        benchmark:
+            "logs/benchmarks/QC/4_decontamination/{sample}.txt"
         resources:
             mem=config["large_memory"],
             java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
@@ -415,12 +408,12 @@ localrules:
 rule qcreads:
     input:
         (
-            "{sample}/sequence_quality_control/4_decontamination"
+            lambda wc: get_output_fastq(wc, "4_decontamination")
             if len(config.get("contaminant_references", {}).keys()) > 0
-            else "{sample}/sequence_quality_control/3_quality_filtered"
+            else lambda wc: get_output_fastq(wc, "3_quality_filtered")
         ),
     output:
-        temp(directory("{sample}/sequence_quality_control/5_QC")),
+        temp(lambda wc: get_output_fastq(wc, "5_QC")),
     params:
         inputs=lambda wc: get_ribosomal_rna_input(wc),
         outputs=lambda wc: get_output_fastq(wc, "5_QC"),
@@ -445,9 +438,7 @@ def get_qc_and_lr_reads(wildcards):
     reads file for scaffolding. This can be unpacked by a rule.
     """
     inputs = {
-        "qc_reads_dir": "{sample}/sequence_quality_control/5_QC".format(
-            sample=wildcards.sample
-        )
+        "qc_reads": get_output_fastq(wildcards, "5_QC")
     }
 
     sample_info = sampleTable.loc[wildcards.sample,].dropna()
@@ -467,17 +458,19 @@ rule copy_qc_reads:
         unpack(get_qc_and_lr_reads),
     output:
         directory("QC/reads/{sample}"),
+    params:
+        sample=lambda wc: wc.sample,
     run:
         import shutil, os
         from glob import glob
 
         os.makedirs(str(output[0]), exist_ok=True)
 
-        for f_in in glob(os.path.join(input.qc_reads_dir, "*.fastq.gz")):
+        for f_in in input.qc_reads:
             shutil.copy(f_in, str(output[0]))
 
         if hasattr(input, "long_reads_for_scaffolding"):
-            shutil.copy(input.long_reads_for_scaffolding, str(output[0]))
+            shutil.copy(input.long_reads_for_scaffolding, os.path.join(str(output[0]), params.sample + "_LR.fastq.gz"))
 
 
 def get_quality_controlled_path(wildcards):
@@ -487,12 +480,21 @@ def get_quality_controlled_path(wildcards):
     """
     return("QC/reads/{sample}")
 
-def get_quality_controlled_reads(wildcards):
-    files = expand(
-        "QC/reads/{sample}/{sample}_{fraction}.fastq.gz",
-        sample=wildcards.sample,
-        fraction=get_fractions(wildcards.sample),
-    )
+def get_quality_controlled_reads(wildcards, as_dict=False):
+    if as_dict:
+        files = {}
+        for fraction in get_fractions(wildcards.sample):
+            files[fraction].append(expand(
+                "QC/reads/{sample}/{sample}_{fraction}.fastq.gz",
+                sample=wildcards.sample,
+                fraction=fraction,
+            ))
+    else:
+        files = expand(
+            "QC/reads/{sample}/{sample}_{fraction}.fastq.gz",
+           sample=wildcards.sample,
+            fraction=get_fractions(wildcards.sample),
+        )
     return(files)
 
 
