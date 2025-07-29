@@ -30,7 +30,7 @@ def get_ribosomal_rna_input(wildcards):
         return {"clean_reads": clean_reads}
 
 
-def get_input_fastq(wildcards):
+def get_input_fastq(wildcards, return_lr=False):
     """
     Get reads for QC by checking which files were provided.
     
@@ -43,12 +43,17 @@ def get_input_fastq(wildcards):
     sampleTable_info = sampleTable.loc[wildcards.sample, ].dropna()
     
     headers = []
-    if 'Reads_raw_R1' in sampleTable_info:
-        headers.append('Reads_raw_R1')
-    if 'Reads_raw_R2' in sampleTable_info:
-        headers.append('Reads_raw_R2')
-    if 'Reads_raw_Long' in sampleTable_info and not headers: # If only LR provided
-        headers.append('Reads_raw_Long')
+    if not return_lr:
+        if 'Reads_raw_R1' in sampleTable_info:
+            headers.append('Reads_raw_R1')
+        if 'Reads_raw_R2' in sampleTable_info:
+            headers.append('Reads_raw_R2')
+    else:
+        if 'Reads_raw_Long' in sampleTable_info: # If only LR provided
+            headers.append('Reads_raw_Long')
+    
+    if not headers:
+        ValueError(f"No reads found for sample '{wildcards.sample}'.")
     
     return get_files_from_sampleTable(wildcards.sample, headers)
 

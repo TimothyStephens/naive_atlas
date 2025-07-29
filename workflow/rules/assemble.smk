@@ -15,91 +15,15 @@ def get_preprocessing_steps(config):
     if config.get("error_correction_before_assembly", True):
         preprocessing_steps.append("errorcorr")
 
-    if config.get("merge_pairs_before_assembly", True) and PAIRED_END:
-        preprocessing_steps.append("merged")
-
     return ".".join(preprocessing_steps)
 
 
 assembly_preprocessing_steps = get_preprocessing_steps(config)
 
-# I have problems with se reads
-if SKIP_QC & (len(MULTIFILE_FRACTIONS) < 3):
-
-    rule init_pre_assembly_processing:
-        input:  #expect SE or R1,R2 or R1,R2,SE
-            get_quality_controlled_reads,
-        output:
-            temp(
-                expand(
-                    "{{sample}}/assembly/reads/QC_{fraction}.fastq.gz",
-                    fraction=MULTIFILE_FRACTIONS,
-                )
-            ),
-        params:
-            inputs=lambda wc, input: io_params_for_tadpole(input, "in"),
-            interleaved=(
-                lambda wc: "t"
-                if (config.get("interleaved_fastqs", False) & SKIP_QC)
-                else "f"
-            ),
-            outputs=lambda wc, output: io_params_for_tadpole(output, "out"),
-            verifypaired="t" if PAIRED_END else "f",
-        log:
-            "{sample}/logs/assembly/init.log",
-        conda:
-            "../envs/required_packages.yaml"
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
-            time=config["simplejob_runtime"],
-        shell:
-            """
-            reformat.sh {params.inputs} \
-                interleaved={params.interleaved} \
-                {params.outputs} \
-                iupacToN=t \
-                touppercase=t \
-                qout=33 \
-                overwrite=true \
-                verifypaired={params.verifypaired} \
-                addslash=t \
-                trimreaddescription=t \
-                threads={threads} \
-                pigz=t unpigz=t \
-                -Xmx{resources.java_mem}G 2> {log}
-            """
-
-else:
-
-    localrules:
-        init_pre_assembly_processing,
-
-    rule init_pre_assembly_processing:
-        input:
-            lambda wildcards: get_quality_controlled_reads(wildcards),
-        output:
-            temp(
-                expand(
-                    "{{sample}}/assembly/reads/QC_{fraction}.fastq.gz",
-                    fraction=MULTIFILE_FRACTIONS,
-                )
-            ),
-        run:
-            # make symlink
-            assert len(input) == len(
-                output
-            ), "Input and ouput files have not same number, can not create symlinks for all."
-            for i in range(len(input)):
-                os.symlink(os.path.abspath(input[i]), output[i])
-
-
-
 #
 rule normalize_reads:
     input:
-        expand(
+        reads=expand(
             "{{sample}}/assembly/reads/{{previous_steps}}_{fraction}.fastq.gz",
             fraction=MULTIFILE_FRACTIONS,
         ),
@@ -115,11 +39,13 @@ rule normalize_reads:
             "{sample}/assembly/normalization/histogram_{previous_steps}_after.tsv.gz"
         ),
     params:
+        inputs=lambda wc, input: io_params_for_tadpole(input.reads),
+        outputs=lambda wc, output: io_params_for_tadpole(output.reads, key="out"),
+        pairs=lambda wc, input, output: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+        run_step=lambda wc: "t" if check_bool(wc, "Normalize_reads") else "f",
         k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
         target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
         mindepth=config["normalization_minimum_kmer_depth"],
-        inputs=lambda wc, input: io_params_for_tadpole(input),
-        outputs=lambda wc, output: io_params_for_tadpole(output.reads, key="out"),
     log:
         "{sample}/logs/assembly/pre_process/normalization_{previous_steps}.log",
     benchmark:
@@ -132,47 +58,53 @@ rule normalize_reads:
         java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
         time=config["large_runtime"],
     shell:
-        " bbnorm.sh {params.inputs} "
-        " {params.outputs} "
-        " tmpdir={resources.tmpdir} "
-        " tossbadreads=t "
-        " hist={output.histin} "
-        " histout={output.histout} "
-        " mindepth={params.mindepth} "
-        " k={params.k} "
-        " target={params.target} "
-        " prefilter=t "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}G &> {log} "
+        """
+        ( 
+        if [ '{params.run_step}' == 't' ]; then
+            bbnorm.sh {params.inputs} \
+                {params.outputs} \
+                tmpdir={resources.tmpdir} \
+                tossbadreads=t \
+                hist={output.histin} \
+                histout={output.histout} \
+                mindepth={params.mindepth} \
+                k={params.k} \
+                target={params.target} \
+                prefilter=t \
+                threads={threads} \
+                -Xmx{resources.java_mem}G
+        else
+            echo 'NOTE: Skipping step and hard linking files instead.'
+            mkdir -p "{output.reads}"
+            touch "{output.stats}"
+            for group in {params.pairs};
+            do
+                IFS=',' read -ra items <<< "$group"
+                ln ${{items[0]}} ${{items[1]}}
+            done
+        fi
+        ) 1>{log} 2>&1
+        """
 
 
 rule error_correction:
     input:
-        expand(
+        reads=expand(
             "{{sample}}/assembly/reads/{{previous_steps}}_{fraction}.fastq.gz",
             fraction=MULTIFILE_FRACTIONS,
         ),
     output:
-        temp(
+        reads=temp(
             expand(
                 "{{sample}}/assembly/reads/{{previous_steps}}.errorcorr_{fraction}.fastq.gz",
                 fraction=MULTIFILE_FRACTIONS,
             )
         ),
-    benchmark:
-        "logs/benchmarks/assembly/pre_process/{sample}_error_correction_{previous_steps}.txt"
-    log:
-        "{sample}/logs/assembly/pre_process/error_correction_{previous_steps}.log",
-    conda:
-        "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"],
     params:
-        inputs=lambda wc, input: io_params_for_tadpole(input),
-        outputs=lambda wc, output: io_params_for_tadpole(output, key="out"),
+        inputs=lambda wc, input: io_params_for_tadpole(input.reads),
+        outputs=lambda wc, output: io_params_for_tadpole(output.reads, key="out"),
+        pairs=lambda wc, input, output: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+        run_step=lambda wc: "t" if check_bool(wc, "Error_correction") else "f",
         prefilter=2,  # Ignore kmers with less than 2 occurance
         minprob=config["error_correction_minprob"],
         tossdepth=config["error_correction_minimum_kmer_depth"],
@@ -180,297 +112,128 @@ rule error_correction:
         lowdepthfraction=config["error_correction_lowdepth_fraction"],
         aggressive=config["error_correction_aggressive"],
         shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
-    shell:
-        "tadpole.sh -Xmx{resources.java_mem}G "
-        " prefilter={params.prefilter} "
-        " prealloc=1 "
-        " {params.inputs} "
-        " {params.outputs} "
-        " mode=correct "
-        " aggressive={params.aggressive} "
-        " tossjunk={params.tossjunk} "
-        " lowdepthfraction={params.lowdepthfraction}"
-        " tossdepth={params.tossdepth} "
-        " merge=t "
-        " shave={params.shave} rinse={params.shave} "
-        " threads={threads} "
-        " pigz=t unpigz=t "
-        " ecc=t ecco=t "
-        "&> {log} "
-
-
-rule merge_pairs:
-    input:
-        expand(
-            "{{sample}}/assembly/reads/{{previous_steps}}_{fraction}.fastq.gz",
-            fraction=["R1", "R2"],
-        ),
-    output:
-        temp(
-            expand(
-                "{{sample}}/assembly/reads/{{previous_steps}}.merged_{fraction}.fastq.gz",
-                fraction=["R1", "R2", "me"],
-            )
-        ),
-    threads: config["large_threads"],
+    log:
+        "{sample}/logs/assembly/pre_process/error_correction_{previous_steps}.log",
+    benchmark:
+        "logs/benchmarks/assembly/pre_process/{sample}_error_correction_{previous_steps}.txt"
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
     resources:
         mem=config["large_memory"],
         java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
         time=config["large_runtime"],
-    conda:
-        "../envs/required_packages.yaml"
-    log:
-        "{sample}/logs/assembly/pre_process/merge_pairs_{previous_steps}.log",
-    benchmark:
-        "logs/benchmarks/assembly/pre_process/merge_pairs_{previous_steps}/{sample}.txt"
-    shadow:
-        "shallow"
-    params:
-        kmer=config.get("merging_k", MERGING_K),
-        extend2=config.get("merging_extend2", MERGING_EXTEND2),
-        flags=config.get("merging_flags", MERGING_FLAGS),
     shell:
         """
-        bbmerge.sh -Xmx{resources.java_mem}G threads={threads} \
-            in1={input[0]} in2={input[1]} \
-            outmerged={output[2]} \
-            outu={output[0]} outu2={output[1]} \
-            {params.flags} k={params.kmer} \
-            pigz=t unpigz=t \
-            extend2={params.extend2} 2> {log}
+        ( 
+        if [ '{params.run_step}' == 't' ]; then
+            "tadpole.sh \
+                prefilter={params.prefilter} \
+                prealloc=1 \
+                {params.inputs} \
+                {params.outputs} \
+                mode=correct \
+                aggressive={params.aggressive} \
+                tossjunk={params.tossjunk} \
+                lowdepthfraction={params.lowdepthfraction} \
+                tossdepth={params.tossdepth} \
+                merge=t \
+                shave={params.shave} \
+                rinse={params.shave} \
+                threads={threads} \
+                pigz=t \
+                unpigz=t \
+                ecc=t \
+                ecco=t \
+                -Xmx{resources.java_mem}G \
+        else
+            echo 'NOTE: Skipping step and hard linking files instead.'
+            mkdir -p "{output.reads}"
+            touch "{output.stats}"
+            for group in {params.pairs};
+            do
+                IFS=',' read -ra items <<< "$group"
+                ln ${{items[0]}} ${{items[1]}}
+            done
+        fi
+        ) 1>{log} 2>&1
         """
 
 
-assembly_params = {}
+def get_assembly_command(sample_id, assembly_input):
+    """
+    Builds the assembly command using the file paths provided by the
+    'run_assembly' rule's input directive.
+    """
+    assembler = sampleTable.loc[sample_id, 'Assembler']
+    output_dir = f"results/assemblies/{sample_id}_{assembler}"
 
-if config.get("assembler", "megahit") == "megahit":
-    assembly_params["megahit"] = {
-        "default": "",
-        "meta-sensitive": "--presets meta-sensitive",
-        "meta-large": " --presets meta-large",
-    }
-    ASSEMBLY_FRACTIONS = MULTIFILE_FRACTIONS
-    if PAIRED_END and config.get("merge_pairs_before_assembly", True):
-        ASSEMBLY_FRACTIONS = ["R1", "R2", "me"]
-
-    localrules:
-        merge_se_me_for_megahit,
-
-    rule merge_se_me_for_megahit:
-        input:
-            expand(
-                "{{sample}}/assembly/reads/{assembly_preprocessing_steps}_{fraction}.fastq.gz",
-                fraction=["se", "me"],
-                assembly_preprocessing_steps=assembly_preprocessing_steps,
-            ),
-        output:
-            temp(
-                expand(
-                    "{{sample}}/assembly/reads/{assembly_preprocessing_steps}_{fraction}.fastq.gz",
-                    fraction=["co"],
-                    assembly_preprocessing_steps=assembly_preprocessing_steps,
-                )
-            ),
-        shell:
-            "cat {input} > {output}"
-
-    def megahit_input_parsing(input):
-        Nfiles = len(input)
-
-        if Nfiles == 1:
-            out = f"--read {input[0]}"
+    # MEGAHIT / SPADES (Short Reads)
+    if assembler == 'spades':
+        cmd_part = "--meta"
+        # Check for named inputs 'r1'/'r2' or 'se'
+        if 'r1' in assembly_input and 'r2' in assembly_input:
+            cmd_part += f" -1 {assembly_input.r1} -2 {assembly_input.r2}"
+        elif 'r1' in assembly_input and not 'r2' in assembly_input:
+            cmd_part += f" -s {assembly_input.r1}"
         else:
-            out = f"-1 {input[0]} -2 {input[1]} "
+            raise ValueError(f"No trimmed short reads found for assembler '{assembler}' and sample '{sample_id}'.")
+        
+        # Add long reads for SPADES hybrid assembly
+        if assembler == 'spades' and 'lr' in assembly_input:
+            long_read_type = sampleTable.loc[sample_id].get('LongReadType', 'pacbio')
+            cmd_part += f" --{long_read_type} {assembly_input.long_reads}"
+            
+        return f"spades.py {cmd_part} -o {output_dir}" if assembler == 'spades' else f"{assembler} {cmd_part} -o {output_dir}"
 
-            if Nfiles == 3:
-                out += f"--read {input[2]}"
-        return out
-
-    rule run_megahit:
-        input:
-            expand(
-                "{{sample}}/assembly/reads/{assembly_preprocessing_steps}_{fraction}.fastq.gz",
-                fraction=ASSEMBLY_FRACTIONS,
-                assembly_preprocessing_steps=assembly_preprocessing_steps,
-            ),
-        output:
-            temp("{sample}/assembly/megahit/{sample}_prefilter.contigs.fa"),
-        benchmark:
-            "logs/benchmarks/assembly/megahit/{sample}.txt"
-        log:
-            "{sample}/logs/assembly/megahit.log",
-        params:
-            min_count=config.get("megahit_min_count", MEGAHIT_MIN_COUNT),
-            k_min=config.get("megahit_k_min", MEGAHIT_K_MIN),
-            k_max=config.get("megahit_k_max", MEGAHIT_K_MAX),
-            k_step=config.get("megahit_k_step", MEGAHIT_K_STEP),
-            merge_level=config.get("megahit_merge_level", MEGAHIT_MERGE_LEVEL),
-            prune_level=config.get("megahit_prune_level", MEGAHIT_PRUNE_LEVEL),
-            low_local_ratio=config["megahit_low_local_ratio"],
-            min_contig_len=config["minimum_contig_length"],
-            outdir=lambda wc, output: os.path.dirname(output[0]),
-            inputs=lambda wc, input: megahit_input_parsing(input),
-            preset=assembly_params["megahit"][config["megahit_preset"]],
-        conda:
-            "../envs/megahit.yaml"
-        threads: config["assembly_threads"]
-        resources:
-            mem_mb=config["assembly_memory"] * 1000,
-            time=config["assembly_runtime"],
-        shell:
-            """
-            rm -r {params.outdir} 2> {log}
-
-            megahit \
-            {params.inputs} \
-            --tmp-dir {resources.tmpdir} \
-            --num-cpu-threads {threads} \
-            --k-min {params.k_min} \
-            --k-max {params.k_max} \
-            --k-step {params.k_step} \
-            --out-dir {params.outdir} \
-            --out-prefix {wildcards.sample}_prefilter \
-            --min-contig-len {params.min_contig_len} \
-            --min-count {params.min_count} \
-            --merge-level {params.merge_level} \
-            --prune-level {params.prune_level} \
-            --low-local-ratio {params.low_local_ratio} \
-            --memory {resources.mem_mb}000000  \
-            {params.preset} >> {log} 2>&1
-            """
-
-    localrules:
-        rename_megahit_output,
-
-    rule rename_megahit_output:
-        input:
-            "{sample}/assembly/megahit/{sample}_prefilter.contigs.fa",
-        output:
-            temp("{sample}/assembly/{sample}_raw_contigs.fasta"),
-        conda:
-            "../envs/seqkit.yaml"
-        shell:
-            "seqkit sort -l -r -w 0 {input} > {output}"
-
-else:
-    if PAIRED_END:
-        ASSEMBLY_FRACTIONS = ["R1", "R2"]
-        if config.get("merge_pairs_before_assembly", True):
-            ASSEMBLY_FRACTIONS += ["me"]
+    elif assembler == 'megahit':
+        pass
+    # FLYE / METAMDBG (Long Reads)
+    elif assembler in ['flye', 'metaMDBG']:
+        if 'long_reads' not in assembly_input:
+            raise ValueError(f"{assembler.capitalize()} requires long reads for sample '{sample_id}'.")
+        
+        long_reads = assembly_input.long_reads
+        if assembler == 'flye':
+            long_read_type = sampleTable.loc[sample_id].get('LongReadType', 'pacbio').replace('pacbio', 'pacbio-raw').replace('nanopore', 'nano-raw')
+            return f"flye --{long_read_type} {long_reads} --out-dir {output_dir}"
+        else: # metaMDBG
+            return f"metaMDBG -i {long_reads} -o {output_dir}"
     else:
-        ASSEMBLY_FRACTIONS = deepcopy(MULTIFILE_FRACTIONS)
-
-        if config["spades_preset"] == "meta":
-            logger.error(
-                "Metaspades cannot handle single end libraries. Use another assembler or specify 'spades_preset': normal"
-            )
-            exit(1)
-
-    assembly_params["spades"] = {"meta": "--meta", "normal": "", "rna": "--rna"}
-
-    def spades_parameters(wc, input):
-        if not os.path.exists("{sample}/assembly/params.txt".format(sample=wc.sample)):
-            params = {}
-
-            reads = dict(zip(ASSEMBLY_FRACTIONS, input))
-
-            if not PAIRED_END:
-                params["inputs"] = " -s {se} ".format(**reads)
-            else:
-                params["inputs"] = " --pe1-1 {R1} --pe1-2 {R2} ".format(**reads)
-
-                if "se" in ASSEMBLY_FRACTIONS:
-                    params["inputs"] += "--pe1-s {se} ".format(**reads)
-                if "me" in ASSEMBLY_FRACTIONS:
-                    params["inputs"] += "--pe1-m {me} ".format(**reads)
-
-            # Long reads:
-
-            if (config["longread_type"] is not None) & (
-                str(config["longread_type"]).lower() != "none"
-            ):
-                long_read_file = get_files_from_sampleTable(wc.sample, "longreads")[0]
-                params["longreads"] = " --{t} {f} ".format(
-                    t=config["longread_type"], f=long_read_file
-                )
-            else:
-                params["longreads"] = ""
-
-            params["preset"] = assembly_params["spades"][config["spades_preset"]]
-            params["skip_error_correction"] = (
-                "--only-assembler" if config["spades_skip_BayesHammer"] else ""
-            )
-            params["extra"] = config["spades_extra"]
-
-        else:
-            params = {
-                "inputs": "--restart-from last",
-                "preset": "",
-                "skip_error_correction": "",
-                "extra": "",
-                "longreads": "",
-            }
-
-        params["outdir"] = "{sample}/assembly".format(sample=wc.sample)
-
-        return params
-
-    rule run_spades:
-        input:
-            expand(
-                "{{sample}}/assembly/reads/{assembly_preprocessing_steps}_{fraction}.fastq.gz",
-                fraction=ASSEMBLY_FRACTIONS,
-                assembly_preprocessing_steps=assembly_preprocessing_steps,
-            ),
-        output:
-            "{sample}/assembly/contigs.fasta",
-            "{sample}/assembly/scaffolds.fasta",
-        benchmark:
-            "logs/benchmarks/assembly/spades/{sample}.txt"
-        params:
-            p=lambda wc, input: spades_parameters(wc, input),
-            k=config.get("spades_k", SPADES_K),
-        log:
-            "{sample}/logs/assembly/spades.log",
-        conda:
-            "../envs/spades.yaml"
-        threads: config["assembly_threads"]
-        resources:
-            mem=config["assembly_memory"],
-            time=config["assembly_runtime"],
-        shell:
-            # remove pipeline_state file to create all output files again
-            " rm -f {params.p[outdir]}/pipeline_state/stage_*_copy_files 2> {log} ; "
-            " "
-            "spades.py "
-            " --threads {threads} "
-            " --memory {resources.mem} "
-            " -o {params.p[outdir]} "
-            " -k {params.k}"
-            " {params.p[preset]} "
-            " {params.p[extra]} "
-            " {params.p[inputs]} "
-            " {params.p[longreads]} "
-            " {params.p[skip_error_correction]} "
-            " >> {log} 2>&1 "
-
-    localrules:
-        rename_spades_output,
-
-    rule rename_spades_output:
-        input:
-            "{{sample}}/assembly/{sequences}.fasta".format(
-            sequences="scaffolds" if config["spades_use_scaffolds"] else "contigs"
-            ),
-        output:
-            temp("{sample}/assembly/{sample}_raw_contigs.fasta"),
-        conda:
-            "../envs/seqkit.yaml"
-        shell:
-            "seqkit sort -l -r -w 0 {input} > {output}"
+        raise ValueError(f"Unknown assembler '{assembler}'.")
 
 
-# standardizes header labels within contig FASTAs
+rule run_assembly:
+    input:
+        # Use the helper function to get the correct mix of trimmed short reads and raw long reads
+        unpack(get_assembly_inputs)
+    output:
+        contigs = "results/assemblies/{sample}_{assembler}/scaffolds.fasta"
+    params:
+        # The assembly command function now references the named inputs from this rule
+        command = lambda wildcards, input: get_assembly_command(wildcards.sample, input)
+    threads: 16
+    log:
+        "logs/assembly/{sample}_{assembler}.log"
+    shell:
+        """
+        ({params.command} --threads {threads}) > {log} 2>&1
+        """
+
+localrules:
+    rename_assembler_output,
+
+rule rename_assembler_output:
+    input:
+        "{{sample}}/assembly/{sequences}.fasta".format(
+        sequences="scaffolds" if config["spades_use_scaffolds"] else "contigs"
+        ),
+    output:
+        temp("{sample}/assembly/{sample}_raw_contigs.fasta"),
+    conda:
+        "../envs/seqkit.yaml"
+    shell:
+        "seqkit sort -l -r -w 0 {input} > {output}"
 
 
 rule rename_contigs:
