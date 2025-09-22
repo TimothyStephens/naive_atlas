@@ -13,7 +13,7 @@ def load_sample_table(sample_table="samples.tsv"):
 
 
 def validate_sample_table(sampleTable):
-    Expected_Headers = ["Reads_raw_R1", "Reads_raw_R2", "Reads_raw_Long", "Normalize_reads_before_assembly", "Error_correction_before_assembly", "Assembler", "Bin_group"]
+    Expected_Headers = ["Reads_raw_R1", "Reads_raw_R2", "Assembler", "Bin_group"]
     for h in Expected_Headers:
         if not (h in sampleTable.columns):
             logger.error(f"expect '{h}' to be found in samples.tsv")
@@ -65,21 +65,53 @@ def validate_sample_table(sampleTable):
         exit(1)
     
     ### Validate Assembler
+    allowed_assembler_options = [
+        'megahit', 
+        'spades', 'spades-pacbio-raw', 'spades-pacbio-corr', 'spades-pacbio-hq', 'spades-nanopore-raw', 'spades-nanopore-corr', 'spades-nanopore-hq', 
+        'flye-pacbio-raw', 'flye-pacbio-corr', 'flye-pacbio-hq', 'flye-nanopore-raw', 'flye-nanopore-corr', 'flye-nanopore-hq',
+        'metamdbg-pacbio-hq', 'metamdbg-nanopore-hq'
+    ]
     sampleTable['Assembler'] = sampleTable['Assembler'].str.lower()
-    unknown_assemblers = [x for x in sampleTable.Assembler.unique() if not x in ['megahit', 'spades', 'flye']]
+    unknown_assemblers = [x for x in sampleTable.Assembler.unique() if not x in allowed_assembler_options]
     if unknown_assemblers:
         logger.error(
-            f"Assembler found that is not part of allowable options: 'megahit', 'spades', and 'flye'.\nBad assembler options: {unknown_assemblers}"
+            f"Assembler listed is not part of allowable options: {allowed_assembler_options}.\nBad assembler options: {unknown_assemblers}"
         )
         exit(1)
     
-    ### Enforce Bool
-    sampleTable['Normalize_reads_before_assembly']  = sampleTable['Normalize_reads_before_assembly'].map(
-            {'True': True, 'T': True, 'true': True, '1': True, 'False': False, 'F': False, 'false': False, '0': False}
-        ).fillna(False).astype(bool)
-    sampleTable['Error_correction_before_assembly'] = sampleTable['Error_correction_before_assembly'].map(
-            {'True': True, 'T': True, 'true': True, '1': True, 'False': False, 'F': False, 'false': False, '0': False}
-        ).fillna(False).astype(bool)
+    ### Add Long read column if missing
+    if 'Reads_raw_Long' not in sampleTable.columns:
+        sampleTable['Reads_raw_Long'] = pd.NA
+    
+    ### Add missing (optional columns) or Enforce Bool (if provided)
+    sampleTable = check_column(sampleTable, megahit=False, spades=False, flye=False, metamdbg=False, col='Interleaved')
+    sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='DeDuplicate')
+    sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Quality_filter')
+    sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Remove_contaminants')
+    sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Normalize_reads_before_assembly')
+    sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Error_correction_before_assembly')
+
+
+def check_column(df, col, megahit=False, spades=False, flye=False, metamdbg=False):
+    bool_map = {'True': True, 'T': True, 'true': True, '1': True, 'False': False, 'F': False, 'false': False, '0': False}
+    
+    if col in df.columns:
+        df[col] = df[col].astype(str).map(bool_map).fillna(False).astype(bool)
+    else:
+        def new_values(v):
+            if v.startswith('megahit'):
+                return megahit
+            elif v.startswith('spades'):
+                return spades
+            elif v.startswith('flye'):
+                return flye
+            elif v.startswith('metamdbg'):
+                return metamdbg
+            else:
+                return False
+        df[col] = df['Assembler'].apply(new_values)
+    return df
+
 
 
 class BinGroupSizeError(Exception):

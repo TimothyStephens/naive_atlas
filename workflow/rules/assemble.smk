@@ -9,9 +9,6 @@ from copy import deepcopy
 
 def get_preprocessing_steps(config):
     preprocessing_steps = ["QC"]
-    if config.get("normalize_reads_before_assembly", False):
-        preprocessing_steps.append("normalized")
-
     if config.get("error_correction_before_assembly", True):
         preprocessing_steps.append("errorcorr")
 
@@ -20,36 +17,75 @@ def get_preprocessing_steps(config):
 
 assembly_preprocessing_steps = get_preprocessing_steps(config)
 
-#
-rule normalize_reads:
+
+####
+#### Normalize Reads
+####
+def normalize_reads_command(inputs, outputs, outdir, pairs, histin, histout, run_step, k, target, mindepth, threads, resources):
+    if run_step == 't':
+        cmd = f"""
+        bbnorm.sh \\
+            {inputs} \\
+            {outputs} \\
+            tmpdir={resources.tmpdir} \\
+            tossbadreads=t \\
+            hist={histin} \\
+            histout={histout} \\
+            mindepth={mindepth} \\
+            k={k} \\
+            target={target} \\
+            prefilter=t \\
+            threads={threads} \\
+            -Xmx{resources.java_mem}G
+        """
+    else:
+        cmd = f"""
+        echo 'Skipping step, hard linking files instead.'
+        mkdir -p "{outdir}"
+        touch "{histin}"
+        touch "{histout}"
+        IFS=';' read -ra groups <<< '{pairs}'
+        for group in "${{groups[@]}}";
+        do
+            IFS=',' read -ra items <<< "$group"
+            cp "${{items[0]}}" "${{items[1]}}"
+        done
+        """
+    return(cmd)
+
+
+rule normalize_reads_PE:
     input:
-        reads=expand(
-            "{{sample}}/assembly/reads/{{previous_steps}}_{fraction}.fastq.gz",
-            fraction=MULTIFILE_FRACTIONS,
-        ),
+        reads=[
+            "{sample}/sequence_quality_control/{sample}_R1.fastq.gz",
+            "{sample}/sequence_quality_control/{sample}_R2.fastq.gz"
+        ],
     output:
-        reads=temp(
-            expand(
-                "{{sample}}/assembly/reads/{{previous_steps}}.normalized_{fraction}.fastq.gz",
-                fraction=MULTIFILE_FRACTIONS,
-            )
-        ),
-        histin="{sample}/assembly/normalization/histogram_{previous_steps}_before_normalization.tsv.gz",
-        histout=(
-            "{sample}/assembly/normalization/histogram_{previous_steps}_after.tsv.gz"
-        ),
+        reads=temp([
+            "{sample}/assembly/reads/1_normalize_reads_R1.fastq.gz",
+            "{sample}/assembly/reads/1_normalize_reads_R2.fastq.gz"
+        ]),
+        histin ="{sample}/assembly/reads/1_normalize_reads.histogram_before_normalization.tsv.gz",
+        histout="{sample}/assembly/reads/1_normalize_reads.histogram_after_normalization.tsv.gz",
     params:
-        inputs=lambda wc, input: io_params_for_tadpole(input.reads),
-        outputs=lambda wc, output: io_params_for_tadpole(output.reads, key="out"),
-        pairs=lambda wc, input, output: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
-        run_step=lambda wc: "t" if check_bool(wc, "Normalize_reads") else "f",
-        k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
-        target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
-        mindepth=config["normalization_minimum_kmer_depth"],
+        command = lambda wc, input, output, threads, resources: normalize_reads_command(
+            inputs=io_params_for_tadpole(input.reads),
+            outputs=io_params_for_tadpole(output.reads, key="out"),
+            outdir=f"{wc.sample}/assembly/reads",
+            pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            histin=output.histin,
+            histout=output.histout,
+            run_step="t" if check_bool(wc, "Normalize_reads_before_assembly") else "f",
+            k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
+            target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
+            mindepth=config["normalization_minimum_kmer_depth"],
+            threads=threads,
+            resources=resources
+        )
     log:
-        "{sample}/logs/assembly/pre_process/normalization_{previous_steps}.log",
+        "{sample}/logs/assembly/pre_process/1_normalize_reads.log",
     benchmark:
-        "logs/benchmarks/assembly/pre_process/normalization/{sample}_{previous_steps}.txt"
+        "{sample}/benchmarks/assembly/pre_process/1_normalize_reads/{sample}.txt"
     conda:
         "../envs/required_packages.yaml"
     threads: config["large_threads"]
@@ -59,63 +95,167 @@ rule normalize_reads:
         time=config["large_runtime"],
     shell:
         """
-        ( 
-        if [ '{params.run_step}' == 't' ]; then
-            bbnorm.sh {params.inputs} \
-                {params.outputs} \
-                tmpdir={resources.tmpdir} \
-                tossbadreads=t \
-                hist={output.histin} \
-                histout={output.histout} \
-                mindepth={params.mindepth} \
-                k={params.k} \
-                target={params.target} \
-                prefilter=t \
-                threads={threads} \
+        ({params.command}) > {log} 2>&1
+        """
+
+
+rule normalize_reads_SE:
+    input:
+        reads=[
+            "{sample}/sequence_quality_control/{sample}_SE.fastq.gz",
+        ],
+    output:
+        reads=temp([
+            "{sample}/assembly/reads/1_normalize_reads_SE.fastq.gz",
+        ]),
+        histin ="{sample}/assembly/reads/1_normalize_reads.histogram_before_normalization.tsv.gz",
+        histout="{sample}/assembly/reads/1_normalize_reads.histogram_after_normalization.tsv.gz",
+    params:
+        command = lambda wc, input, output, threads, resources: normalize_reads_command(
+            inputs=io_params_for_tadpole(input.reads),
+            outputs=io_params_for_tadpole(output.reads, key="out"),
+            outdir=f"{wc.sample}/assembly/reads",
+            pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            histin=output.histin,
+            histout=output.histout,
+            run_step="t" if check_bool(wc, "Normalize_reads_before_assembly") else "f",
+            k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
+            target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
+            mindepth=config["normalization_minimum_kmer_depth"],
+            threads=threads,
+            resources=resources
+        )
+    log:
+        "{sample}/logs/assembly/pre_process/1_normalize_reads.log",
+    benchmark:
+        "{sample}/benchmarks/assembly/pre_process/1_normalize_reads/{sample}.txt"
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
+    resources:
+        mem=config["large_memory"],
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"],
+    shell:
+        """
+        ({params.command}) > {log} 2>&1
+        """
+
+
+rule normalize_reads_LR:
+    input:
+        reads=[
+            "{sample}/sequence_quality_control/{sample}_LR.fastq.gz",
+        ],
+    output:
+        reads=temp([
+            "{sample}/assembly/reads/1_normalize_reads_LR.fastq.gz",
+        ]),
+        histin ="{sample}/assembly/reads/1_normalize_reads.histogram_before_normalization.tsv.gz",
+        histout="{sample}/assembly/reads/1_normalize_reads.histogram_after_normalization.tsv.gz",
+    params:
+        command = lambda wc, input, output, threads, resources: normalize_reads_command(
+            inputs=io_params_for_tadpole(input.reads),
+            outputs=io_params_for_tadpole(output.reads, key="out"),
+            outdir=f"{wc.sample}/assembly/reads",
+            pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            histin=output.histin,
+            histout=output.histout,
+            run_step="t" if check_bool(wc, "Normalize_reads_before_assembly") else "f",
+            k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
+            target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
+            mindepth=config["normalization_minimum_kmer_depth"],
+            threads=threads,
+            resources=resources
+        )
+    log:
+        "{sample}/logs/assembly/pre_process/1_normalize_reads.log",
+    benchmark:
+        "{sample}/benchmarks/assembly/pre_process/1_normalize_reads/{sample}.txt"
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
+    resources:
+        mem=config["large_memory"],
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"],
+    shell:
+        """
+        ({params.command}) > {log} 2>&1
+        """
+
+
+
+####
+#### Error Correction
+####
+def error_correction_command(inputs, outputs, outdir, pairs, run_step, 
+                            prefilter, minprob, tossdepth, tossjunk, lowdepthfraction, 
+                            aggressive, shave, threads, resources):
+    if run_step == 't':
+        cmd = f"""
+            tadpole.sh \\
+                prefilter={prefilter} \\
+                prealloc=1 \\
+                {inputs} \\
+                {outputs} \\
+                mode=correct \\
+                aggressive={aggressive} \\
+                tossjunk={tossjunk} \\
+                lowdepthfraction={lowdepthfraction} \\
+                tossdepth={tossdepth} \\
+                merge=t \\
+                shave={shave} \\
+                rinse={shave} \\
+                threads={threads} \\
+                pigz=t \\
+                unpigz=t \\
+                ecc=t \\
+                ecco=t \\
                 -Xmx{resources.java_mem}G
-        else
-            echo 'NOTE: Skipping step and hard linking files instead.'
-            mkdir -p "{output.reads}"
-            touch "{output.stats}"
-            for group in {params.pairs};
-            do
-                IFS=',' read -ra items <<< "$group"
-                ln ${{items[0]}} ${{items[1]}}
-            done
-        fi
-        ) 1>{log} 2>&1
         """
+    else:
+        cmd = f"""
+        echo 'Skipping step, hard linking files instead.'
+        mkdir -p "{outdir}"
+        IFS=';' read -ra groups <<< '{pairs}'
+        for group in "${{groups[@]}}";
+        do
+            IFS=',' read -ra items <<< "$group"
+            cp "${{items[0]}}" "${{items[1]}}"
+        done
+        """
+    return(cmd)
 
-
-rule error_correction:
+rule error_correction_PE:
     input:
-        reads=expand(
-            "{{sample}}/assembly/reads/{{previous_steps}}_{fraction}.fastq.gz",
-            fraction=MULTIFILE_FRACTIONS,
-        ),
+        reads=rules.normalize_reads_PE.output.reads,
     output:
-        reads=temp(
-            expand(
-                "{{sample}}/assembly/reads/{{previous_steps}}.errorcorr_{fraction}.fastq.gz",
-                fraction=MULTIFILE_FRACTIONS,
-            )
-        ),
+        reads=temp([
+            "{sample}/assembly/reads/2_error_correction_R1.fastq.gz",
+            "{sample}/assembly/reads/2_error_correction_R2.fastq.gz"
+        ]),
     params:
-        inputs=lambda wc, input: io_params_for_tadpole(input.reads),
-        outputs=lambda wc, output: io_params_for_tadpole(output.reads, key="out"),
-        pairs=lambda wc, input, output: " ".join(",".join(x) for x in list(zip(input.reads, output.reads))),
-        run_step=lambda wc: "t" if check_bool(wc, "Error_correction") else "f",
-        prefilter=2,  # Ignore kmers with less than 2 occurance
-        minprob=config["error_correction_minprob"],
-        tossdepth=config["error_correction_minimum_kmer_depth"],
-        tossjunk="t" if config["error_correction_remove_lowdepth"] else "f",
-        lowdepthfraction=config["error_correction_lowdepth_fraction"],
-        aggressive=config["error_correction_aggressive"],
-        shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
+        command = lambda wc, input, output, threads, resources: error_correction_command(
+            inputs=io_params_for_tadpole(input.reads),
+            outputs=io_params_for_tadpole(output.reads, key="out"),
+            outdir=f"{wc.sample}/assembly/reads",
+            pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
+            prefilter=2,  # Ignore kmers with less than 2 occurance
+            minprob=config["error_correction_minprob"],
+            tossdepth=config["error_correction_minimum_kmer_depth"],
+            tossjunk="t" if config["error_correction_remove_lowdepth"] else "f",
+            lowdepthfraction=config["error_correction_lowdepth_fraction"],
+            aggressive=config["error_correction_aggressive"],
+            shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
+            threads=threads,
+            resources=resources
+        )
     log:
-        "{sample}/logs/assembly/pre_process/error_correction_{previous_steps}.log",
+        "{sample}/logs/assembly/pre_process/2_error_correction.log",
     benchmark:
-        "logs/benchmarks/assembly/pre_process/{sample}_error_correction_{previous_steps}.txt"
+        "{sample}/benchmarks/assembly/pre_process/2_error_correction/{sample}.txt"
     conda:
         "../envs/required_packages.yaml"
     threads: config["large_threads"]
@@ -125,123 +265,336 @@ rule error_correction:
         time=config["large_runtime"],
     shell:
         """
-        ( 
-        if [ '{params.run_step}' == 't' ]; then
-            "tadpole.sh \
-                prefilter={params.prefilter} \
-                prealloc=1 \
-                {params.inputs} \
-                {params.outputs} \
-                mode=correct \
-                aggressive={params.aggressive} \
-                tossjunk={params.tossjunk} \
-                lowdepthfraction={params.lowdepthfraction} \
-                tossdepth={params.tossdepth} \
-                merge=t \
-                shave={params.shave} \
-                rinse={params.shave} \
-                threads={threads} \
-                pigz=t \
-                unpigz=t \
-                ecc=t \
-                ecco=t \
-                -Xmx{resources.java_mem}G \
-        else
-            echo 'NOTE: Skipping step and hard linking files instead.'
-            mkdir -p "{output.reads}"
-            touch "{output.stats}"
-            for group in {params.pairs};
-            do
-                IFS=',' read -ra items <<< "$group"
-                ln ${{items[0]}} ${{items[1]}}
-            done
-        fi
-        ) 1>{log} 2>&1
+        ({params.command}) > {log} 2>&1
         """
 
 
-def get_assembly_command(sample_id, assembly_input):
-    """
-    Builds the assembly command using the file paths provided by the
-    'run_assembly' rule's input directive.
-    """
-    assembler = sampleTable.loc[sample_id, 'Assembler']
-    output_dir = f"results/assemblies/{sample_id}_{assembler}"
+rule error_correction_SE:
+    input:
+        reads=rules.normalize_reads_SE.output.reads,
+    output:
+        reads=temp([
+            "{sample}/assembly/reads/2_error_correction_SE.fastq.gz",
+        ]),
+    params:
+        command = lambda wc, input, output, threads, resources: error_correction_command(
+            inputs=io_params_for_tadpole(input.reads),
+            outputs=io_params_for_tadpole(output.reads, key="out"),
+            outdir=f"{wc.sample}/assembly/reads",
+            pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
+            prefilter=2,  # Ignore kmers with less than 2 occurance
+            minprob=config["error_correction_minprob"],
+            tossdepth=config["error_correction_minimum_kmer_depth"],
+            tossjunk="t" if config["error_correction_remove_lowdepth"] else "f",
+            lowdepthfraction=config["error_correction_lowdepth_fraction"],
+            aggressive=config["error_correction_aggressive"],
+            shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
+            threads=threads,
+            resources=resources
+        )
+    log:
+        "{sample}/logs/assembly/pre_process/2_error_correction.log",
+    benchmark:
+        "{sample}/benchmarks/assembly/pre_process/2_error_correction/{sample}.txt"
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
+    resources:
+        mem=config["large_memory"],
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"],
+    shell:
+        """
+        ({params.command}) > {log} 2>&1
+        """
 
-    # MEGAHIT / SPADES (Short Reads)
-    if assembler == 'spades':
-        cmd_part = "--meta"
+
+rule error_correction_LR:
+    input:
+        reads=rules.normalize_reads_LR.output.reads,
+    output:
+        reads=temp([
+            "{sample}/assembly/reads/2_error_correction_LR.fastq.gz",
+        ]),
+    params:
+        command = lambda wc, input, output, threads, resources: error_correction_command(
+            inputs=io_params_for_tadpole(input.reads),
+            outputs=io_params_for_tadpole(output.reads, key="out"),
+            outdir=f"{wc.sample}/assembly/reads",
+            pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
+            run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
+            prefilter=2,  # Ignore kmers with less than 2 occurance
+            minprob=config["error_correction_minprob"],
+            tossdepth=config["error_correction_minimum_kmer_depth"],
+            tossjunk="t" if config["error_correction_remove_lowdepth"] else "f",
+            lowdepthfraction=config["error_correction_lowdepth_fraction"],
+            aggressive=config["error_correction_aggressive"],
+            shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
+            threads=threads,
+            resources=resources
+        )
+    log:
+        "{sample}/logs/assembly/pre_process/2_error_correction.log",
+    benchmark:
+        "{sample}/benchmarks/assembly/pre_process/2_error_correction/{sample}.txt"
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["large_threads"]
+    resources:
+        mem=config["large_memory"],    
+        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        time=config["large_runtime"], 
+    shell:
+        """
+        ({params.command}) > {log} 2>&1
+        """
+
+
+def get_pre_processed_reads(wildcards, as_dict=False):
+    if as_dict:
+        files = {}
+        for fraction in get_fractions(wildcards.sample):
+            files[fraction] = f"{wildcards.sample}/assembly/reads/2_error_correction_{fraction}.fastq.gz"
+    else:
+        files = expand(
+            "{sample}/assembly/reads/2_error_correction_{fraction}.fastq.gz",
+            sample=wildcards.sample,
+            fraction=get_fractions(wildcards.sample),
+        )
+    return(files)
+
+
+
+####
+#### Assembly
+####
+
+def assembly_command(wildcards, input, output, threads, resources):
+    """
+    Builds the assembly command depending on the type of data we have.
+    """
+    assembler = sampleTable.loc[wildcards.sample, 'Assembler']
+    output_dir = f"{wildcards.sample}/assembly/assembly"
+    
+    # SPADES (Short Reads + long reads for scaffolding)
+    if assembler.startswith('spades'):
+        s_num = 1 # Keep track of how many SE files we have
+        
+        reads = ""
         # Check for named inputs 'r1'/'r2' or 'se'
-        if 'r1' in assembly_input and 'r2' in assembly_input:
-            cmd_part += f" -1 {assembly_input.r1} -2 {assembly_input.r2}"
-        elif 'r1' in assembly_input and not 'r2' in assembly_input:
-            cmd_part += f" -s {assembly_input.r1}"
+        if hasattr(input, "R1"): 
+            reads += f" -1 {input.R1} -2 {input.R2} "
+        elif hasattr(input, "SE"):
+            reads += f" --s{s_num} {input.SE} "
+            s_num+=1
+        else:
+            raise ValueError(f"No trimmed short reads found for assembler '{assembler}' and sample '{wildcards.sample}'.")
+        
+        # Add long reads for SPADES hybrid assembly
+        if hasattr(input, "LR"):
+            # HQ PacBio and Nanopore should be set as single end reads.
+            # See: https://ablab.github.io/spades/running.html
+            m = {"spades-pacbio-raw":   "--pacbio",
+                 "spades-pacbio-corr":  "--pacbio",
+                 "spades-pacbio-hq":    f"--s{s_num}",
+                 "spades-nanopore-raw": "--nanopore",
+                 "spades-nanopore-corr":"--nanopore",
+                 "spades-nanopore-hq":  f"--s{s_num}"}
+            reads += f" {m[assembler]} {input.LR} "
+        
+        k = config.get("spades_k", SPADES_K)
+        extra = config.get("spades_extra", '')
+        sequences="scaffolds" if config["spades_use_scaffolds"] else "contigs"
+        
+        # If we see spades has already run, we can continue to save time.
+        if not os.path.exists(f"{output_dir}/params.txt"):
+            cmd = f"""
+            rm -fr "{output_dir}"
+            
+            spades.py \\
+                {reads} \\
+                -o {output_dir} \\
+                --meta \\
+                --only-assembler \\
+                -k {k} \\
+                --checkpoints last \\
+                --threads {threads} \\
+                --memory {resources.mem_gb} {extra}
+            
+            seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
+            """
+        else:
+            cmd = f"""
+            spades.py \\
+                -o {output_dir} \\
+                --restart-from last \\
+                -k {k} \\
+                --threads {threads} \\
+                --memory {resources.mem_gb} {extra}
+            
+            seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
+            """
+    
+    
+    # MEGAHIT (Short Reads)
+    elif assembler.startswith('megahit'):
+        reads = ""
+        # Check for named inputs 'r1'/'r2' or 'se'
+        if hasattr(input, "R1"):
+            reads += f"-1 {input.R1} -2 {input.R2}"
+        elif hasattr(input, "SE"):
+            reads += f"-r {input.SE}"
         else:
             raise ValueError(f"No trimmed short reads found for assembler '{assembler}' and sample '{sample_id}'.")
         
-        # Add long reads for SPADES hybrid assembly
-        if assembler == 'spades' and 'lr' in assembly_input:
-            long_read_type = sampleTable.loc[sample_id].get('LongReadType', 'pacbio')
-            cmd_part += f" --{long_read_type} {assembly_input.long_reads}"
-            
-        return f"spades.py {cmd_part} -o {output_dir}" if assembler == 'spades' else f"{assembler} {cmd_part} -o {output_dir}"
-
-    elif assembler == 'megahit':
-        pass
-    # FLYE / METAMDBG (Long Reads)
-    elif assembler in ['flye', 'metaMDBG']:
-        if 'long_reads' not in assembly_input:
-            raise ValueError(f"{assembler.capitalize()} requires long reads for sample '{sample_id}'.")
+        min_count=config.get("megahit_min_count", MEGAHIT_MIN_COUNT),
+        k_min=config.get("megahit_k_min", MEGAHIT_K_MIN),
+        k_max=config.get("megahit_k_max", MEGAHIT_K_MAX),
+        k_step=config.get("megahit_k_step", MEGAHIT_K_STEP),
+        merge_level=config.get("megahit_merge_level", MEGAHIT_MERGE_LEVEL),
+        prune_level=config.get("megahit_prune_level", MEGAHIT_PRUNE_LEVEL),
+        low_local_ratio=config["megahit_low_local_ratio"],
+        min_contig_len=config["minimum_contig_length"],
+        assembly_params = {
+            "default": "",
+            "meta-sensitive": "--presets meta-sensitive",
+            "meta-large": " --presets meta-large",
+        }
+        preset=assembly_params[config["megahit_preset"]],
+        extra = config.get("megahit_extra", '')
         
-        long_reads = assembly_input.long_reads
-        if assembler == 'flye':
-            long_read_type = sampleTable.loc[sample_id].get('LongReadType', 'pacbio').replace('pacbio', 'pacbio-raw').replace('nanopore', 'nano-raw')
-            return f"flye --{long_read_type} {long_reads} --out-dir {output_dir}"
-        else: # metaMDBG
-            return f"metaMDBG -i {long_reads} -o {output_dir}"
+        # If we see megahit has already run, we can continue to save time.
+        if not os.path.exists(f"{output_dir}/options.json"):
+            cmd = f"""
+            rm -fr "{output_dir}"
+            
+            megahit \\
+                {reads} \\
+                --out-dir {output_dir} \\
+                --out-prefix {wildcards.sample}_prefilter \\
+                --tmp-dir {resources.tmpdir} \\
+                --num-cpu-threads {threads} \\
+                --k-min {k_min[0]} \\
+                --k-max {k_max[0]} \\
+                --k-step {k_step[0]} \\
+                --min-contig-len {min_contig_len[0]} \\
+                --min-count {min_count[0]} \\
+                --merge-level {merge_level[0]} \\
+                --prune-level {prune_level[0]} \\
+                --low-local-ratio {low_local_ratio[0]} \\
+                --memory {resources.mem_mb}000000 \\
+                {preset[0]} {extra}
+            
+            seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
+            """
+        else:
+            cmd = f"""
+            megahit \\
+                --out-dir {output_dir} \\
+                --continue
+            
+            seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
+            """
+    
+    
+    # FLYE (Long Reads)
+    elif assembler.startswith('flye'):
+        extra = config.get("flye_extra", '')
+        
+        m = {"flye-pacbio-raw":   "--pacbio-raw", 
+             "flye-pacbio-corr":  "--pacbio-corr",
+             "flye-pacbio-hq":    "--pacbio-hq",
+             "flye-nanopore-raw": "--nano-raw",
+             "flye-nanopore-corr":"--nano-corr",
+             "flye-nanopore-hq":  "--nano-hq"}
+        reads = f"{m[assembler]} {input.LR}"
+
+        # If we see flye has already run, we can continue to save time.
+        if not os.path.exists(f"{output_dir}/params.json"):
+            cmd = f"""
+            rm -fr "{output_dir}"
+            
+            flye \\
+                {reads} \\
+                --out-dir {output_dir} \\
+                --meta \\
+                --threads {threads} {extra}
+            
+            seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output}
+            """
+        else:
+            cmd = f"""
+            flye \\
+                {reads} \\
+                --out-dir {output_dir} \\
+                --meta \\
+                --threads {threads} {extra} \\
+                --resume
+            
+            seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output}
+            """
+    
+    
+    # metaMDBG (Long Reads)
+    elif assembler.startswith('metamdbg'):
+        extra = config.get("metamdbg_extra", '')
+        
+        m = {"metamdbg-pacbio-hq":  "--in-hifi",
+             "metamdbg-nanopore-hq":"--in-ont"}
+        reads = f"{m[assembler]} {input.LR}"
+        
+        # If metaMDBG has already run, it should resume automatically.
+        cmd = f"""
+        metaMDBG asm \\
+            {reads} \\
+            --out-dir {output_dir} \\
+            --skip-correction \\
+            --threads {threads} {extra}
+        
+        zcat "{output_dir}/contigs.fasta.gz" | sed -e 's/ .*circular=/_circular_/' | seqkit sort -l -r -w 0 > {output}
+        """
+    
+    
+    # Dont recognize assembler
     else:
         raise ValueError(f"Unknown assembler '{assembler}'.")
+    
+    return(cmd)
 
 
 rule run_assembly:
     input:
-        # Use the helper function to get the correct mix of trimmed short reads and raw long reads
-        unpack(get_assembly_inputs)
+        unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
     output:
-        contigs = "results/assemblies/{sample}_{assembler}/scaffolds.fasta"
+        "{sample}/assembly/assembly/{sample}_raw_contigs.fasta"
     params:
-        # The assembly command function now references the named inputs from this rule
-        command = lambda wildcards, input: get_assembly_command(wildcards.sample, input)
-    threads: 16
-    log:
-        "logs/assembly/{sample}_{assembler}.log"
-    shell:
-        """
-        ({params.command} --threads {threads}) > {log} 2>&1
-        """
-
-localrules:
-    rename_assembler_output,
-
-rule rename_assembler_output:
-    input:
-        "{{sample}}/assembly/{sequences}.fasta".format(
-        sequences="scaffolds" if config["spades_use_scaffolds"] else "contigs"
+        command = lambda wildcards, input, output, threads, resources: assembly_command(
+            wildcards, input, output, threads, resources
         ),
-    output:
-        temp("{sample}/assembly/{sample}_raw_contigs.fasta"),
+    log:
+        "{sample}/logs/assembly.log",
+    benchmark:
+        "{sample}/benchmarks/assembly/{sample}.txt"
     conda:
-        "../envs/seqkit.yaml"
+        "../envs/assembly.yaml"
+    threads: config["assembly_threads"]
+    resources:
+        mem_mb=config["assembly_memory"] * 1000,
+        mem_gb=config["assembly_memory"],
+        time_min=60 * config["assembly_runtime"],
     shell:
-        "seqkit sort -l -r -w 0 {input} > {output}"
+        """
+        ({params.command}) > {log} 2>&1
+        """
 
 
 rule rename_contigs:
     input:
-        "{sample}/assembly/{sample}_raw_contigs.fasta",
+        "{sample}/assembly/assembly/{sample}_raw_contigs.fasta",
     output:
-        fasta="{sample}/assembly/{sample}_prefilter_contigs.fasta",
-        mapping_table="{sample}/assembly/old2new_contig_names.tsv",
+        fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        mapping_table="{sample}/assembly/assembly/old2new_contig_names.tsv",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -256,36 +609,99 @@ rule rename_contigs:
         "../scripts/rename_assembly.py"
 
 
+def align_reads_command(wildcards, input, output, threads, resources):
+    """
+    Map any combination of reads against a reference using minimap2.
+    """
+    
+    cmd = ""
+    
+    ## Map short reads
+    cmd_sr = ""
+    if hasattr(input, "R1"):
+        cmd_sr = f"minimap2 -t {threads} -ax sr {input.target} {input.R1} {input.R2}"
+    elif hasattr(input, "SE"):
+        cmd_sr = f"minimap2 -t {threads} -ax sr {input.target} {input.SE}"
+    
+    ## Map long reads
+    # pacbio-raw:      PacBio regular CLR reads (<20% error)
+    # pacbio-corr:     PacBio reads that were corrected with other methods (<3% error)
+    # pacbio-hq:       PacBio HiFi reads (<1% error)
+    # nanopore-raw:    ONT regular reads, pre-Guppy5 (<20% error)
+    # nanopore-corr:   ONT reads that were corrected with other methods (<3% error)
+    # nanopore-hq:     ONT high-quality reads (<1% error)
+    cmd_lr = ""
+    if hasattr(input, "LR"):
+        assembler = sampleTable.loc[wildcards.sample, 'Assembler']
+        if assembler.endswith("-pacbio-raw") | assembler.endswith("-pacbio-corr"):
+            cmd_lr = f"minimap2 -t {threads} -ax map-pb {input.target} {input.LR}"
+        
+        elif assembler.endswith("-nanopore-raw") | assembler.endswith("-nanopore-corr"):
+            cmd_lr = f"minimap2 -t {threads} -ax map-ont {input.target} {input.LR}"
+        
+        elif assembler.endswith("-pacbio-hq"):
+            cmd_lr = f"minimap2 -t {threads} -ax map-hifi {input.target} {input.LR}"
+        
+        elif assembler.endswith("-nanopore-hq"):
+            # See: https://github.com/lh3/minimap2/issues/1127
+            cmd_lr = f"minimap2 -t {threads} -ax lr:hq {input.target} {input.LR}"
+        
+        # Unknown error rate
+        else:
+            cmd_lr = f"minimap2 -t {threads} -ax map-ont {input.target} {input.LR}"
+   
+    # Check if we have SR+LR (need to map separatly and merge) or SR OR LR
+    if cmd_sr and cmd_lr:
+        cmd = f"({cmd_sr} && {cmd_lr} | grep -v '^@') | samtools sort > {output}"
+    elif cmd_sr and not cmd_lr:
+        cmd = f"{cmd_sr} | samtools sort > {output}"
+    else:
+        cmd = f"{cmd_lr} | samtools sort > {output}"
+    
+    return(cmd)
+
+
 if config["filter_contigs"]:
 
     ruleorder: align_reads_to_prefilter_contigs > align_reads_to_final_contigs
 
     rule align_reads_to_prefilter_contigs:
         input:
-            query=get_quality_controlled_reads,
-            target=rules.rename_contigs.output,
+            unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
+            target=rules.rename_contigs.output.fasta,
         output:
             bam=temp("{sample}/sequence_alignment/alignment_to_prefilter_contigs.bam"),
         params:
-            extra="-x sr",
+            command = lambda wildcards, input, output, threads, resources: align_reads_command(
+                wildcards, input, output, threads, resources
+            ),
+        benchmark:
+            "{sample}/benchmarks/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
         log:
             "{sample}/logs/assembly/post_process/align_reads_to_prefiltered_contigs.log",
+        conda:
+            "../envs/minimap.yaml"
         threads: config["simplejob_threads"]
         resources:
             mem_mb=config["simplejob_memory"] * 1000,
             time=config["simplejob_runtime"],
-        wrapper:
-            "v1.19.0/bio/minimap2/aligner"
+        shell:
+            """
+            ({params.command}) >{log} 2>&1
+            """
+
 
     rule pileup_prefilter:
         input:
-            fasta="{sample}/assembly/{sample}_prefilter_contigs.fasta",
+            fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
             bam="{sample}/sequence_alignment/alignment_to_prefilter_contigs.bam",
         output:
             covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
         params:
             pileup_secondary="t",
             minmapq=config["minimum_map_quality"],
+        benchmark:
+            "{sample}/benchmarks/assembly/post_process/pilup_prefilter_contigs.log",
         log:
             "{sample}/logs/assembly/post_process/pilup_prefilter_contigs.log",
         conda:
@@ -307,11 +723,11 @@ if config["filter_contigs"]:
 
     rule filter_by_coverage:
         input:
-            fasta="{sample}/assembly/{sample}_prefilter_contigs.fasta",
+            fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
             covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
         output:
-            fasta="{sample}/assembly/{sample}_final_contigs.fasta",
-            removed_names="{sample}/assembly/{sample}_discarded_contigs.fasta",
+            fasta="{sample}/assembly/assembly/{sample}_final_contigs.fasta",
+            removed_names="{sample}/assembly/assembly/{sample}_discarded_contigs.fasta",
         params:
             minc=config["minimum_average_coverage"],
             minp=config["minimum_percent_covered_bases"],
@@ -350,9 +766,9 @@ else:  # no filter
 
     rule do_not_filter_contigs:
         input:
-            "{sample}/assembly/{sample}_prefilter_contigs.fasta",
+            "{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
         output:
-            "{sample}/assembly/{sample}_final_contigs.fasta",
+            "{sample}/assembly/assembly/{sample}_final_contigs.fasta",
         shell:
             "cp {input} {output}"
 
@@ -363,9 +779,9 @@ localrules:
 
 rule finalize_contigs:
     input:
-        "{sample}/assembly/{sample}_final_contigs.fasta",
+        "{sample}/assembly/assembly/{sample}_final_contigs.fasta",
     output:
-        "Assembly/fasta/{sample}.fasta",
+        "{sample}/assembly/{sample}.fasta",
     shell:
         "cp {input} {output}"
 
@@ -386,23 +802,28 @@ rule calculate_contigs_stats:
 # generalized rule so that reads from any "sample" can be aligned to contigs from "sample_contigs"
 rule align_reads_to_final_contigs:
     input:
-        query=get_quality_controlled_reads,
-        target="Assembly/fasta/{sample_contigs}.fasta",
+        unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
+        target="{sample}/assembly/{sample_contigs}.fasta",
     output:
         bam=temp("{sample_contigs}/sequence_alignment/{sample}.bam"),
     params:
-        extra="-x sr",
-        sorting="coordinate",
+        command = lambda wildcards, input, output, threads, resources: align_reads_command(
+            wildcards, input, output, threads, resources
+        ),
     benchmark:
-        "logs/benchmarks/assembly/calculate_coverage/align_reads_to_filtered_contigs/{sample}_to_{sample_contigs}.txt"
+        "logs/benchmarks/assembly/calculate_coverage/align_reads_to_filtered_contigs/{sample}_to_{sample_contigs}.txt",
     log:
         "{sample_contigs}/logs/assembly/calculate_coverage/align_reads_from_{sample}_to_filtered_contigs.log",
+    conda:
+        "../envs/minimap.yaml"
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
         time=config["simplejob_runtime"],
-    wrapper:
-        "v1.19.0/bio/minimap2/aligner"
+    shell:
+        """
+        ({params.command}) > {log} 2>&1
+        """
 
 
 rule pileup_contigs_sample:

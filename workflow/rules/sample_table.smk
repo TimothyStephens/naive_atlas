@@ -1,9 +1,8 @@
 from naive_atlas.sample_table import load_sample_table, validate_bingroup_size
 
 sampleTable = load_sample_table()
-#with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
-#    print(sampleTable)
-
+with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+    print(sampleTable)
 
 def io_params_for_tadpole(io, key="in"):
     """This function generates the input flag needed for bbwrap/tadpole for all cases
@@ -191,4 +190,4 @@ def get_assembly(wildcards):
     except FileNotInSampleTableException:
         # return files as named by atlas pipeline
 
-        return "Assembly/fasta/{sample}.fasta".format(sample=wildcards.sample)
+        return "{sample}/assembly/{sample}.fasta".format(sample=wildcards.sample)

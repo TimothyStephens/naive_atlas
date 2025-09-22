@@ -154,15 +154,16 @@ rule genomad_download_db:
         "logs/download/genomad_lineages.log",
     benchmark:
         "logs/benchmarks/download/genomad_lineages.tsv"
-    conda:
-        "../envs/genomad.yaml"
+    #conda:
+    #    "../envs/genomad.yaml"
+    container:
+        "docker://antoniopcamargo/genomad:1.11.0",
     shell:
         """
         (
+        export PATH="/opt/conda/bin:$PATH"
         mkdir -p {output.dbdir}
-        wget -v -O {output.dbdir}/genomad_db_{params.db_version}.tar.gz https://zenodo.org/record/7586412/files/genomad_db_{params.db_version}.tar.gz?download=1
-        tar xvzf {output.dbdir}/genomad_db_{params.db_version}.tar.gz -C {output.dbdir} --strip-components=1
-        rm -rf {output.dbdir}/genomad_db_{params.db_version}.tar.gz
+        genomad download-database {output.dbdir}
         ) &> {log}
         """
 

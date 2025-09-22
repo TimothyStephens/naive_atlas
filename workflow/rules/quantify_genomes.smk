@@ -111,82 +111,45 @@ rule concat_genomes:
         "cat {input}/*{params.ext} > {output}"
 
 
-if config["genome_aligner"] == "minimap":
+rule index_genomes:
+    input:
+        target=rules.concat_genomes.output,
+        timestamp=genome_dir,
+    output:
+        "ref/genomes.mmi",
+    log:
+        "logs/genomes/alignmentsindex.log",
+    params:
+        index_size="12G",
+    threads: 3
+    resources:
+        mem=config["simplejob_memory"],
+    wrapper:
+        "v3.13.4/bio/minimap2/index"
 
-    rule index_genomes:
-        input:
-            target=rules.concat_genomes.output,
-            timestamp=genome_dir,
-        output:
-            "ref/genomes.mmi",
-        log:
-            "logs/genomes/alignmentsindex.log",
-        params:
-            index_size="12G",
-        threads: 3
-        resources:
-            mem=config["simplejob_memory"],
-        wrapper:
-            "v1.19.0/bio/minimap2/index"
 
-    rule align_reads_to_genomes:
-        input:
-            target=rules.index_genomes.output,
-            query=get_quality_controlled_reads,
-        output:
-            "genomes/alignments/bams/{sample}.bam",
-        log:
-            "logs/genomes/alignments/{sample}_map.log",
-        params:
-            extra="-x sr",
-            sorting="coordinate",
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-        wrapper:
-            "v1.19.0/bio/minimap2/aligner"
+rule align_reads_to_genomes:
+    input:
+        unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
+        target=rules.index_genomes.output,
+    output:
+        "genomes/alignments/bams/{sample}.bam",
+    params:
+        command = lambda wildcards, input, output, threads, resources: align_reads_command(
+            wildcards, input, output, threads, resources
+        ),
+    log:
+        "logs/genomes/alignments/{sample}_map.log",
+    conda:
+        "../envs/minimap.yaml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+    shell:
+        """
+        ({params.command}) > {log} 2>&1
+        """
 
-elif config["genome_aligner"] == "bwa":
-
-    rule index_genomes:
-        input:
-            rules.concat_genomes.output,
-            timestamp=genome_dir,
-        output:
-            multiext("ref/genomes", ".amb", ".ann", ".bwt.2bit.64", ".pac"),
-        log:
-            "logs/genomes/alignments/bwa_index.log",
-        threads: 4
-        resources:
-            mem=config["simplejob_memory"],
-        wrapper:
-            "v1.19.0/bio/bwa-mem2/index"
-
-    rule align_reads_to_genomes:
-        input:
-            idx=rules.index_genomes.output,
-            reads=get_quality_controlled_reads,
-        output:
-            "genomes/alignments/bams/{sample}.bam",
-        log:
-            "logs/genomes/alignments/{sample}_bwa.log",
-        params:
-            extra=r"-R '@RG\tID:{sample}\tSM:{sample}'",
-            sort="samtools",
-            sort_order="coordinate",
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-            mem_mb=config["simplejob_memory"] * 1000,
-        wrapper:
-            "v1.19.0/bio/bwa-mem2/mem"
-
-else:
-    raise Exception(
-        "'genome_aligner' not understood, it should be 'minimap' or 'bwa', not '{genome_aligner}'. check config file".format(
-            **config
-        )
-    )
 
 
 # path change for bam file

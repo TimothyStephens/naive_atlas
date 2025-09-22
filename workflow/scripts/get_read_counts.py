@@ -2,7 +2,6 @@
 import os, sys
 import logging, traceback
 
-
 logging.basicConfig(
     filename=snakemake.log[0],
     level=logging.INFO,
@@ -49,16 +48,16 @@ def get_read_stats(fraction, params_in):
     tmp_file = os.path.join(subfolder, "read_stats.tmp")
     shell(
         f" mkdir -p {subfolder} 2>> {snakemake.log[0]} "
-        " ; "
+        f" ; "
         f" reformat.sh {params_in} "
         f" bhist={subfolder}/base_hist.txt "
         f" qhist={subfolder}/quality_by_pos.txt "
         f" lhist={subfolder}/readlength.txt "
         f" gchist={subfolder}/gc_hist.txt "
-        " gcbins=auto "
+        f" gcbins=auto "
         f" bqhist={subfolder}/boxplot_quality.txt "
         f" threads={snakemake.threads} "
-        " overwrite=true "
+        f" overwrite=true "
         f" -Xmx{snakemake.resources.java_mem}G "
         f" 2>&1 | tee -a {snakemake.log[0]} {tmp_file} >/dev/null "
     )
@@ -75,51 +74,57 @@ def get_read_stats(fraction, params_in):
     return int(n_reads), int(n_bases)
 
 
-if len(snakemake.params.inputs) >= 2:
+# Generate stats for each read type if present.
+if hasattr(snakemake.input, 'R1'):
     n_reads_pe, n_bases_pe = get_read_stats(
-        "pe", "in1={0} in2={1}".format(*snakemake.params.inputs)
+        "pe", f"in1={snakemake.input.R1} in2={snakemake.input.R2}"
     )
-
     n_reads_pe = n_reads_pe / 2
-
-    headers = [
-        "Sample",
-        "Step",
-        "Total_Reads",
-        "Total_Bases",
-        "Reads_pe",
-        "Bases_pe",
-        "Reads_se",
-        "Bases_se",
-        "Timestamp",
-    ]
-
-    if os.path.exists(snakemake.params.single_end_file):
-        n_reads_se, n_bases_se = get_read_stats(
-            "se", "in=" + snakemake.params.single_end_file
-        )
-    else:
-        n_reads_se, n_bases_se = 0, 0
-
-    values = [
-        n_reads_pe + n_reads_se,
-        n_bases_pe + n_bases_se,
-        n_reads_pe,
-        n_bases_pe,
-        n_reads_se,
-        n_bases_se,
-    ]
 else:
-    headers = [
-        "Sample",
-        "Step",
-        "Total_Reads",
-        "Total_Bases",
-        "Reads",
-        "Bases",
-        "Timestamp",
-    ]
-    values = 2 * get_read_stats("", "in=" + snakemake.params.inputs[0])
+    n_reads_pe, n_bases_pe = 0, 0
+
+
+if hasattr(snakemake.input, 'SE'):
+    n_reads_se, n_bases_se = get_read_stats(
+        "se", f"in={snakemake.input.SE}"
+    )
+else:
+    n_reads_se, n_bases_se = 0, 0
+
+
+if hasattr(snakemake.input, 'LR'):
+    n_reads_lr, n_bases_lr = get_read_stats(
+        "lr", f"in={snakemake.input.LR}"
+    )
+else:
+    n_reads_lr, n_bases_lr = 0, 0
+
+
+headers = [
+    "Sample",
+    "Step",
+    "Total_Reads",
+    "Total_Bases",
+    "Reads_pe",
+    "Bases_pe",
+    "Reads_se",
+    "Bases_se",
+    "Reads_lr",
+    "Bases_lr",
+    "Timestamp",
+]
+
+values = [
+    n_reads_pe + n_reads_se + n_reads_lr,
+    n_bases_pe + n_bases_se + n_bases_lr,
+    n_reads_pe,
+    n_bases_pe,
+    n_reads_se,
+    n_bases_se,
+    n_reads_lr,
+    n_bases_lr,
+]
+
 
 with open(snakemake.output.read_counts, "w") as f:
     f.write("\t".join(headers) + "\n")

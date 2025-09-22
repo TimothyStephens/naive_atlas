@@ -88,12 +88,22 @@ rule all:
 ## ---- ##
 rule test:
     input:
-        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=SAMPLES, step="raw")
-        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=["N10", "N10longread"], step=["1_raw", "2_deduplicated", "3_quality_filtered", "4_decontamination", "5_QC"]),
-        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=["N10hybrid"], step=["1_raw", "2_deduplicated", "3_quality_filtered", "4_decontamination", "5_QC"]),
-        #expand("QC/reads/{sample}", sample=["N10hybrid"])
+        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=SAMPLES, step="1_raw")
+        ## 1_raw, 2_deduplicated, 3_quality_filtered, 4_decontaminated, 5_final
+        expand("{sample}/sequence_quality_control/{sample}_R1.fastq.gz", sample=["N10hybrid"]),
+        #expand("{sample}/sequence_quality_control/{sample}_SE.fastq.gz", sample=["N10single"]),
+        expand("{sample}/sequence_quality_control/{sample}_LR.fastq.gz", sample=["N10hybrid"]),
+        expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=["N10hybrid"], step=["1_raw", "2_deduplicated", "3_quality_filtered", "4_decontaminated", "5_final"]),
+        expand("{sample}/sequence_quality_control/read_stats/read_counts.tsv", sample=["N10hybrid"]),
+        expand("{sample}/sequence_quality_control/read_stats/QC_read_length_hist_{fraction}.txt", sample=["N10hybrid"], fraction=["PE", "SE", "LR"]),
         expand("{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
-        #expand("{sample}/finished_assembly", sample=["N10", "N10longread"]),
+        # 1_normalize_reads 2_error_correction
+        #expand("{sample}/assembly/reads/2_error_correction_R1.fastq.gz", sample=["N10", "N10interleaved", "N10hybrid"]),
+        #expand("{sample}/assembly/reads/2_error_correction_SE.fastq.gz", sample=["N10single"]),
+        #expand("{sample}/assembly/reads/2_error_correction_LR.fastq.gz", sample=["N10hybrid", "N10longread"]),
+        #expand("{sample}/assembly/{sample}_raw_assembly.fasta", sample=["N10", "N10interleaved", "N10hybrid", "N10single", "N10longread"]),
+        #expand("{sample}/assembly/assembly/{sample}_raw_assembly.fasta", sample=["N10longread"]),
+        expand("{sample}/finished_assembly", sample=["N10hybrid"]),
     output:
         touch("finished_test"),
 

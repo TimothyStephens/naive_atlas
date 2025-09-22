@@ -1,0 +1,10 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - seqkit=2.4.0
+    - spades>=4.0
+    - megahit=1.2
+    - flye=2.9.6
+    - metamdbg=1.2

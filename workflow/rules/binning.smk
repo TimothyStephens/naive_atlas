@@ -962,8 +962,10 @@ rule binning_viral_genomad:
         "{sample}/logs/benchmarks/binning/veba/3_viral/2_genomad.txt"
     log:
         "{sample}/logs/binning/veba/3_viral/2_genomad.txt",
-    conda:
-        "../envs/genomad.yaml"
+    #conda:
+    #    "../envs/genomad.yaml"
+    container:
+        "docker://antoniopcamargo/genomad:1.11.0",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -971,6 +973,7 @@ rule binning_viral_genomad:
     shell:
         """
         (
+        export PATH="/opt/conda/bin:$PATH"
         genomad end-to-end \
             --cleanup \
             --threads {threads} \
@@ -989,7 +992,7 @@ rule binning_viral_genomad:
             --max-uscg 100 \
             {input.fasta} \
             {params.results} \
-            {input.dbdir}
+            {input.dbdir}/genomad_db
         ) &> {log}
         """
 

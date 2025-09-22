@@ -130,10 +130,8 @@ merging_k: 62
 ########################
 # Assembly
 ########################
-# megahit OR spades
-assembler: spades
-
 minimum_contig_length: 1000
+
 # Megahit
 #-----------
 # 2 is for metagenomes, 3 for genomes with 30x coverage
@@ -146,16 +144,22 @@ megahit_prune_level: 2
 megahit_low_local_ratio: 0.2
 # ['default','meta-large','meta-sensitive']
 megahit_preset: default
+megahit_extra: ''
 
 # Spades
 #------------
 spades_use_scaffolds: true # if false use contigs
 #Comma-separated list of k-mer sizes to be used (all values must be odd, less than 128 and listed in ascending order).
 spades_k: auto
-spades_preset: meta # meta, ,normal, rna  single end libraries doesn't work for metaspades
 spades_extra: ''
-longread_type: none # [none,"pacbio", "nanopore", "sanger", "trusted-contigs", "untrusted-contigs"]
-# Preprocessed long reads can be defined in the sample table with 'longreads' , for more info see the spades manual
+
+# Flye
+#------------
+flye_extra: ''
+
+# metaMDBG
+#------------
+metamdbg_extra: ''
 
 # Filtering
 #------------
@@ -214,8 +218,6 @@ genome_dereplication:
 ########################
 # Quantification
 ########################
-
-genome_aligner: "minimap"
 
 coverm_params: '--min-read-percent-identity 98 --min-covered-fraction 0 --min-read-aligned-percent 70'
 coverm_stats: 'relative_abundance mean trimmed_mean covered_bases variance length count reads_per_base rpkm tpm'

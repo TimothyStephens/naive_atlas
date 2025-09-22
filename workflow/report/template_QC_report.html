@@ -1,7 +1,7 @@
 <html>
     <head>
 
-        <title>Metagenome-Atlas - QC Report</title>
+        <title>Metagenome-naiveATLAS - QC Report</title>
 
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
@@ -35,17 +35,20 @@
             </tr>
             </thead>
             <tbody valign="top">
-            <tr><td>raw</td>
+            <tr><td>1_raw</td>
             <td>the input reads</td>
             </tr>
-            <tr><td>deduplicated</td>
+            <tr><td>2_deduplicated</td>
             <td>after (optional) deduplication step</td>
             </tr>
-            <tr><td>filtered</td>
+            <tr><td>3_quality_filtered</td>
             <td>trimmed, quality filtered</td>
             </tr>
-            <tr><td>qc</td>
-            <td>final reads, contaminants removed</td>
+            <tr><td>4_decontaminated</td>
+            <td>contaminant sequences removed</td>
+            </tr>
+            <tr><td>5_final</td>
+            <td>final reads after all filtering steps</td>
             </tr>
             </tbody>
             </table>
@@ -65,14 +68,75 @@
           </div>
 
 
-          <h2>Base quality values along reads</h2>
+        <h2>Total number of PE reads/bases after QC</h2>
 
-            {div[quality_QC]}
+          <div class="float-container">
 
-          <h2>Read length</h2>
+            <div class="float-child">
+              {div[Reads_pe]}
+            </div>
+
+            <div class="float-child">
+              {div[Bases_pe]}
+            </div>
+
+          </div>
 
 
-            {div[Length]}
+        <h2>Total number of SE reads/bases after QC</h2>
+
+          <div class="float-container">
+
+            <div class="float-child">
+              {div[Reads_se]}
+            </div>
+
+            <div class="float-child">
+              {div[Bases_se]}
+            </div>
+
+          </div>
+
+
+        <h2>Total number of LR reads/bases after QC</h2>
+
+          <div class="float-container">
+
+            <div class="float-child">
+              {div[Reads_lr]}
+            </div>
+
+            <div class="float-child">
+              {div[Bases_lr]}
+            </div>
+
+          </div>
+
+
+          <h2>Base quality values along PE reads</h2>
+
+            {div[quality_QC_PE]}
+
+          <h2>Base quality values along SE reads</h2>
+
+            {div[quality_QC_SE]}
+
+          <h2>Base quality values along LR reads</h2>
+
+            {div[quality_QC_LR]}
+
+          <h2>Read length PE</h2>
+
+            {div[Length_PE]}
+
+          <h2>Read length SE</h2>
+
+            {div[Length_SE]}
+
+          <h2>Read length LR</h2>
+
+            {div[Length_LR]}
+
 
           <h2>Insert size</h2>
             <p> The size of the reads + the space between. Ideally, the paired-end reads don't overlap. </p>
