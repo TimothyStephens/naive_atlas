@@ -1,16 +1,9 @@
 # Metagenome-Naive_Atlas
 
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/metagenome-atlas/badges/latest_release_relative_date.svg)](https://anaconda.org/bioconda/metagenome-atlas)
-[![Bioconda](https://img.shields.io/conda/dn/bioconda/metagenome-atlas.svg?label=Bioconda )](https://anaconda.org/bioconda/metagenome-atlas)
-[![Documentation Status](https://readthedocs.org/projects/metagenome-atlas/badge/?version=latest)](https://metagenome-atlas.readthedocs.io/en/latest/?badge=latest)
-![Mastodon Follow](https://img.shields.io/mastodon/follow/109273833677404282?domain=https%3A%2F%2Fmstdn.science&style=social)
-<!--[![follow on twitter](https://img.shields.io/twitter/follow/SilasKieser.svg?style=social&label=Follow)](https://twitter.com/search?f=tweets&q=%40SilasKieser%20%23metagenomeAtlas&src=typd) -->
-
-
 Metagenome-naive_atlas is a easy-to-use metagenomic pipeline based on snakemake. It handles all steps from QC, Assembly, Binning, to Annotation, and is designed to be as domain agnostic as possible (i.e., to assemble and bin eukaryotes, prokaryotes, and viruses).
-All credit for this amazing workflow should go to the original authors. naive_atlas is simply a reconfiguration to remove filtering steps that select for only prokaryotes, allowing for eukaryote and viral bins to also be produced by the workflow.
+naive_atlas is built upon the [ATLAS](https://github.com/metagenome-atlas/atlas) workflow, with enhancments from [VEBA](https://github.com/jolespin/veba) which allow it to identify MAGs from all domains.
+All credit should go to the original authors of both workflows. 
 
-![scheme of workflow](resources/images/atlas_list.png?raw=true)
 
 You can start using naive_atlas with the following commands:
 ```
@@ -29,9 +22,11 @@ naive_atlas run all
 ```
 naive_atlas does not have its own dedicted documentation, however, the atlas documentation is still highly relevent.
 
+
 # Webpage
 
 [metagenome-atlas.github.io](https://metagenome-atlas.github.io/)
+
 
 # Documentation
 
@@ -39,24 +34,61 @@ https://metagenome-atlas.readthedocs.io/
 
 [Tutorial](https://github.com/metagenome-atlas/Tutorial)
 
-# Citation
+
+# Citations
 
 > ATLAS: a Snakemake workflow for assembly, annotation, and genomic binning of metagenome sequence data.  
 > Kieser, S., Brown, J., Zdobnov, E. M., Trajkovski, M. & McCue, L. A.   
 > BMC Bioinformatics 21, 257 (2020).  
 > doi: [10.1186/s12859-020-03585-4](https://doi.org/10.1186/s12859-020-03585-4)
 
+> Unveiling the microbial realm with VEBA 2.0: a modular bioinformatics suite for end-to-end genome-resolved prokaryotic, (micro)eukaryotic and viral multi-omics from either short- or long-read sequencing.
+> Espinoza JL, Phillips A, Prentice MB, Tan GS, Kamath PL, Lloyd KG, Dupont CL.
+> Nucleic Acids Res. 2024 Jun 22:gkae528.
+> doi: [10.1093/nar/gkae528](https://doi.org/10.1093/nar/gkae528). PMID: 38909293.
 
-# Developpment/Extensions
 
-Here are some ideas I work or want to work on when I have time. If you want to contribute or have some ideas let me know via a feature request issue.
+# Sample file
 
-- Optimized MAG recovery (e.g. [Spacegraphcats](https://github.com/spacegraphcats/spacegraphcats))
-- Integration of viruses/plasmid that live for now as [extensions](https://github.com/metagenome-atlas/virome_atlas)
-- Add statistics and visualisations as in [atlas_analyze](https://github.com/metagenome-atlas/atlas_analyze)
-- Implementation of most rules as snakemake wrapper
-- Cloud execution
-- Update to new Snakemake version and use cool reports.
+The sample file used to tell the workflow about your samples has 4 required columns: "Reads_raw_R1", "Reads_raw_R2", "Assembler", "Bin_group"
+ - `Reads_raw_R1`:    Path to first short read file (first mate of paired-end, single-end, or interleaved reads)
+ - `Reads_raw_R2`:    Path to second short read file (second mate of paired-end, leave blank if single-end, or interleaved reads)
+ - `Assembler`:       Assembler to us (see below)
+ - `Bin_group`:       Groups to use when mapping read data for binning (all sample in a group will be mapped against each other, more samples helps binning, but massivly increases runtime)
+
+The possible options for the `Assembler` column are:
+
+ - `megahit`                Short reads (PE or SE)
+
+ - `spades                  Short reads (PE or SE)
+ - `spades-pacbio-raw`      Short reads (PE or SE) + PacBio regular CLR reads (<20% error)
+ - `spades-pacbio-corr`     Short reads (PE or SE) + PacBio reads that were corrected with other methods (<3% error)
+ - `spades-pacbio-hq`       Short reads (PE or SE) + PacBio HiFi reads (<1% error)
+ - `spades-nanopore-raw`    Short reads (PE or SE) + ONT regular reads, pre-Guppy5 (<20% error)
+ - `spades-nanopore-corr`   Short reads (PE or SE) + ONT reads that were corrected with other methods (<3% error)
+ - `spades-nanopore-hq`     Short reads (PE or SE) + ONT high-quality reads (<1% error)
+
+ - `flye-pacbio-raw`        Short reads (PE or SE) + PacBio regular CLR reads (<20% error)
+ - `flye-pacbio-corr`       Short reads (PE or SE) + PacBio reads that were corrected with other methods (<3% error)
+ - `flye-pacbio-hq`         Short reads (PE or SE) + PacBio HiFi reads (<1% error)
+ - `flye-nanopore-raw`      Short reads (PE or SE) + ONT regular reads, pre-Guppy5 (<20% error)
+ - `flye-nanopore-corr`     Short reads (PE or SE) + ONT reads that were corrected with other methods (<3% error)
+ - `flye-nanopore-hq`       Short reads (PE or SE) + ONT high-quality reads (<1% error)
+
+ - `metamdbg-pacbio-hq`     PacBio HiFi reads (<1% error)
+ - `metamdbg-nanopore-hq`   ONT high-quality reads (<1% error)
+
+
+Optional extra columns:
+ - `Reads_raw_Long`                     Path to long reads (PacBio or Nanopore)
+ - `Interleaved`                        Is the R1 short read file interleaved?                                      Options: `True` or `False`; False by default
+ - `DeDuplicate`                        Should the sample's reads have depuplication run on itbefore use?           Options: `True` or `False`; True by default
+ - `Quality_filter`                     Should the sample's reads have quality filtering run on it before use?      Options: `True` or `False`; True by default
+ - `Remove_contaminants`                Should the sample's reads have contaminant sequences removed before use?    Options: `True` or `False`; True by default
+ - `Normalize_reads_before_assembly`    Should the sample's reads be normalized before assembly?                    Options: `True` or `False`; True by default
+ - `Error_correction_before_assembly`   Should the sample's reads be error corrected before assembly?               Options: `True` or `False`; True by default
+
+
 
 # Output files
 
@@ -124,5 +156,13 @@ The sub result directories:
   - `*.genome_quality.tsv` MAG quality metrics.
 
 - `genomes/unbinned/` Unbinned scaffolds from each sample.
+
+
+# Known bugs
+
+ - Parts of the workflow will randomly fail if you have packages (namely `numpy`) installed in `$USER/.local/lib/python*`. Python within the snakemake jobs will try and use the packages in theis directory over the ones installed in their conda environment, causing version issues with packages like `numpy`. The easiest way is to remove this whole directory to force python to always use it intended local conda env.
+
+
+
 
 
