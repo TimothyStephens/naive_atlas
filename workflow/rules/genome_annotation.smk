@@ -88,7 +88,6 @@ rule classify:
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk classify --genome_dir {input.genome_dir} --align_dir {params.outdir} "
-        "--mash_db {params.mashdir} "
         "--out_dir {params.outdir} "
         "--tmpdir {resources.tmpdir} "
         "--extension {params.extension} "
