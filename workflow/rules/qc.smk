@@ -272,8 +272,8 @@ rule deduplicate_reads_PE:
         "../envs/required_packages.yaml"
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+        mem=config["medium_memory"],
+        java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -307,8 +307,8 @@ rule deduplicate_reads_SE:
         "../envs/required_packages.yaml"
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+        mem=config["medium_memory"],
+        java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -342,8 +342,8 @@ rule deduplicate_reads_LR:
         "../envs/required_packages.yaml"
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+        mem=config["medium_memory"],
+        java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
     shell:
         """
         ({params.command}) > {log} 2>&1

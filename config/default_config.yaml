@@ -25,6 +25,10 @@
 large_memory: 200 #GB
 large_threads: 46
 large_runtime: 24 #hr
+# BBMAPs tools threads and memory - needs moderate amount of memory: deduplicate_reads
+medium_memory: 50 #GB
+medium_threads: 24
+medium_runtime: 24 #hr
 # Assembly threads and memory: run_megahit, run_spades
 assembly_memory: 350 #GB
 assembly_threads: 60
