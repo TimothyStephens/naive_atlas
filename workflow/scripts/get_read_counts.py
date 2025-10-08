@@ -46,12 +46,21 @@ def get_read_stats(fraction, params_in):
 
     subfolder = os.path.join(snakemake.params.folder, fraction)
     tmp_file = os.path.join(subfolder, "read_stats.tmp")
+    ## `qhist` is commented out becuase it can cause the following error with single-end reads, for some unknown reason.
+    # Exception in thread "main" java.lang.AssertionError: NaN, 0.0, 1.0
+    # [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    # tracker.ReadStats@7cca494b
+    #	at tracker.ReadStats.calcEntropySuperSlow(ReadStats.java:1316)
+    #	at tracker.ReadStats.writeQualityToFile(ReadStats.java:1046)
+    #	at tracker.ReadStats.writeAll(ReadStats.java:852)
+    #	at jgi.ReformatReads.process(ReformatReads.java:1210)
+    #	at jgi.ReformatReads.main(ReformatReads.java:54)
     shell(
         f" mkdir -p {subfolder} 2>> {snakemake.log[0]} "
         f" ; "
         f" reformat.sh {params_in} "
         f" bhist={subfolder}/base_hist.txt "
-        f" qhist={subfolder}/quality_by_pos.txt "
+        #f" qhist={subfolder}/quality_by_pos.txt " 
         f" lhist={subfolder}/readlength.txt "
         f" gchist={subfolder}/gc_hist.txt "
         f" gcbins=auto "
