@@ -134,37 +134,10 @@ rule binning_prokaryotic_metabat:
         """
 
 
-rule patch_maxbin:
-    output:
-        touch("Binning/patch/maxbin.done")
-    params:
-        workflow_folder=f"{workflow_folder}",
-    log:
-        "logs/patch/maxbin.log",
-    conda:
-        "../envs/maxbin2.yaml"
-    shell:
-        """
-        (
-        set +eu
-        D=$(which run_MaxBin.pl | xargs readlink -f | xargs dirname)
-        cd $D/
-        
-        if [ ! -e "patch.done" ];
-        then
-            patch -N < {params.workflow_folder}/scripts/veba/maxbin.patch \
-                && touch "patch.done"
-        fi
-        
-        ) &> {log}
-        """
-
-
 rule binning_prokaryotic_maxbin_107:
     input:
         depth_file=rules.get_maxbin_depth_file.output,
         contigs=get_assembly,
-        patch=rules.patch_maxbin.output,
     output:
         s2b="{sample}/binning/veba/1_prokaryotic/2_maxbin2_107/scaffolds_to_bins.tsv",
     params:
@@ -177,8 +150,10 @@ rule binning_prokaryotic_maxbin_107:
         "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/2_maxbin2_107.txt"
     log:
         "{sample}/logs/binning/veba/1_prokaryotic/2_maxbin2_107.txt",
-    conda:
-        "../envs/maxbin2.yaml"
+    #conda:
+    #    "../envs/maxbin2.yaml"
+    container:
+        "docker://timothystephens/maxbin2:2.2.7-TGSv2",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -231,7 +206,6 @@ rule binning_prokaryotic_maxbin_40:
     input:
         depth_file=rules.get_maxbin_depth_file.output,
         contigs=get_assembly,
-        patch=rules.patch_maxbin.output,
     output:
         s2b="{sample}/binning/veba/1_prokaryotic/3_maxbin2_40/scaffolds_to_bins.tsv",
     params:
@@ -244,8 +218,10 @@ rule binning_prokaryotic_maxbin_40:
         "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/3_maxbin2_40.txt"
     log:
         "{sample}/logs/binning/veba/1_prokaryotic/3_maxbin2_40.txt",
-    conda:
-        "../envs/maxbin2.yaml"
+    #conda:
+    #    "../envs/maxbin2.yaml"
+    container:
+        "docker://timothystephens/maxbin2:2.2.7-TGSv2",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -403,37 +379,10 @@ rule binning_prokaryotic_whokaryote:
         """ # Need to touch output file on sucess since it is not created if we have no prok contigs identified (i.e., is a euk bin)
 
 
-rule patch_mdmcleaner:
-    output:
-        touch("Binning/patch/mdmcleaner.done")
-    params:
-        workflow_folder=f"{workflow_folder}",
-    log:
-        "logs/patch/mdmcleaner.log",
-    conda:
-        "../envs/mdmcleaner.yaml"
-    shell:
-        """
-        (
-        set +eu
-        D=$(find "$CONDA_PREFIX" -name "mdmcleaner.py" | xargs readlink -f | xargs dirname)
-        cd $D/
-        
-        if [ ! -e "patch.done" ];
-        then
-            patch -N < {params.workflow_folder}/scripts/veba/mdmcleaner.patch \
-                && touch "patch.done"
-        fi
-        
-        ) &> {log}
-        """
-
-
 rule binning_prokaryotic_mdmcleaner:
     input:
         fasta=rules.binning_prokaryotic_whokaryote.output.fasta,
         dbdir=rules.mdmcleaner_download_db.output.dbdir,
-        patch=rules.patch_mdmcleaner.output,
     output:
         fasta="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.cleaned.fa",
     params:
@@ -445,8 +394,10 @@ rule binning_prokaryotic_mdmcleaner:
         "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
     log:
         "{sample}/logs/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt",
-    conda:
-        "../envs/mdmcleaner.yaml"
+    #conda:
+    #    "../envs/mdmcleaner.yaml"
+    container:
+        "docker://timothystephens/mdmcleaner:0.8.7-TGS",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
