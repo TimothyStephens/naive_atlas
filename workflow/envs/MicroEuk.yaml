@@ -1,7 +1,7 @@
 channels:
-    - conda-forge
-    - bioconda
-    - defaults
+  - conda-forge
+  - bioconda
+  - default
 dependencies:
   - mmseqs2=14.7e284
   - seqkit=2.4.0

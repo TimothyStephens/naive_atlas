@@ -1,4 +1,5 @@
 channels:
+    - jolespin
     - conda-forge
     - bioconda
     - defaults
