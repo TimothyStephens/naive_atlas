@@ -30,8 +30,8 @@ from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEA
 min_version("6.1")
 
 
-#container: "docker://continuumio/miniconda3:4.4.10"
-
+#container: "docker://continuumio/miniconda3:25.3.1-1"
+containerized: "/scratch/timothy/tmp/naive_atlas_v0.1.0.sif"
 
 wildcard_constraints:
     binner="[A-Za-z]+",

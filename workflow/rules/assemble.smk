@@ -65,8 +65,8 @@ rule normalize_reads_PE:
             "{sample}/assembly/reads/1_normalize_reads_R1.fastq.gz",
             "{sample}/assembly/reads/1_normalize_reads_R2.fastq.gz"
         ]),
-        histin ="{sample}/assembly/reads/1_normalize_reads.histogram_before_normalization.tsv.gz",
-        histout="{sample}/assembly/reads/1_normalize_reads.histogram_after_normalization.tsv.gz",
+        histin ="{sample}/assembly/reads/1_normalize_reads_PE.histogram_before_normalization.tsv.gz",
+        histout="{sample}/assembly/reads/1_normalize_reads_PE.histogram_after_normalization.tsv.gz",
     params:
         command = lambda wc, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -108,8 +108,8 @@ rule normalize_reads_SE:
         reads=temp([
             "{sample}/assembly/reads/1_normalize_reads_SE.fastq.gz",
         ]),
-        histin ="{sample}/assembly/reads/1_normalize_reads.histogram_before_normalization.tsv.gz",
-        histout="{sample}/assembly/reads/1_normalize_reads.histogram_after_normalization.tsv.gz",
+        histin ="{sample}/assembly/reads/1_normalize_reads_SE.histogram_before_normalization.tsv.gz",
+        histout="{sample}/assembly/reads/1_normalize_reads_SE.histogram_after_normalization.tsv.gz",
     params:
         command = lambda wc, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -151,8 +151,8 @@ rule normalize_reads_LR:
         reads=temp([
             "{sample}/assembly/reads/1_normalize_reads_LR.fastq.gz",
         ]),
-        histin ="{sample}/assembly/reads/1_normalize_reads.histogram_before_normalization.tsv.gz",
-        histout="{sample}/assembly/reads/1_normalize_reads.histogram_after_normalization.tsv.gz",
+        histin ="{sample}/assembly/reads/1_normalize_reads_LR.histogram_before_normalization.tsv.gz",
+        histout="{sample}/assembly/reads/1_normalize_reads_LR.histogram_after_normalization.tsv.gz",
     params:
         command = lambda wc, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
