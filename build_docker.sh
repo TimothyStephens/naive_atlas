@@ -16,14 +16,16 @@ echo -e "# Dockerfile to containerize naiveATLAS workflow
 FROM condaforge/mambaforge:latest
 
 
-## (1/7) Set environment variables
+## (1/6) Set environment variables
 # So we dont have to interactivly configure tzdata
 RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 ENV CONDA_DIR=/conda-envs
 ENV PATH=/conda-envs/naive_atlas/bin:\$PATH
-
+# Enhance mamba network robustness
+ENV MAMBA_NO_LOW_SPEED_LIMIT=1
+ENV CONDA_REMOTE_READ_TIMEOUT_SECS=300
 
 RUN apt-get update && \\
     apt-get install -y \\
@@ -31,7 +33,7 @@ RUN apt-get update && \\
     rm -rf /var/lib/apt/lists/*
 
 
-## (2/7) Install Singulairty
+## (2/6) Install Singulairty
 RUN apt-get update && \\
     apt-get install -y --no-install-recommends \\
       software-properties-common \\
@@ -43,16 +45,18 @@ RUN apt-get update && \\
     && rm -rf /var/lib/apt/lists/*
 
 
-## (3/7) Create and set workflow working directory
+## (3/6) Create and set workflow working directory
 WORKDIR /app
 COPY . .
-RUN mamba env create --prefix /conda-envs/naive_atlas --file naive_atlasenv.yml
+RUN mamba env create --prefix /conda-envs/naive_atlas --file naive_atlasenv.yml -v
 SHELL [\"conda\", \"run\", \"-p\", \"/conda-envs/naive_atlas\", \"/bin/bash\", \"-c\"]
-RUN /conda-envs/naive_atlas/bin/pip3 install --prefix /conda-envs/naive_atlas --editable .
+RUN /conda-envs/naive_atlas/bin/pip3 install --prefix /conda-envs/naive_atlas --editable . && \\
+    /conda-envs/naive_atlas/bin/pip3 install snakemake-executor-plugin-slurm && \\
+    /conda-envs/naive_atlas/bin/pip3 install snakemake-executor-plugin-cluster-generic
 SHELL [\"/bin/sh\", \"-c\"]
 
 
-## (4/7) Install each workflow package" > "$DOCKERFILE"
+## (4/6) Install each workflow package" > "$DOCKERFILE"
 
 RUN=""
 tmp_seen=$(mktemp)
@@ -75,9 +79,9 @@ echo "" >> "$DOCKERFILE"
 # Need to run mamba create as each RUN creates a new layer, which is a lot of diskspace overhead and will cause issues if done separatly.
 NL=$'\n'
 if [ -z "$RUN" ]; then
-  RUN="RUN mamba env create --prefix /conda-envs/$MD5SUM --file /conda-envs/$MD5SUM.yaml && \\"
+  RUN="RUN mamba env create --prefix /conda-envs/$MD5SUM --file /conda-envs/$MD5SUM.yaml -vvv && \\"
 else
-  RUN="${RUN}${NL}    mamba env create --prefix /conda-envs/$MD5SUM --file /conda-envs/$MD5SUM.yaml && \\"
+  RUN="${RUN}${NL}    mamba env create --prefix /conda-envs/$MD5SUM --file /conda-envs/$MD5SUM.yaml -vvv && \\"
 fi
 
   echo "$MD5SUM" >> "$tmp_seen"
@@ -102,49 +106,16 @@ echo -e "$RUN" >> "$DOCKERFILE"
 
 echo -e '
 
-## (5/7) Download Singulairty/Apptainer SIF files
-RUN mkdir -p /containers-sif' >> "$DOCKERFILE"
-
-RUN=""
-tmp_seen=$(mktemp)
-for URI in $(cat workflow/rules/*.smk \
-  | grep 'docker:' \
-  | awk '{print $1}' \
-  | sed -e 's/,//'); do
-
-HASH=$(echo -n "$URI" | sha256sum | awk '{print $1}')
-SIF="/containers-sif/${HASH}.sif"
-
-if ! grep -qFx "$HASH" "$tmp_seen"; then
-  # Not seen
-  NL=$'\n'
-  if [ -z "$RUN" ]; then
-    RUN="RUN apptainer pull --name $SIF $URI && \\"
-  else
-    RUN="${RUN}${NL}    apptainer pull --name $SIF $URI && \\"
-  fi
-  
-  echo "$HASH" >> "$tmp_seen"
-fi
-
-done
-
-RUN="${RUN}${NL}    apptainer cache clean --force"
-rm "$tmp_seen"
-echo -e "\n$RUN" >> "$DOCKERFILE"
-
-
-echo -e '
-
-## (6/7) Verify the installation by checking the version
+## (5/6) Verify the installation by checking the version
 RUN naive_atlas --help
 
 
-## (7/7) Set the default command to show MaxBin2 help
+## (6/6) Set the default command to show MaxBin2 help
 CMD ["naive_atlas", "--help"]
 ' >> "$DOCKERFILE"
 
 
+#exit 0
 ## Build using docker
 $DOCKER build -t $USER/naive_atlas:${VERSION} .
 $DOCKER run $USER/naive_atlas:${VERSION} naive_atlas --help
@@ -162,6 +133,12 @@ docker image rm XXXX
 singularity pull naive_atlas_v${VERSION}.sif docker://$USER/naive_atlas:${VERSION}
 singularity exec naive_atlas_v${VERSION}.sif naive_atlas --help
 rm naive_atlas_v${VERSION}.sif
+
+# OR build a SIF file directly from a local docker image
+singularity build naive_atlas_v${VERSION}.sif docker-daemon://$USER/naive_atlas:${VERSION}
+singularity exec naive_atlas_v${VERSION}.sif naive_atlas --help
+rm naive_atlas_v${VERSION}.sif
+
 
 docker image ls
 docker image rm XXXX
