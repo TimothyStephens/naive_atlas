@@ -99,3 +99,6 @@ EGGNOG_HEADER = [
     "BiGG_Reaction",
     "PFAMs",
 ]
+
+GENOME_DIR   = "genomes/genomes"
+UNBINNED_DIR = "genomes/unbinned"

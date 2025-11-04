@@ -13,7 +13,7 @@ gtdb_dir = "genomes/annotations/genomes/taxonomy/gtdb"
 
 rule copy_prokaryotic_genomes:
     input:
-        "genomes/genomes",
+        GENOME_DIR,
     output:
         directory("tmp/gtdbtk"),
     log:

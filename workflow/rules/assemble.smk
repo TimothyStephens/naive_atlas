@@ -806,6 +806,8 @@ rule align_reads_to_final_contigs:
         target="{sample}/assembly/{sample_contigs}.fasta",
     output:
         bam=temp("{sample_contigs}/sequence_alignment/{sample}.bam"),
+    wildcard_constraints:
+        sample="|".join(SAMPLES)
     params:
         command = lambda wildcards, input, output, threads, resources: align_reads_command(
             wildcards, input, output, threads, resources

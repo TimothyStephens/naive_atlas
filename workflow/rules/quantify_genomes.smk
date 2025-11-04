@@ -9,65 +9,19 @@
 ####                             ####
 #####################################
 
-def get_genome_dir():
-    if ("genome_dir" in config) and (config["genome_dir"] is not None):
-        genome_dir = config["genome_dir"]
-        assert os.path.exists(genome_dir), f"{genome_dir} Doesn't exists"
-        
-        logger.info(f"Set genomes from {genome_dir}.")
-        
-        # check if genomes are present
-        genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
-        
-        if len(genomes) == 0:
-            logger.error(f"No genomes found with fa extension in {genome_dir} ")
-            exit(1)
-    
-    else:
-        genome_dir = "genomes/genomes"
-    
-    return genome_dir
-
-
-genome_dir = get_genome_dir()
-
-
 def get_all_genomes(wildcards):
-    global genome_dir
-    # check if genomes are present
-    genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
-    
-    if len(genomes) == 0:
-        logger.error(
-            f"No genomes found with fa extension in {genome_dir} "
-            "You don't have any Metagenome assembled genomes with sufficient quality. "
-            "You may want to change the assembly, binning or filtering parameters. "
-            "Or focus on the genecatalog workflow only."
-        )
-        #exit(1)
-
+    genomes = glob_wildcards(os.path.join(GENOME_DIR, "{genome}.fa")).genome
     return genomes
 
 
 def get_all_unbinned(wildcards):
-    # check if genomes are present
-    genomes = glob_wildcards(os.path.join("genomes/unbinned", "{genome}.fa")).genome
-
-    if len(genomes) == 0:
-        logger.error(
-            f"No genomes found with fasta extension in genomes/genomes/unbinned "
-            "You don't have any Metagenome assembled genomes with sufficient quality. "
-            "You may want to change the assembly, binning or filtering parameters. "
-            "Or focus on the genecatalog workflow only."
-        )
-        #exit(1)
-
+    genomes = glob_wildcards(os.path.join(UNBINNED_DIR, "{genome}.fa")).genome
     return genomes
 
 
 rule get_contig2genomes:
     input:
-        genome_dir,
+        GENOME_DIR,
     output:
         c2g="genomes/clustering/contig2genome.tsv",
         g2c="genomes/clustering/genome2contig.tsv",
@@ -102,7 +56,7 @@ localrules:
 
 rule concat_genomes:
     input:
-        genome_dir,
+        GENOME_DIR,
     output:
         "genomes/alignments/all_contigs.fa",
     params:
@@ -114,7 +68,7 @@ rule concat_genomes:
 rule index_genomes:
     input:
         target=rules.concat_genomes.output,
-        timestamp=genome_dir,
+        timestamp=GENOME_DIR,
     output:
         "ref/genomes.mmi",
     log:

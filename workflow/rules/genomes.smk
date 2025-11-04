@@ -461,7 +461,7 @@ rule move_genomes:
         all_done="Binning/raw_bins/all.done",
         dirs=get_genome_to_move,
     output:
-        dir=directory("genomes/genomes"),
+        dir=directory(GENOME_DIR),
     log:
         "logs/genomes/move_mags.log",
     script:
@@ -474,7 +474,7 @@ rule move_unbinned:
             sample=SAMPLES
         ),
     output:
-        dir=directory("genomes/unbinned"),
+        dir=directory(UNBINNED_DIR),
     log:
         "logs/genomes/move_unbinned.log",
     script:

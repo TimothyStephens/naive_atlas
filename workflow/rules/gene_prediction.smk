@@ -10,12 +10,10 @@
 def get_genomes_for_gene_prediction(lineage):
     import pandas as pd
     
-    genome_dir = 'genomes/genomes'
-    
     if lineage == 'bacteria':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_prokaryotic_*.fa"))
+        fasta_files = glob(os.path.join(GENOME_DIR, "MAG_prokaryotic_*.fa"))
         if len(fasta_files) == 0:
-            print(f"No Prokaryotic genomes found with fa extension in {genome_dir} ")
+            #print(f"No Prokaryotic genomes found with fa extension in {GENOME_DIR}")
             return([])
         
         file_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
@@ -30,9 +28,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'archaea':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_prokaryotic_*.fa"))
+        fasta_files = glob(os.path.join(GENOME_DIR, "MAG_prokaryotic_*.fa"))
         if len(fasta_files) == 0:
-            print(f"No Prokaryotic genomes found with fa extension in {genome_dir} ")
+            #print(f"No Prokaryotic genomes found with fa extension in {GENOME_DIR}")
             return([])
 
         file_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
@@ -47,9 +45,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'eukaryote':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_eukaryotic_*.fa"))
+        fasta_files = glob(os.path.join(GENOME_DIR, "MAG_eukaryotic_*.fa"))
         if len(fasta_files) == 0:
-            print(f"No Eukaryotic genomes found with fa extension in {genome_dir} ")
+            #print(f"No Eukaryotic genomes found with fa extension in {GENOME_DIR}")
             return([])
         
         genomes = []
@@ -60,9 +58,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'virus':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_viral_*.fa"))
+        fasta_files = glob(os.path.join(GENOME_DIR, "MAG_viral_*.fa"))
         if len(fasta_files) == 0:
-            print(f"No Viral genomes found with fa extension in {genome_dir} ")
+            #print(f"No Viral genomes found with fa extension in {GENOME_DIR}")
             return([])
         
         genomes = []
@@ -73,9 +71,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'plasmid':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_plasmid_*.fa"))
+        fasta_files = glob(os.path.join(GENOME_DIR, "MAG_plasmid_*.fa"))
         if len(fasta_files) == 0:
-            print(f"No Plastid genomes found with fa extension in {genome_dir} ")
+            #print(f"No Plastid genomes found with fa extension in {GENOME_DIR}")
             return([])
         
         genomes = []
@@ -88,7 +86,7 @@ def get_genomes_for_gene_prediction(lineage):
 
 rule gene_prediction_bacteria:
     input:
-        fasta="genomes/genomes/{genome}.fa",
+        fasta=f"{GENOME_DIR}/{{genome}}.fa",
         dbdir=rules.bakta_download_db.output.dbdir,
     output:
         faa="Predict_Genes/genomes/bacteria/{genome}.faa",
@@ -127,7 +125,7 @@ rule gene_prediction_bacteria:
 
 rule gene_prediction_archaea:
     input:
-        fasta="genomes/genomes/{genome}.fa",
+        fasta=f"{GENOME_DIR}/{{genome}}.fa",
     output:
         faa="Predict_Genes/genomes/archaea/{genome}.faa",
     params:
@@ -162,7 +160,7 @@ rule gene_prediction_archaea:
 
 rule gene_prediction_virus:
     input:
-        fasta="genomes/genomes/{genome}.fa",
+        fasta=f"{GENOME_DIR}/{{genome}}.fa",
     output:
         faa="Predict_Genes/genomes/virus/{genome}.faa",
     params:
@@ -197,7 +195,7 @@ rule gene_prediction_virus:
 
 rule gene_prediction_plasmid:
     input:
-        fasta="genomes/genomes/{genome}.fa",
+        fasta=f"{GENOME_DIR}/{{genome}}.fa",
         dbdir=rules.bakta_download_db.output.dbdir,
     output:
         faa="Predict_Genes/genomes/plasmid/{genome}.faa",
@@ -234,7 +232,7 @@ rule gene_prediction_plasmid:
 
 rule gene_prediction_eukaryote:
     input:
-        fasta="genomes/genomes/{genome}.fa",
+        fasta=f"{GENOME_DIR}/{{genome}}.fa",
         dbdir=rules.microeukaryotic_mmseqs2_db.output.dbdir,
     output:
         seq_type="Predict_Genes/genomes/eukaryotes/{genome}.seq_type.tsv",
@@ -435,7 +433,7 @@ checkpoint move_genome_predicted_genes:
 
 rule gene_prediction_unbinned:
     input:
-        fasta="genomes/unbinned/{genome}.fa",
+        fasta=f"{UNBINNED_DIR}/{{genome}}.fa",
     output:
         faa="Predict_Genes/unbinned/{genome}.faa",
     params:

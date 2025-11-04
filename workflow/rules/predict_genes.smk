@@ -3,7 +3,7 @@
 
 rule copy_eukaryotic_genomes:
     input:
-        "genomes/genomes",
+        GENOME_DIR,
     output:
         directory("tmp/genes/eukaryotic"),
     log:
