@@ -13,15 +13,13 @@ def load_sample_table(sample_table="samples.tsv"):
 
 
 def validate_sample_table(sampleTable):
-    Expected_Headers = ["Reads_raw_R1", "Reads_raw_R2", "Assembler", "Bin_group"]
+    Expected_Headers = ["Reads_raw_R1"]
     for h in Expected_Headers:
         if not (h in sampleTable.columns):
             logger.error(f"expect '{h}' to be found in samples.tsv")
             exit(1)
-        #elif sampleTable[h].isnull().any():
-        #    logger.error(f"Found empty values in the sample table column '{h}'")
-        #    exit(1)
 
+    ### Sample_IDs
     if not sampleTable.index.is_unique:
         duplicated_samples = ", ".join(sampleTable.index.duplicated())
         logger.error(
@@ -47,10 +45,23 @@ def validate_sample_table(sampleTable):
         )
         exit(1)
 
-    ### Validate Bin_group
+    ### R2
+    if 'Reads_raw_R2' not in sampleTable.columns:
+        sampleTable['Reads_raw_R2'] = pd.NA
+
+    ### LR
+    if 'Reads_raw_Long' not in sampleTable.columns:
+        sampleTable['Reads_raw_Long'] = pd.NA
+
+    ### Bin_group
+    if 'Bin_group' not in sampleTable.columns:
+        sampleTable['Bin_group'] = "all"
 
     if sampleTable.Bin_group.isnull().any():
-        logger.warning(f"Found empty values in the sample table column 'Bin_group'")
+        logger.error(
+            f"Found empty values in the sample table column 'Bin_group' \n {list(sampleTable.Bin_group)}"
+        )
+        exit(1)
 
     if sampleTable.Bin_group.str.contains("_").any():
         logger.error(
@@ -64,7 +75,10 @@ def validate_sample_table(sampleTable):
         )
         exit(1)
     
-    ### Validate Assembler
+    ### Assembler
+    if 'Assembler' not in sampleTable.columns:
+        sampleTable['Assembler'] = "megahit"
+    
     allowed_assembler_options = [
         'megahit', 
         'spades', 'spades-pacbio-raw', 'spades-pacbio-corr', 'spades-pacbio-hq', 'spades-nanopore-raw', 'spades-nanopore-corr', 'spades-nanopore-hq', 
@@ -78,10 +92,6 @@ def validate_sample_table(sampleTable):
             f"Assembler listed is not part of allowable options: {allowed_assembler_options}.\nBad assembler options: {unknown_assemblers}"
         )
         exit(1)
-    
-    ### Add Long read column if missing
-    if 'Reads_raw_Long' not in sampleTable.columns:
-        sampleTable['Reads_raw_Long'] = pd.NA
     
     ### Add missing (optional columns) or Enforce Bool (if provided)
     sampleTable = check_column(sampleTable, megahit=False, spades=False, flye=False, metamdbg=False, col='Interleaved')
@@ -136,14 +146,14 @@ def validate_bingroup_size(sampleTable):
     if max_bin_group_size > 50:
         logger.error(
             warn_message
-            + f"Max bin group size of {max_bin_group_size} is too much . Please split your samples into smaller groups."
+            + f"Max bin group size of {max_bin_group_size} is too much . Please split your samples into smaller groups (<<50)."
         )
         BinGroupSizeError("Bin_group too large")
 
     if max_bin_group_size > 15:
         logger.warning(
             warn_message
-            + f"Max bin group size of {max_bin_group_size} might be too much for cross-mapping. Consider spliting your samples into smaller groups."
+            + f"Max bin group size of {max_bin_group_size} might be too much for cross-mapping. Consider spliting your samples into smaller groups (<15)."
         )
 
     elif max_bin_group_size == 1:
