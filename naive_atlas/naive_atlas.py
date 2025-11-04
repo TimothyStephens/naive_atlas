@@ -1,21 +1,16 @@
-import os
-import sys
+import os, sys, shutil
 from .color_logger import logger
 
 import multiprocessing
 import subprocess
 import click
 
-
 from snakemake.common.configfile import load_configfile
-from .make_config import validate_config
-from .init.atlas_init import run_init  # , run_init_sra
-
 from .__init__ import __version__
 
-##
 
 
+###### Functions ######
 def handle_max_mem(max_mem, profile):
     "Specify maximum virtual memory to use by atlas."
     "For numbers >1 its the memory in GB. "
@@ -52,6 +47,16 @@ def handle_max_mem(max_mem, profile):
         return f" --resources mem={floor(max_mem)} mem_mb={floor(max_mem*1024)} java_mem={floor(0.85* max_mem)} "
 
 
+def get_snakefile(file="workflow/Snakefile"):
+    sf = os.path.join(os.path.dirname(os.path.abspath(__file__)), file)
+    if not os.path.exists(sf):
+        sys.exit("Unable to locate the Snakemake workflow file; tried %s" % sf)
+    return sf
+
+
+
+###### Naive ATLAS ######
+
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.version_option(__version__)
 @click.pass_context
@@ -63,22 +68,55 @@ def cli(obj):
     """
 
 
-cli.add_command(run_init)
+###### init command ######
 
 
-# cli.add_command(run_init_sra)
+@cli.command(
+    "init",
+    short_help="prepare configuration file and sample table for atlas run",
+)
+@click.option(
+    "-w",
+    "--working-dir",
+    type=click.Path(dir_okay=True, writable=True, resolve_path=True),
+    help="location to run atlas",
+    default=".",
+)
+def run_init(
+    working_dir,
+):
+    """Write the CONFIG and example SAMPLES files to working dir.
+    """
+    config_file  = os.path.join(working_dir, "config.yaml")
+    samples_file = os.path.join(working_dir, "samples.tsv")
+
+    # Create working dir
+    os.makedirs(working_dir, exist_ok=True)
+
+    # Create template config.yaml file
+    shutil.copy2(
+        "../config/template_samples.tsv", # Relative from naive_atlas/naive_atlas/naive_atlas.py
+        samples_file
+    )
+    print()
+    print(f"## Created template config file: {config_file}")
+    print(f"## Please add host datasets for mapping (if any exist) and uncomment the annotation approaches that you want to run (it is also fine to keep just the default config and change nothing).")
+    print()
+
+    # Create template samples.tsv file
+    with open("../config/template_config.yaml", 'r') as infile: # Relative from naive_atlas/naive_atlas/naive_atlas.py
+        file_content = infile.read()
+    new_content = file_content.replace('/project', working_dir)
+    with open(config_file, 'w') as outfile:
+        outfile.write(new_content)
+    print()
+    print(f"## Created template samples file: {samples_file}")
+    print(f"## Please use this template to guide the construction of your final samples file.")
+    print()
 
 
-def get_snakefile(file="workflow/Snakefile"):
-    sf = os.path.join(os.path.dirname(os.path.abspath(__file__)), file)
-    if not os.path.exists(sf):
-        sys.exit("Unable to locate the Snakemake workflow file; tried %s" % sf)
-    return sf
 
-
-# QC command
-
-
+###### run command ######
 @cli.command(
     "run",
     context_settings=dict(ignore_unknown_options=True),
@@ -191,8 +229,6 @@ def run_workflow(
             "Generate one with 'atlas init'"
         )
         exit(1)
-
-    validate_config(config_file, workflow)
 
     conf = load_configfile(config_file)
 

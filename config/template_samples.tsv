@@ -1,0 +1,5 @@
+Sample_ID	Reads_raw_R1	Reads_raw_R2	Reads_raw_Long	Assembler	Bin_group
+SampleA	/project/SampleA.R1.fastq.gz	/project/reads/SampleA.R2.fastq.gz	NA	megahit	Set1
+SampleB	/project/reads/SampleB.R1.fastq.gz	NA	NA	megahit	Set1
+SampleC	/project/reads/SampleD.R1.fastq.gz	/project/reads/SampleD.R2.fastq.gz	/project/SampleD.LR.fasta.gz	spades-pacbio-hq	Set2
+SampleD	NA	NA	/project/S-fluitans.hifireads.fasta.gz	flye-pacbio-hq	Set2

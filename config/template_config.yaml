@@ -9,7 +9,7 @@
 #####################################################################
 
 #  For more details about the config values see:
-#  https://metagenome-atlas.rtfd.io
+#  https://github.com/TimothyStephens/naive_atlas
 
 
 
@@ -42,23 +42,23 @@ runtime: 4 #hr
 ########################
 # directory where databases are downloaded with 'atlas download'
 database_dir: 
-  /user/project/dir/databases
+  /project/databases
 
 tmpdir: 
-  /user/project/dir/tmp
+  /project/tmp
 
 # used to trim adapters from reads and read ends
 preprocess_adapters: 
-  /user/project/dir/databases/adapters.fa
+  /project/databases/adapters.fa
 
 #contamination references can be added such that -- key: /path/to/fasta
 contaminant_references:
   PhiX: 
-    /user/project/dir/databases/phiX174_virus.fa
-  Host_A:
-    /user/project/host_refs/Host_A.fa
-  Host_B:
-    /user/project/host_refs/Host_B.fa
+    /project/databases/phiX174_virus.fa
+  #Host_A:
+  #  /project/host_refs/Host_A.fa
+  #Host_B:
+  #  /project/host_refs/Host_B.fa
 
 
 
@@ -68,20 +68,20 @@ contaminant_references:
 genome_annotations:
 - gtdb_tree
 - gtdb_taxonomy
-- dram
-- dram_unbinned
-- metaeuk
-- metaeuk_unbinned
+#- dram
+#- dram_unbinned
+#- metaeuk
+#- metaeuk_unbinned
 #- mmseqs2_easy_taxonomy
-- mmseqs2_easy_taxonomy_unbinned
+#- mmseqs2_easy_taxonomy_unbinned
 
 gene_annotations:
 - eggNOG
-- eggNOG_unbinned
+#- eggNOG_unbinned
 - dram
-- dram_unbinned
-- mmseqs2
-- mmseqs2_unbinned
+#- dram_unbinned
+#- mmseqs2
+#- mmseqs2_unbinned
 
 
 
