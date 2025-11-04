@@ -60,7 +60,6 @@ def calculate_insert_size_hist(params_in, params_out=None):
             f" threads={snakemake.threads} "
             f" {params_in} "
             f" {snakemake.params.flags} k={snakemake.params.kmer} "
-            f" extend2={snakemake.params.extend2} "
             f" ihist={params_out} merge=f "
             f" mininsert0=35 minoverlap0=8 "
             f" prealloc=t prefilter=t "

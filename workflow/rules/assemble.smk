@@ -7,16 +7,6 @@ import warnings
 from copy import deepcopy
 
 
-def get_preprocessing_steps(config):
-    preprocessing_steps = ["QC"]
-    if config.get("error_correction_before_assembly", True):
-        preprocessing_steps.append("errorcorr")
-
-    return ".".join(preprocessing_steps)
-
-
-assembly_preprocessing_steps = get_preprocessing_steps(config)
-
 
 ####
 #### Normalize Reads

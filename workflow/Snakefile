@@ -121,11 +121,7 @@ rule qc:
     input:
         expand("{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
         read_counts="stats/read_counts.tsv",
-        read_length_stats=(
-            ["stats/insert_stats.tsv", "stats/read_length_stats.tsv"]
-            if PAIRED_END
-            else "stats/read_length_stats.tsv"
-        ),
+        read_length_stats=["stats/insert_stats.tsv", "stats/read_length_stats.tsv"],
         report="reports/QC_report.html",
     output:
         touch("finished_QC"),

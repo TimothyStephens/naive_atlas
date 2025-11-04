@@ -390,6 +390,7 @@ rule binning_prokaryotic_mdmcleaner:
         mdmcleaner_config="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.mdmcleaner.config",
         output_path="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner",
         output_filtered="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}/{genome}_filtered_kept_contigs.fasta.gz",
+        mdmcleaner_options=config['veba_prokaryotic']['mdmcleaner_options'],
     benchmark:
         "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
     log:
@@ -418,7 +419,7 @@ rule binning_prokaryotic_mdmcleaner:
             -c {params.mdmcleaner_config} \
             -i {params.raw_fasta} \
             -o {params.output_path} \
-            --threads {threads}
+            --threads {threads} {params.mdmcleaner_options}
         gunzip -c {params.output_filtered} > {output.fasta}
         ) &> {log}
         """
@@ -909,6 +910,7 @@ rule binning_viral_genomad:
         results="{sample}/binning/veba/3_viral/2_genomad",
         workflow_folder=f"{workflow_folder}",
         sample="{sample}",
+        minimum_score=config['veba_viral']['minimum_score']
     benchmark:
         "{sample}/logs/benchmarks/binning/veba/3_viral/2_genomad.txt"
     log:
@@ -934,7 +936,7 @@ rule binning_viral_genomad:
             --sensitivity 4.0 \
             --splits 0 \
             --composition auto \
-            --min-score 0.7 \
+            --min-score {params.minimum_score} \
             --max-fdr 1.0 \
             --min-plasmid-marker-enrichment -100 \
             --min-virus-marker-enrichment -100 \

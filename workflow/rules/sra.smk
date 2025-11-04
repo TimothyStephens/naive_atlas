@@ -6,7 +6,7 @@ localrules:
     prefetch,
 
 
-SRA_read_fractions = ["_1", "_2"] if PAIRED_END else [""]
+SRA_read_fractions = ["_1", "_2"]
 SRA_SUBDIR_RUN = "SRA/Runs"
 
 

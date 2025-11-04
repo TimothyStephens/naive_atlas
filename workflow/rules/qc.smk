@@ -270,7 +270,7 @@ rule deduplicate_reads_PE:
         "{sample}/benchmarks/sequence_quality_control/cleaning/2_deduplicated_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
+    threads: config["medium_threads"]
     resources:
         mem=config["medium_memory"],
         java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
@@ -305,7 +305,7 @@ rule deduplicate_reads_SE:
         "{sample}/benchmarks/sequence_quality_control/cleaning/2_deduplicated_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
+    threads: config["medium_threads"]
     resources:
         mem=config["medium_memory"],
         java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
@@ -340,7 +340,7 @@ rule deduplicate_reads_LR:
         "{sample}/benchmarks/sequence_quality_control/cleaning/2_deduplicated_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
+    threads: config["medium_threads"]
     resources:
         mem=config["medium_memory"],
         java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
@@ -1042,10 +1042,9 @@ rule get_read_length_hist:
         lenHist_se="{sample}/sequence_quality_control/read_stats/QC_read_length_hist_SE.txt",
         lenHist_lr="{sample}/sequence_quality_control/read_stats/QC_read_length_hist_LR.txt",
     params:
-        kmer=config["merging_k"],
-        extend2=config["merging_extend2"],
+        kmer=62,
         flags="loose ecct",
-        minprob=config.get("bbmerge_minprob", "0.8"),
+        minprob="0.8",
     log:
         "{sample}/logs/sequence_quality_control/read_stats/calculate_read_length.log",
     benchmark:

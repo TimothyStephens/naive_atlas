@@ -42,13 +42,6 @@ mem: 2 #GB
 threads: 1 
 runtime: 4 #hr
 
-# directory where databases are downloaded with 'atlas download'
-database_dir: 
-  /user/project/dir/databases
-
-tmpdir: 
-  /user/project/dir/tmp
-
 
 
 
@@ -56,17 +49,11 @@ tmpdir:
 ########################
 # Quality control
 ########################
-data_type: metagenome # metagenome or metatranscriptome
-interleaved_fastqs: false
-
 # remove (PCR)-duplicated reads using clumpify
-deduplicate: true
 duplicates_only_optical: false
 duplicates_allow_substitutions: 2
 
 # used to trim adapters from reads and read ends
-preprocess_adapters: 
-  /user/project/dir/databases/adapters.fa
 preprocess_qtrim: "rl"
 preprocess_kmer_trim: "r"
 preprocess_minimum_base_quality: 10
@@ -83,20 +70,11 @@ preprocess_adapter_min_k: 8
 preprocess_allowable_kmer_mismatches: 1
 preprocess_reference_kmer_match_length: 27
 # normalize reads
-normalize_reads_before_assembly: false
 normalization_kmer_length: 21
 normalization_target_depth: 1000
 normalization_minimum_kmer_depth: 3
 # error correction where PE reads overlap
 error_correction_overlapping_pairs: true
-#contamination references can be added such that -- key: /path/to/fasta
-contaminant_references:
-  PhiX: 
-    /user/project/dir/databases/phiX174_virus.fa
-#  Host_A:
-#    /user/project/host_refs/Host_A.fa
-#  Host_B:
-#    /user/project/host_refs/Host_B.fa
 contaminant_max_indel: 20
 contaminant_min_ratio: 0.65
 contaminant_kmer_length: 13
@@ -110,22 +88,11 @@ contaminant_ambiguous: best
 ########################
 # Pre-assembly-processing
 ########################
-
-# Advanced Error correction
-error_correction_before_assembly: true
-spades_skip_BayesHammer: true # Skip error correction in spades assembler
-error_correction_kmer: 31 # can be longer e.g. 62 but takes more memory
-
 # remove reads with k-mers that cannot be used for assembly.
 # Filter reads that have a 10% of k-mers below a minimum depth.
 error_correction_remove_lowdepth: false
 error_correction_minimum_kmer_depth: 1 #
 error_correction_aggressive: false
-
-# Merging of pairs
-# join R1 and R2 at overlap; unjoined reads are still utilized
-merge_pairs_before_assembly: true
-merging_k: 62
 
 
 
@@ -253,6 +220,9 @@ metaeuk_reduceredundancy: ""
 metaeuk_unitesetstofasta: ""
 metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
 
+## DRAM
+dram_extra: ""
+
 
 
 
@@ -267,13 +237,4 @@ eggNOG_use_virtual_disk: false # coping the eggNOG DB to a virtual disk can spee
 virtual_disk: /dev/shm   # But you need 37G extra ram
 
 
-
-
-
-########################
-# Misc
-#######################
-
-## use just in time compilation for bbmap
-usejni: false
 

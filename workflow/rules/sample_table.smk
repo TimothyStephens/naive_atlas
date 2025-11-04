@@ -2,8 +2,7 @@ from naive_atlas.sample_table import load_sample_table, validate_bingroup_size
 
 sampleTable = load_sample_table()
 sampleTable.to_csv('naive_atlas.samples.run_info.tsv', sep='\t', index=False)
-#with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
-#    print(sampleTable)
+SAMPLES = sampleTable.index.values
 
 def io_params_for_tadpole(io, key="in"):
     """This function generates the input flag needed for bbwrap/tadpole for all cases
@@ -44,49 +43,11 @@ def input_params_for_bbwrap(input):
         return io_params_for_tadpole(input)
 
 
-SAMPLES = sampleTable.index.values
-SKIP_QC = False
-
-
 # GROUPS = sampleTable.Bin_group.unique()
 def get_alls_samples_of_group(wildcards):
     group_of_sample = sampleTable.loc[wildcards.sample, "Bin_group"]
 
     return list(sampleTable.loc[sampleTable.Bin_group == group_of_sample].index)
-
-
-PAIRED_END = sampleTable.columns.str.contains("R2").any() or config.get(
-    "interleaved_fastqs", False
-)
-
-
-colum_headers_QC = sampleTable.columns[sampleTable.columns.str.startswith("Reads_QC_")]
-if len(colum_headers_QC) >= 1:
-    MULTIFILE_FRACTIONS = list(colum_headers_QC.str.replace("Reads_QC_", ""))
-
-    if (len(MULTIFILE_FRACTIONS) == 1) and config.get("interleaved_fastqs", False):
-        MULTIFILE_FRACTIONS = ["R1", "R2"]
-
-else:
-    MULTIFILE_FRACTIONS = ["R1", "R2"] if PAIRED_END else ["se"]
-
-colum_headers_raw = sampleTable.columns[
-    sampleTable.columns.str.startswith("Reads_raw_")
-]
-if len(colum_headers_raw) == 0:
-    SKIP_QC = True
-
-    logger.info("Didn't find raw reads in sampleTable - skip QC")
-    RAW_INPUT_FRACTIONS = MULTIFILE_FRACTIONS
-else:
-    RAW_INPUT_FRACTIONS = ["R1", "R2"] if PAIRED_END else ["se"]
-
-
-if (len(colum_headers_raw) == 0) and (len(colum_headers_QC) == 0):
-    raise IOError(
-        "Either raw reas or QC reads need to be in the sample table. "
-        "I din't find any columnns with 'Reads_raw_<fraction>' or 'Reads_QC_<fraction>'  "
-    )
 
 
 class FileNotInSampleTableException(Exception):
@@ -144,38 +105,6 @@ def get_files_from_sampleTable(sample, Headers):
         )
 
     return list(files)
-
-
-def get_quality_controlled_reads(wildcards, include_se=False):
-    """
-    Gets quality controlled reads.
-    R1 and R1 or se are returned as a dict.
-
-    if the files are not in the sample tible impute default path produced with atlas.
-    set
-
-    """
-
-    Fractions = MULTIFILE_FRACTIONS
-
-    if config.get("interleaved_fastqs", False) and SKIP_QC:
-        Fractions = ["se"]
-
-    elif not include_se:
-        # get only R1 and R2 or se
-        Fractions = Fractions[: min(len(Fractions), 2)]
-
-    try:
-        QC_Headers = ["Reads_QC_" + f for f in Fractions]
-        return get_files_from_sampleTable(wildcards.sample, QC_Headers)
-
-    except FileNotInSampleTableException:
-        # return files as named by atlas pipeline
-        return expand(
-            "QC/reads/{sample}_{fraction}.fastq.gz",
-            fraction=Fractions,
-            sample=wildcards.sample,
-        )
 
 
 def get_assembly(wildcards):
