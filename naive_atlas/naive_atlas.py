@@ -129,15 +129,15 @@ def get_snakefile(file="workflow/Snakefile"):
     help="use at most this many jobs in parallel (see cluster submission for more details).",
 )
 @click.option(
+    "--profile",
+    default=None,
+    help="snakemake profile e.g. for cluster execution.",
+)
+@click.option(
     "--max-mem",
     type=float,
     default=None,
     help=handle_max_mem.__doc__,
-)
-@click.option(
-    "--profile",
-    default=None,
-    help="snakemake profile e.g. for cluster execution.",
 )
 @click.option(
     "-n",
@@ -200,26 +200,27 @@ def run_workflow(
 
     cmd = (
         "snakemake --snakefile {snakefile} --directory {working_dir} "
+        " --configfile '{config_file}' "
+        " {profile} "
+        "{jobs} {max_mem_string} "
+        " --keep-incomplete --rerun-incomplete --keep-going "
         " --rerun-triggers mtime "
-        "{jobs} --rerun-incomplete "
-        "--configfile '{config_file}' --nolock "
         " --show-failed-logs "
-        " {profile} --use-conda {conda_prefix} {dryrun} "
-        " {max_mem_string} "
+        " --use-conda --use-apptainer "
         " --scheduler greedy "
         " {target_rule} "
         " {args} "
+        " {dryrun} "
     ).format(
         snakefile=get_snakefile(),
         working_dir=working_dir,
-        jobs="--jobs {}".format(jobs) if jobs is not None else "",
         config_file=config_file,
         profile="" if (profile is None) else "--profile {}".format(profile),
-        dryrun="--dryrun" if dryrun else "",
-        args=" ".join(snakemake_args),
-        target_rule=workflow if workflow != "None" else "",
-        conda_prefix="--conda-prefix " + os.path.join(db_dir, "conda_envs"),
+        jobs="--jobs {}".format(jobs) if jobs is not None else "",
         max_mem_string=handle_max_mem(max_mem, profile),
+        target_rule=workflow if workflow != "None" else "",
+        args=" ".join(snakemake_args),
+        dryrun="--dryrun" if dryrun else "",
     )
     logger.info("Executing: %s" % cmd)
     try:
