@@ -1,7 +1,7 @@
 # Metagenome-Naive_Atlas
 
 Metagenome-naive_atlas is a easy-to-use metagenomic pipeline based on snakemake. It handles all steps from QC, Assembly, Binning, to Annotation, and is designed to be as domain agnostic as possible (i.e., to assemble and bin eukaryotes, prokaryotes, and viruses).
-naive_atlas is built upon the [ATLAS](https://github.com/metagenome-atlas/atlas) workflow, with enhancments from [VEBA](https://github.com/jolespin/veba) which allow it to identify MAGs from all domains.
+naive_atlas is built upon the [ATLAS](https://github.com/metagenome-atlas/atlas) workflow, with enhancements from [VEBA](https://github.com/jolespin/veba) which allow it to identify MAGs from all domains.
 All credit should go to the original authors of both workflows. 
 
 
@@ -51,7 +51,7 @@ The `samples.tsv` file is where you tell the workflow about your samples (type o
  - `Reads_raw_R2`:    Path to second short read file (second mate of paired-end, leave blank if single-end, or interleaved reads)
  - `Reads_raw_Long`:  Path to long reads (PacBio or Nanopore)
  - `Assembler`:       Assembler to us (see below)
- - `Bin_group`:       Groups to use when mapping read data for binning (all sample in a group will be mapped against each other, more samples helps binning, but massivly increases runtime)
+ - `Bin_group`:       Groups to use when mapping read data for binning (all sample in a group will be mapped against each other, more samples helps binning, but massively increases runtime)
 
 The possible options for the `Assembler` column are:
  - `megahit`                Short reads (PE or SE)
