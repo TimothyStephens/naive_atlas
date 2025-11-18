@@ -1,0 +1,24 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python >=3.8, < 3.12
+  - mamba
+  - bbmap >= 39.01, <40
+  - snakemake-minimal=9.13.3
+  - pygments
+  - networkx
+  - graphviz
+  - pandas >=1.2, <1.6
+  - pyarrow # for parquet reading
+  - click >=7
+  - ruamel.yaml >=0.17
+  - cookiecutter
+  - wget
+  - apptainer
+  - kingfisher
+  - pip:
+    - snakemake-executor-plugin-slurm
+    - snakemake-executor-plugin-cluster-generic
+    #- snakemake-logger-plugin-flowo
