@@ -6,12 +6,6 @@ from snakemake.utils import report
 import warnings
 
 
-localrules:
-    build_qc_report,
-    combine_read_length_stats,
-    combine_read_counts,
-
-
 def get_input_fastq(wildcards):
     """
     Get reads for QC by checking which files were provided.
@@ -989,8 +983,8 @@ rule get_read_counts:
 
 
 localrules:
-    combine_read_counts,
     write_read_counts,
+    combine_read_counts,
 
 
 rule write_read_counts:
@@ -1062,8 +1056,8 @@ rule get_read_length_hist:
 
 
 localrules:
-    combine_read_length_stats,
-    combine_insert_stats,
+    combine_read_length_hist,
+    combine_insert_hist,
 
 
 rule combine_read_length_hist:
@@ -1133,6 +1127,9 @@ rule combine_insert_hist:
 #### Build QC Report
 ####
 
+localrules:
+    build_qc_report
+
 rule build_qc_report:
     input:
         zipfiles_QC=expand(
@@ -1158,6 +1155,9 @@ rule build_qc_report:
 ####
 #### Done
 ####
+
+localrules:
+    finalize_sample_qc
 
 rule finalize_sample_qc:
     input:
