@@ -420,7 +420,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 -k {k} \\
                 --checkpoints last \\
                 --threads {threads} \\
-                --memory {resources.mem_gb} {extra}
+                --memory {resources.mem} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
             """
@@ -431,7 +431,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --restart-from last \\
                 -k {k} \\
                 --threads {threads} \\
-                --memory {resources.mem_gb} {extra}
+                --memory {resources.mem} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
             """
@@ -483,7 +483,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --merge-level {merge_level[0]} \\
                 --prune-level {prune_level[0]} \\
                 --low-local-ratio {low_local_ratio[0]} \\
-                --memory {resources.mem_mb}000000 \\
+                --memory {resources.mem}000000 \\
                 {preset[0]} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
@@ -580,8 +580,7 @@ rule run_assembly:
         "../envs/assembly.yaml"
     threads: config["assembly_threads"]
     resources:
-        mem_mb=config["assembly_memory"] * 1000,
-        mem_gb=config["assembly_memory"],
+        mem=config["assembly_memory"],
         time_min=60 * config["assembly_runtime"],
     shell:
         """
@@ -683,7 +682,7 @@ if config["filter_contigs"]:
             "../envs/minimap.yaml"
         threads: config["simplejob_threads"]
         resources:
-            mem_mb=config["simplejob_memory"] * 1000,
+            mem=config["simplejob_memory"],
             time=config["simplejob_runtime"],
         shell:
             """
@@ -708,7 +707,7 @@ if config["filter_contigs"]:
             "../envs/required_packages.yaml"
         threads: config["simplejob_threads"]
         resources:
-            mem_mb=config["simplejob_memory"] * 1000,
+            mem=config["simplejob_memory"],
             java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
             time=config["simplejob_runtime"],
         shell:
