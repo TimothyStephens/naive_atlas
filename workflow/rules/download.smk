@@ -10,7 +10,8 @@ EGGNOG_VERSION = "5"
 EGGNOG_DIR = os.path.join(DBDIR, "EggNOG_V" + EGGNOG_VERSION)
 
 GTDB_VERSION = "R220"
-GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
+GTDB_DATA_URL = "https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
+#GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
 GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_" + GTDB_VERSION)
 
 
@@ -120,8 +121,10 @@ rule mdmcleaner_download_db:
         "logs/download/mdmcleaner_database.log",
     benchmark:
         "logs/benchmarks/download/mdmcleaner_database.tsv"
-    conda:
-        "../envs/mdmcleaner.yaml"
+    container:
+        "docker://timothystephens/mdmcleaner:0.8.7-TGSv2",
+    #conda:
+    #    "../envs/mdmcleaner.yaml"
     shell:
         """
         mdmcleaner makedb --outdir {output.dbdir} &> {log}
@@ -185,8 +188,10 @@ rule download_eggNOG_files:
         "logs/download/download_eggNOG_files.log",
     benchmark:
         "logs/benchmarks/download/download_eggNOG_files.tsv"
-    conda:
-        "../envs/eggNOG.yaml"
+    #conda:
+    #    "../envs/eggNOG.yaml"
+    container:
+        "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     shell:
         """
         download_eggnog_data.py -yf --data_dir {params.eggnog_dir} &> {log}
@@ -260,7 +265,7 @@ rule mmseqs2_download:
         mmseqs2_database=config["mmseqs2_database"],
     threads: config["simplejob_threads"]
     resources:
-        mem=config["simplejob_memory"],
+        mem=config["assembly_memory"],
         time=config["simplejob_runtime"],
     log:
         "logs/download/download_MMseqs2_database.log",
@@ -292,6 +297,10 @@ rule microeukaryotic_mmseqs2_db:
         "logs/download/microeukaryotic_mmseqs2.log",
     benchmark:
         "logs/benchmarks/download/microeukaryotic_mmseqs2.tsv"
+    threads: 2
+    resources:
+        mem=config["assembly_memory"],
+        time_min=60 * config["assembly_runtime"],
     conda:
         "../envs/MicroEuk.yaml"
     shell:
@@ -315,6 +324,8 @@ rule bakta_download_db:
         """
         (
         mkdir -p {params.wd}; cd {params.wd}/
+        export LC_ALL=C.UTF-8
+        export LANG=C.UTF-8
         bakta_db download --type full
         ) &> {log}
         """

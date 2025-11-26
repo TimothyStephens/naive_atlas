@@ -5,3 +5,5 @@ channels:
 dependencies:
   - mmseqs2=14.7e284
   - seqkit=2.4.0
+  - tqdm
+  - pandas

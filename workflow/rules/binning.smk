@@ -397,7 +397,7 @@ rule binning_prokaryotic_mdmcleaner:
     #conda:
     #    "../envs/mdmcleaner.yaml"
     container:
-        "docker://timothystephens/mdmcleaner:0.8.7-TGS",
+        "docker://timothystephens/mdmcleaner:0.8.7-TGSv2",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],

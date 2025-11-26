@@ -25,8 +25,10 @@ rule gene_eggNOG_homology_search:
     threads: config["simplejob_threads"]
     shadow:
         "minimal"
-    conda:
-        "../envs/eggNOG.yaml"
+    #conda:
+    #    "../envs/eggNOG.yaml"
+    container:
+        "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     log:
         "logs/genecatalog/annotations/{dataset}/genes/eggnog/{genome}_homology_search_diamond.log",
     shell:
@@ -60,8 +62,10 @@ rule gene_eggNOG_annotation:
         mem=calculate_mem_eggnog(),
     shadow:
         "minimal"
-    conda:
-        "../envs/eggNOG.yaml"
+    #conda:
+    #    "../envs/eggNOG.yaml"
+    container:
+        "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     log:
         "logs/genecatalog/annotations/{dataset}/genes/eggnog/{genome}_annotate_hits_table.log",
     shell:
