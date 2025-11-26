@@ -802,7 +802,7 @@ rule calculate_contigs_stats:
 rule align_reads_to_final_contigs:
     input:
         unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
-        target="{sample}/assembly/{sample_contigs}.fasta",
+        target="{sample_contigs}/assembly/{sample_contigs}.fasta",
     output:
         bam=temp("{sample_contigs}/sequence_alignment/{sample}.bam"),
     params:
