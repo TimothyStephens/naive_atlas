@@ -119,6 +119,10 @@ rule mdmcleaner_download_db:
         dbdir=directory(f"{DBDIR}/MDMcleaner"),
     log:
         "logs/download/mdmcleaner_database.log",
+    threads: 2
+    resources:
+        mem=config["assembly_memory"],
+        time=config["simplejob_runtime"],
     benchmark:
         "logs/benchmarks/download/mdmcleaner_database.tsv"
     container:
