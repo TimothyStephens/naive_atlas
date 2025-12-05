@@ -6,7 +6,7 @@ dependencies:
   - python >=3.8, < 3.12
   - mamba
   - bbmap >= 39.01, <40
-  - snakemake-minimal=9.13.3
+  - snakemake-minimal=8.5.5
   - pygments
   - networkx
   - graphviz
@@ -19,6 +19,6 @@ dependencies:
   - apptainer
   - kingfisher
   - pip:
-    - snakemake-executor-plugin-slurm
-    - snakemake-executor-plugin-cluster-generic
+    - snakemake-executor-plugin-slurm==0.2.0
+    - snakemake-executor-plugin-cluster-generic==1.0.7
     #- snakemake-logger-plugin-flowo
