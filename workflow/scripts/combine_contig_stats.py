@@ -29,7 +29,7 @@ sys.excepthook = handle_exception
 
 
 import pandas as pd
-from utils.parsers_bbmap import parse_pileup_log_file
+from utils.parsers_samtools import parse_samtools_stats_file
 
 
 def parse_map_stats(sample_data, out_tsv):
@@ -46,9 +46,10 @@ def parse_map_stats(sample_data, out_tsv):
         df["N_Predicted_Genes"] = genes_df.shape[0]
 
         # mappingt stats
-        mapping_stats = parse_pileup_log_file(sample_data[sample]["mapping_log"])
-        df["Assembled_Reads"] = mapping_stats["Mapped reads"]
-        df["Percent_Assembled_Reads"] = mapping_stats["Percent mapped"]
+        mapping_stats = parse_samtools_stats_file(sample_data[sample]["samtools_stats"])
+        df["Total_Reads"]             = int(mapping_stats["raw total sequences"])
+        df["Mapped_Reads"]            = int(mapping_stats["reads mapped"])
+        df["Percent_Assembled_Reads"] = round((df["Mapped_Reads"]/df["Total_Reads"])*100, 2)
 
         logging.info(f"Stats for sample {sample}\n{df}")
 
@@ -64,7 +65,7 @@ def parse_map_stats(sample_data, out_tsv):
     return stats_df
 
 
-def main(samples, contig_stats, gene_tables, mapping_logs, combined_stats):
+def main(samples, contig_stats, gene_tables, samtools_stats, combined_stats):
     sample_data = {}
     for sample in samples:
         sample_data[sample] = {}
@@ -77,10 +78,10 @@ def main(samples, contig_stats, gene_tables, mapping_logs, combined_stats):
             # if "%s_" % sample in g_table:
             if "%s/" % sample in g_table:
                 sample_data[sample]["gene_table"] = g_table
-        for mapping_log in mapping_logs:
-            # if "%s_" % sample in mapping_log:
-            if "%s/" % sample in mapping_log:
-                sample_data[sample]["mapping_log"] = mapping_log
+        for samtools_stat in samtools_stats:
+            # if "%s_" % sample in samtools_stat:
+            if "%s/" % sample in samtools_stat:
+                sample_data[sample]["samtools_stats"] = samtools_stat
 
     parse_map_stats(sample_data, combined_stats)
 
@@ -90,6 +91,6 @@ if __name__ == "__main__":
         samples=snakemake.params.samples,
         contig_stats=snakemake.input.contig_stats,
         gene_tables=snakemake.input.gene_tables,
-        mapping_logs=snakemake.input.mapping_logs,
+        samtools_stats=snakemake.input.samtools_stats,
         combined_stats=snakemake.output.combined_contig_stats,
     )

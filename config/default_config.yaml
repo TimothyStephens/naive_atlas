@@ -134,7 +134,6 @@ merging_k: 62
 ########################
 # Assembly
 ########################
-minimum_contig_length: 1000
 
 # Megahit
 #-----------
@@ -168,8 +167,7 @@ metamdbg_extra: ''
 # Filtering
 #------------
 # filter out assembled noise
-# this is more important for assembly from megahit
-filter_contigs: false
+minimum_contig_length: 1000
 # trim contig tips
 contig_trim_bp: 0
 # require contigs to have read support

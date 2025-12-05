@@ -645,7 +645,6 @@ def align_reads_command(wildcards, input, output, threads, resources):
             # See: https://github.com/lh3/minimap2/issues/1127
             cmd_lr = f"minimap2 -t {threads} -ax lr:hq {input.target} {input.LR}"
         
-        # Unknown error rate
         else:
             cmd_lr = f"minimap2 -t {threads} -ax map-ont {input.target} {input.LR}"
    
@@ -660,121 +659,100 @@ def align_reads_command(wildcards, input, output, threads, resources):
     return(cmd)
 
 
-if config["filter_contigs"]:
-
-    ruleorder: align_reads_to_prefilter_contigs > align_reads_to_final_contigs
-
-    rule align_reads_to_prefilter_contigs:
-        input:
-            unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
-            target=rules.rename_contigs.output.fasta,
-        output:
-            bam=temp("{sample}/sequence_alignment/alignment_to_prefilter_contigs.bam"),
-        params:
-            command = lambda wildcards, input, output, threads, resources: align_reads_command(
-                wildcards, input, output, threads, resources
-            ),
-        benchmark:
-            "{sample}/benchmarks/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
-        log:
-            "{sample}/logs/assembly/post_process/align_reads_to_prefiltered_contigs.log",
-        conda:
-            "../envs/minimap.yaml"
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-            time=config["simplejob_runtime"],
-        shell:
-            """
-            ({params.command}) >{log} 2>&1
-            """
+rule align_reads_to_prefilter_contigs:
+    input:
+        unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
+        target=rules.rename_contigs.output.fasta,
+    output:
+        bam=temp("{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
+    params:
+        command = lambda wildcards, input, output, threads, resources: align_reads_command(
+            wildcards, input, output, threads, resources
+        ),
+    benchmark:
+        "{sample}/benchmarks/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
+    log:
+        "{sample}/logs/assembly/post_process/align_reads_to_prefiltered_contigs.log",
+    conda:
+        "../envs/minimap.yaml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    shell:
+        """
+        ({params.command}) >{log} 2>&1
+        """
 
 
-    rule pileup_prefilter:
-        input:
-            fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-            bam="{sample}/sequence_alignment/alignment_to_prefilter_contigs.bam",
-        output:
-            covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
-        params:
-            pileup_secondary="t",
-            minmapq=config["minimum_map_quality"],
-        benchmark:
-            "{sample}/benchmarks/assembly/post_process/pilup_prefilter_contigs.log",
-        log:
-            "{sample}/logs/assembly/post_process/pilup_prefilter_contigs.log",
-        conda:
-            "../envs/required_packages.yaml"
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
-            time=config["simplejob_runtime"],
-        shell:
-            "pileup.sh ref={input.fasta} in={input.bam} "
-            " threads={threads} "
-            " -Xmx{resources.java_mem}G "
-            " covstats={output.covstats} "
-            " concise=t "
-            " minmapq={params.minmapq} "
-            " secondary={params.pileup_secondary} "
-            " 2> {log}"
+rule pileup_prefilter:
+    input:
+        fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        bam="{sample}/assembly/assembly/{sample}_prefilter_contigs.bam",
+    output:
+        covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
+    params:
+        pileup_secondary="t",
+        minmapq=config["minimum_map_quality"],
+    benchmark:
+        "{sample}/benchmarks/assembly/post_process/pilup_prefilter_contigs.log",
+    log:
+        "{sample}/logs/assembly/post_process/pilup_prefilter_contigs.log",
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+        time=config["simplejob_runtime"],
+    shell:
+        "pileup.sh ref={input.fasta} in={input.bam} "
+        " threads={threads} "
+        " -Xmx{resources.java_mem}G "
+        " covstats={output.covstats} "
+        " concise=t "
+        " minmapq={params.minmapq} "
+        " secondary={params.pileup_secondary} "
+        " 2> {log}"
 
-    rule filter_by_coverage:
-        input:
-            fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-            covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
-        output:
-            fasta="{sample}/assembly/assembly/{sample}_final_contigs.fasta",
-            removed_names="{sample}/assembly/assembly/{sample}_discarded_contigs.fasta",
-        params:
-            minc=config["minimum_average_coverage"],
-            minp=config["minimum_percent_covered_bases"],
-            minr=config.get("minimum_mapped_reads", MINIMUM_MAPPED_READS),
-            minl=config.get("minimum_contig_length", MINIMUM_CONTIG_LENGTH),
-            trim=config.get("contig_trim_bp", CONTIG_TRIM_BP),
-        log:
-            "{sample}/logs/assembly/post_process/filter_by_coverage.log",
-        conda:
-            "../envs/required_packages.yaml"
-        threads: config["simplejob_threads"]
-        resources:
-            mem=config["simplejob_memory"],
-            java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
-            time=config["simplejob_runtime"],
-        shell:
-            """filterbycoverage.sh in={input.fasta} \
-            cov={input.covstats} \
-            out={output.fasta} \
-            outd={output.removed_names} \
-            minc={params.minc} \
-            minp={params.minp} \
-            minr={params.minr} \
-            minl={params.minl} \
-            trim={params.trim} \
-            -Xmx{resources.java_mem}G 2> {log}"""
+rule filter_by_coverage:
+    input:
+        fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
+    output:
+        fasta="{sample}/assembly/assembly/{sample}_final_contigs.fasta",
+        removed_names="{sample}/assembly/assembly/{sample}_discarded_contigs.fasta",
+    params:
+        minc=config["minimum_average_coverage"],
+        minp=config["minimum_percent_covered_bases"],
+        minr=config.get("minimum_mapped_reads", MINIMUM_MAPPED_READS),
+        minl=config.get("minimum_contig_length", MINIMUM_CONTIG_LENGTH),
+        trim=config.get("contig_trim_bp", CONTIG_TRIM_BP),
+    log:
+        "{sample}/logs/assembly/post_process/filter_by_coverage.log",
+    conda:
+        "../envs/required_packages.yaml"
+    threads: config["simplejob_threads"]
+    resources:
+        mem=config["simplejob_memory"],
+        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+        time=config["simplejob_runtime"],
+    shell:
+        """filterbycoverage.sh in={input.fasta} \
+        cov={input.covstats} \
+        out={output.fasta} \
+        outd={output.removed_names} \
+        minc={params.minc} \
+        minp={params.minp} \
+        minr={params.minr} \
+        minl={params.minl} \
+        trim={params.trim} \
+        -Xmx{resources.java_mem}G 2> {log}"""
 
-
-# HACK: this makes two copies of the same file
-
-
-else:  # no filter
-
-    localrules:
-        do_not_filter_contigs,
-
-    rule do_not_filter_contigs:
-        input:
-            "{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-        output:
-            "{sample}/assembly/assembly/{sample}_final_contigs.fasta",
-        shell:
-            "cp {input} {output}"
 
 
 localrules:
     finalize_contigs,
-
 
 rule finalize_contigs:
     input:
@@ -801,7 +779,7 @@ rule calculate_contigs_stats:
 # generalized rule so that reads from any "sample" can be aligned to contigs from "sample_contigs"
 rule align_reads_to_final_contigs:
     input:
-        unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
+        unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
         target="{sample_contigs}/assembly/{sample_contigs}.fasta",
     output:
         bam=temp("{sample_contigs}/sequence_alignment/{sample}.bam"),
@@ -863,6 +841,29 @@ rule pileup_contigs_sample:
         " minmapq={params.minmapq} "
         " secondary={params.pileup_secondary} "
         " bincov={output.bincov} "
+        " 2> {log} "
+
+
+rule samtools_stats_contigs_sample:
+    input:
+        fasta=get_assembly,
+        bam="{sample}/sequence_alignment/{sample}.bam",
+    output:
+        stats="{sample}/assembly/contig_stats/postfilter_samtools_stats.txt",
+    benchmark:
+        "logs/benchmarks/assembly/calculate_coverage/samtools_stats/{sample}.txt"
+    log:
+        "{sample}/logs/assembly/calculate_coverage/samtools_stats_final_contigs.log",  # This log file is uesd for report
+    conda:
+        "../envs/required_packages.yaml"
+    threads: 1
+    resources:
+        mem=config["simplejob_memory"],
+        time=config["simplejob_runtime"],
+    shell:
+        "samtools stats "
+        " {input.bam} "
+        " 1> {output.stats} "
         " 2> {log} "
 
 
@@ -965,12 +966,12 @@ rule combine_contig_stats:
         gene_tables=expand(
             "{sample}/annotation/predicted_genes/{sample}.tsv", sample=SAMPLES
         ),
-        mapping_logs=expand(
-            "{sample}/logs/assembly/calculate_coverage/pilup_final_contigs.log",
-            sample=SAMPLES,
+        mapping_stats=expand(
+            "{sample}/assembly/contig_stats/postfilter_coverage_stats.txt", sample=SAMPLES,
         ),
-        # mapping logs will be incomplete unless we wait on alignment to finish
-        bams=expand("{sample}/sequence_alignment/{sample}.bam", sample=SAMPLES),
+        samtools_stats=expand(
+            "{sample}/assembly/contig_stats/postfilter_samtools_stats.txt", sample=SAMPLES
+        )
     output:
         combined_contig_stats="stats/combined_contig_stats.tsv",
     params:
