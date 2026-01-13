@@ -650,11 +650,15 @@ def align_reads_command(wildcards, input, output, threads, resources):
    
     # Check if we have SR+LR (need to map separatly and merge) or SR OR LR
     if cmd_sr and cmd_lr:
-        cmd = f"({cmd_sr} && {cmd_lr} | grep -v '^@') | samtools sort > {output}"
+        cmd = f"({cmd_sr} && {cmd_lr} | grep -v '^@') | samtools sort"
     elif cmd_sr and not cmd_lr:
-        cmd = f"{cmd_sr} | samtools sort > {output}"
+        cmd = f"{cmd_sr} | samtools sort"
     else:
-        cmd = f"{cmd_lr} | samtools sort > {output}"
+        cmd = f"{cmd_lr} | samtools sort"
+    
+    # If output file provided, else will be printed to stdout
+    if not output is None:
+        cmd = f"{cmd} > {output}"
     
     return(cmd)
 
