@@ -153,7 +153,7 @@ rule binning_prokaryotic_maxbin_107:
     #conda:
     #    "../envs/maxbin2.yaml"
     container:
-        "docker://timothystephens/maxbin2:2.2.7-TGSv2",
+        "docker://timothystephens/maxbin2:2.2.7-TGSv3",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -162,6 +162,9 @@ rule binning_prokaryotic_maxbin_107:
     shell:
         """
         (
+        export LC_ALL=C.UTF-8
+        export LANG=C.UTF-8
+        
         run_MaxBin.pl \
             -contig {input.contigs} \
             -out {params.output_path}/bin \
@@ -173,7 +176,9 @@ rule binning_prokaryotic_maxbin_107:
         
         mkdir -p {params.output_path}/bins
         
-        if grep -q 'Marker gene search reveals that the dataset cannot be binned (the medium of marker gene number <= 1). Program stop.' "{params.output_path}/bin.log";
+        if grep -q 'Marker gene search reveals that the dataset cannot be binned (the medium of marker gene number <= 1). Program stop.' "{params.output_path}/bin.log" \
+        || grep -q 'This suggests that the dataset cannot be binned (likely too few and/or small contigs), rather then it actually being an error.' "{params.output_path}/bin.log" \
+        || grep -q 'Yielded 0 bins for contig (scaffold) file' "{params.output_path}/bin.log";
         then
             echo "[WARNING]  - Looks like MaxBin2-107 didnt found any prokaryotic bins, this is not a problem and expected for some samples."
             touch "{output.s2b}"
@@ -221,7 +226,7 @@ rule binning_prokaryotic_maxbin_40:
     #conda:
     #    "../envs/maxbin2.yaml"
     container:
-        "docker://timothystephens/maxbin2:2.2.7-TGSv2",
+        "docker://timothystephens/maxbin2:2.2.7-TGSv3",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -230,6 +235,9 @@ rule binning_prokaryotic_maxbin_40:
     shell:
         """
         (
+        export LC_ALL=C.UTF-8
+        export LANG=C.UTF-8
+        
         run_MaxBin.pl \
             -contig {input.contigs} \
             -out {params.output_path}/bin \
@@ -241,7 +249,9 @@ rule binning_prokaryotic_maxbin_40:
         
         mkdir -p {params.output_path}/bins
         
-        if grep -q 'Marker gene search reveals that the dataset cannot be binned (the medium of marker gene number <= 1). Program stop.' "{params.output_path}/bin.log";
+        if grep -q 'Marker gene search reveals that the dataset cannot be binned (the medium of marker gene number <= 1). Program stop.' "{params.output_path}/bin.log" \
+        || grep -q 'This suggests that the dataset cannot be binned (likely too few and/or small contigs), rather then it actually being an error.' "{params.output_path}/bin.log" \
+        || grep -q 'Yielded 0 bins for contig (scaffold) file' "{params.output_path}/bin.log";
         then
             echo "[WARNING]  - Looks like MaxBin2-40 didnt found any prokaryotic bins, this is not a problem and expected for some samples."
             touch "{output.s2b}"
@@ -304,7 +314,7 @@ checkpoint binning_prokaryotic_dastool:
         )
         IFS=" " read -r -a S2B_ARRAY <<< "$S2B"
         
-        if [ -z "${{S2B_ARRAY[0]}}" ];
+        if [ "${#S2B_ARRAY[@]}" -eq 0 ];
         then
             echo "[WARNING] No bins found to combine with DAS_Tool. Skipping."
             mkdir -p "{output.bins}"
@@ -397,7 +407,7 @@ rule binning_prokaryotic_mdmcleaner:
     #conda:
     #    "../envs/mdmcleaner.yaml"
     container:
-        "docker://timothystephens/mdmcleaner:0.8.7-TGSv2",
+        "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
