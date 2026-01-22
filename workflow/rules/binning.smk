@@ -153,7 +153,7 @@ rule binning_prokaryotic_maxbin_107:
     #conda:
     #    "../envs/maxbin2.yaml"
     container:
-        "docker://timothystephens/maxbin2:2.2.7-TGSv3",
+        "docker://timothystephens/maxbin2:2.2.7-TGSv5",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -226,7 +226,7 @@ rule binning_prokaryotic_maxbin_40:
     #conda:
     #    "../envs/maxbin2.yaml"
     container:
-        "docker://timothystephens/maxbin2:2.2.7-TGSv3",
+        "docker://timothystephens/maxbin2:2.2.7-TGSv5",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -314,7 +314,7 @@ checkpoint binning_prokaryotic_dastool:
         )
         IFS=" " read -r -a S2B_ARRAY <<< "$S2B"
         
-        if [ "${#S2B_ARRAY[@]}" -eq 0 ];
+        if [ "${{#S2B_ARRAY[@]}}" -eq 0 ];
         then
             echo "[WARNING] No bins found to combine with DAS_Tool. Skipping."
             mkdir -p "{output.bins}"
@@ -678,8 +678,10 @@ rule binning_eukaryotic_busco:
         "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/3_busco/{genome}.txt"
     log:
         "{sample}/logs/binning/veba/2_eukaryotic/3_busco/{genome}.txt",
-    conda:
-        "../envs/busco.yaml"
+    #conda:
+    #    "../envs/busco.yaml"
+    container:
+        "docker://timothystephens/busco:6.0.0-TGSv1",
     threads: config["simplejob_threads"]
     resources:
         mem=config["simplejob_memory"],
@@ -895,7 +897,7 @@ rule binning_viral_metabat:
             --bin_prefix {params.output_prefix} \
             > {output.s2b}
         
-        for MAG in {params.output_path}/bins/*.fa;
+        for MAG in `find {params.output_path}/bins -name "*.fa"`;
         do
             P=$(basename ${{MAG%*.fa}})
             echo ">{params.output_prefix}$P"
@@ -919,6 +921,9 @@ rule binning_viral_genomad:
         results="{sample}/binning/veba/3_viral/2_genomad",
         workflow_folder=f"{workflow_folder}",
         sample="{sample}",
+        empty_virus_summary=f"{workflow_folder}/data/virus_summary.tsv",
+        empty_virus_taxonomy=f"{workflow_folder}/data/virus_taxonomy.tsv",
+        empty_plasmid_summary=f"{workflow_folder}/data/plasmid_summary.tsv",
     benchmark:
         "{sample}/logs/benchmarks/binning/veba/3_viral/2_genomad.txt"
     log:
@@ -927,33 +932,43 @@ rule binning_viral_genomad:
     #    "../envs/genomad.yaml"
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
-    threads: config["simplejob_threads"]
+    threads: config["medium_threads"]
     resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        mem=config["medium_memory"],
+        time=config["medium_runtime"],
     shell:
         """
         (
-        export PATH="/opt/conda/bin:$PATH"
-        genomad end-to-end \
-            --cleanup \
-            --threads {threads} \
-            --verbose \
-            --enable-score-calibration \
-            --disable-find-proviruses \
-            --sensitivity 4.0 \
-            --splits 0 \
-            --composition auto \
-            --min-score 0.7 \
-            --max-fdr 1.0 \
-            --min-plasmid-marker-enrichment -100 \
-            --min-virus-marker-enrichment -100 \
-            --min-plasmid-hallmarks 0 \
-            --min-virus-hallmarks 0 \
-            --max-uscg 100 \
-            {input.fasta} \
-            {params.results} \
-            {input.dbdir}/genomad_db
+        if [ -s {input.fasta} ];
+        then
+          export PATH="/opt/conda/bin:$PATH"
+          genomad end-to-end \
+              --cleanup \
+              --threads {threads} \
+              --verbose \
+              --enable-score-calibration \
+              --disable-find-proviruses \
+              --sensitivity 4.0 \
+              --splits 0 \
+              --composition auto \
+              --min-score 0.7 \
+              --max-fdr 1.0 \
+              --min-plasmid-marker-enrichment -100 \
+              --min-virus-marker-enrichment -100 \
+              --min-plasmid-hallmarks 0 \
+              --min-virus-hallmarks 0 \
+              --max-uscg 100 \
+              {input.fasta} \
+              {params.results} \
+              {input.dbdir}/genomad_db
+        else
+          echo '[WARNING] Output from MetaBAT2 is empty, suggesting that no bins were present in the remaining scaffolds. Skipping geNomad and creating empty output files for downstream analysis.'
+          mkdir -p "{params.sample}/binning/veba/3_viral/2_genomad/merged_bins_summary"
+          mkdir -p "{params.sample}/binning/veba/3_viral/2_genomad/merged_bins_annotate"
+          cat "{params.empty_virus_summary}"   > "{output.virus_summary}"
+          cat "{params.empty_virus_taxonomy}"  > "{output.virus_taxonomy}"
+          cat "{params.empty_plasmid_summary}" > "{output.plasmid_summary}"
+        fi
         ) &> {log}
         """
 

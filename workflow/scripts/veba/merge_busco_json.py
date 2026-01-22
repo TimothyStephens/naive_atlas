@@ -27,7 +27,7 @@ def read_busco_json(path, busco_version):
     #     "domain": "eukaryota"
     # }
         results = pd.Series(json_data["results"]).loc[["one_line_summary", "Complete", "Single copy", "Multi copy", "Fragmented", "Missing", "n_markers"]]
-    if busco_version == "5.6.x":
+    if busco_version == "5.6.x" or busco_version == "6.x.x":
 
     # "lineage_dataset": {
     #     "name": "eukaryota_odb10",
@@ -70,7 +70,7 @@ def main(argv=None):
     parser.add_argument("-i","--busco_directory", required=True, type=str, help = "path/to/busco_output_directory/ with subdirectories for each genome")
     parser.add_argument("-j","--json_output", type=str, help = "path/to/merged_busco.json")
     parser.add_argument("-o","--output", type=str,  default="stdout", help = "Output merged multiple sequence alignment [Default: stdout]")
-    parser.add_argument("--busco_version", type=str,  default="5.4.x", choices={"5.4.x", "5.6.x"}, help = "BUSCO version {5.4.x, 5.6.x} [Default: 5.4.x]")
+    parser.add_argument("--busco_version", type=str,  default="6.x.x", choices={"5.4.x", "5.6.x", "6.x.x"}, help = "BUSCO version {5.4.x, 5.6.x, 6.x.x} [Default: 6.x.x]")
 
     # Options
     opts = parser.parse_args(argv)
