@@ -23,8 +23,6 @@ rule gene_eggNOG_homology_search:
     resources:
         mem=config["simplejob_memory"],
     threads: config["simplejob_threads"]
-    shadow:
-        "minimal"
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -60,8 +58,6 @@ rule gene_eggNOG_annotation:
     threads: config["simplejob_threads"]
     resources:
         mem=calculate_mem_eggnog(),
-    shadow:
-        "minimal"
     #conda:
     #    "../envs/eggNOG.yaml"
     container:

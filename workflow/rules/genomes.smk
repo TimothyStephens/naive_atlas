@@ -47,6 +47,8 @@ rule get_prokaryotic_bins:
         filenames="Binning/raw_bins/prokaryotic.paths.tsv",
         genome_names="Binning/raw_bins/prokaryotic.genome.paths.tsv",
         stats="Binning/raw_bins/prokaryotic.statistics.tsv",
+    params:
+        dir="Binning/raw_bins",
     log:
         "logs/Binning/raw_bins/get_prokaryotic_bins.log",
     run:
@@ -54,6 +56,8 @@ rule get_prokaryotic_bins:
         from pathlib import Path
         from utils import io
         import os, os.path
+        
+        os.makedirs(params.dir, exist_ok=True)
         
         genome_filenames = get_list_of_files(input.dirs, "*.fa")
         if genome_filenames.empty:
@@ -107,6 +111,8 @@ rule get_eukaryotic_bins:
         filenames="Binning/raw_bins/eukaryotic.paths.tsv",
         genome_names="Binning/raw_bins/eukaryotic.genome.paths.tsv",
         stats="Binning/raw_bins/eukaryotic.statistics.tsv",
+    params:
+        dir="Binning/raw_bins",
     log:
         "logs/Binning/raw_bins/get_eukaryotic_bins.log",
     run:
@@ -114,6 +120,8 @@ rule get_eukaryotic_bins:
         from pathlib import Path
         from utils import io
         import os, os.path
+        
+        os.makedirs(params.dir, exist_ok=True)
         
         genome_filenames  = get_list_of_files(input.dirs, "*.fa")
         if genome_filenames.empty:
@@ -170,6 +178,8 @@ rule get_viral_bins:
         filenames="Binning/raw_bins/viral.paths.tsv",
         genome_names="Binning/raw_bins/viral.genome.paths.tsv",
         stats="Binning/raw_bins/viral.statistics.tsv",
+    params:
+        dir="Binning/raw_bins",
     log:
         "logs/Binning/raw_bins/get_viral_bins.log",
     run:
@@ -177,6 +187,8 @@ rule get_viral_bins:
         from pathlib import Path
         from utils import io
         import os, os.path
+        
+        os.makedirs(params.dir, exist_ok=True)
         
         genome_filenames = get_list_of_files(input.dirs, "*.fa")
         if genome_filenames.empty:
@@ -226,6 +238,8 @@ rule get_plasmid_bins:
         filenames="Binning/raw_bins/plasmid.paths.tsv",
         genome_names="Binning/raw_bins/plasmid.genome.paths.tsv",
         stats="Binning/raw_bins/plasmid.statistics.tsv",
+    params:
+        dir="Binning/raw_bins",
     log:
         "logs/Binning/raw_bins/get_plasmid_bins.log",
     run:
@@ -233,6 +247,8 @@ rule get_plasmid_bins:
         from pathlib import Path
         from utils import io
         import os, os.path
+        
+        os.makedirs(params.dir, exist_ok=True)
         
         genome_filenames = get_list_of_files(input.dirs, "*.fa")
         if genome_filenames.empty:
@@ -418,8 +434,6 @@ rule rename_genomes:
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="MAG_{lineage}_",
-    shadow:
-        "shallow"
     log:
         "logs/genomes/clustering/{lineage}.rename_genomes.log",
     script:
@@ -434,8 +448,6 @@ rule rename_unbinned:
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="Unbinned_{sample}",
-    shadow:
-        "shallow"
     log:
         "logs/genomes/clustering/{sample}.rename_unbinned.log",
     script:
