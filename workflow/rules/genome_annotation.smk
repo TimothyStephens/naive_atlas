@@ -30,6 +30,9 @@ rule identify:
     output:
         directory(f"{gtdb_dir}/identify"),
     threads: config["simplejob_threads"]
+    resources:
+        mem=config["large_memory"],
+        time=config["simplejob_runtime"],
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -53,6 +56,9 @@ checkpoint align:
     output:
         directory(f"{gtdb_dir}/align"),
     threads: config["simplejob_threads"]
+    resources:
+        mem=config["large_memory"],
+        time=config["simplejob_runtime"],
     conda:
         "../envs/gtdbtk.yaml"
     log:
