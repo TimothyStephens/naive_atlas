@@ -763,11 +763,11 @@ rule binning_eukaryotic_filter:
         contigs=rules.binning_prokaryotic_checkm2.output.unbinned,
         raw_bins=rules.binning_eukaryotic_metabat.output.bins,
     output:
-        outdir=directory("{sample}/binning/veba/2_eukaryotic/3_busco/filtered"),
-        bins=directory("{sample}/binning/veba/2_eukaryotic/3_busco/filtered/genomes"),
-        quality="{sample}/binning/veba/2_eukaryotic/3_busco/filtered/busco_results.filtered.tsv",
-        tsv="{sample}/binning/veba/2_eukaryotic/3_busco/busco_results.tsv",
-        unbinned="{sample}/binning/veba/2_eukaryotic/3_busco/filtered/unbinned.fasta",
+        outdir=directory("{sample}/binning/veba/2_eukaryotic/4_filtered"),
+        bins=directory("{sample}/binning/veba/2_eukaryotic/4_filtered/genomes"),
+        quality="{sample}/binning/veba/2_eukaryotic/4_filtered/busco_results.filtered.tsv",
+        tsv="{sample}/binning/veba/2_eukaryotic/4_filtered/busco_results.tsv",
+        unbinned="{sample}/binning/veba/2_eukaryotic/4_filtered/unbinned.fasta",
     params:
         workflow_folder=f"{workflow_folder}",
         bins_dir="{sample}/binning/veba/2_eukaryotic/3_busco",
@@ -817,7 +817,7 @@ rule binning_eukaryotic_genome_stats:
     input:
         bins=rules.binning_eukaryotic_filter.output.bins,
     output:
-        stats="{sample}/binning/veba/2_eukaryotic/3_busco/filtered/genome_statistics.tsv",
+        stats="{sample}/binning/veba/2_eukaryotic/4_filtered/genome_statistics.tsv",
     benchmark:
         "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/5_stats.txt"
     log:

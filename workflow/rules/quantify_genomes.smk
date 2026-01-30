@@ -123,14 +123,14 @@ rule index_genomes:
         index_size="12G",
     threads: 3
     resources:
-        mem=config["simplejob_memory"],
+        mem=config["medium_memory"],
     wrapper:
         "v3.13.4/bio/minimap2/index"
 
 
 rule align_reads_to_genomes:
     input:
-        unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
+        unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
         target=rules.index_genomes.output,
     output:
         "genomes/alignments/bams/{sample}.bam",
@@ -208,7 +208,9 @@ rule mapping_coverm_coverage:
     log:
         general="logs/coverage/coverage.log",
         coverm="logs/coverage/coverm.log",
-    threads: config["simplejob_threads"]
+    threads: config["medium_threads"]
+    resources:
+        mem=config["medium_memory"],
     conda:
         "../envs/coverm.yaml"
     shell:
