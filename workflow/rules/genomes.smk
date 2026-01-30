@@ -305,24 +305,33 @@ rule run_skani:
     log:
         "logs/Binning/dereplication/{lineage}.skani_calculation.log",
     resources:
-        mem_mb=config["simplejob_memory"] * 1000,
-        time_min=60 * config["simplejob_runtime"],
+        mem=config["large_memory"],
+        time_min=60 * config["large_runtime"],
     params:
-        #preset= "medium", # fast, medium or slow
+        lineage="{lineage}",
         min_af=config["genome_dereplication"]["overlap"] * 100,
         extra="",
-    threads: config["simplejob_threads"]
+    threads: config["large_threads"]
     conda:
         "../envs/skani.yaml"
     shell:
-        "skani triangle "
-        " {params.extra} "
-        " -l {input.paths} "
-        " -o {output} "
-        " -t {threads} "
-        " --sparse --ci "
-        " --min-af {params.min_af} "
-        " &> {log} "
+        """
+        (
+        sensitivity="--medium"
+        if [ "{params.lineage}" == "viral" ] || [ "{params.lineage}" == "plasmid" ]; then
+          sensitivity="--slow"
+        fi
+        
+        skani triangle \
+          {params.extra} \
+          -l {input.paths} \
+          -o {output} \
+          -t {threads} \
+          --sparse --ci \
+          --min-af {params.min_af} \
+          $sensitivity
+        ) 1>{log} 2>&1
+        """
 
 
 rule skani_2_parquet:

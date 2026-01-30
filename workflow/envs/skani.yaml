@@ -3,4 +3,4 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - skani=0.1
+    - skani=0.3.1

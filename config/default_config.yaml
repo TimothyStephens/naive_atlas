@@ -22,8 +22,8 @@
 #Threads and Memory for all executions
 
 # BBMAPs tools threads and memory - needs relatively high amount of memory: normalize_reads, error_correction, merge_pairs
-large_memory: 200 #GB
-large_threads: 46
+large_memory: 180 #GB
+large_threads: 24
 large_runtime: 72 #hr
 # BBMAPs tools threads and memory - needs moderate amount of memory: deduplicate_reads
 medium_memory: 60 #GB
@@ -204,14 +204,10 @@ veba_viral:
   minimum_score: 0.7 # Minimum score to flag a sequence as virus or plasmid.
 
 genome_dereplication:
-  ANI: 0.95 ## Genome dreplication threshold 0.95 is more or less species
-  overlap: 0.2
+  ANI: 0.95 # Genome dreplication threshold 0.95 is more or less species
+  overlap: 0.2 # See more on https://drep.readthedocs.io/en/latest/module_descriptions.html
 
 rename_mags_contigs: true #Rename contigs of representative MAGs (should be kept on - turning off may cause unexpected errors in renaming of MAGs after clustering)
-
-genome_dereplication:
-  ANI: 0.95 ## Genome dreplication threshold
-  overlap: 0.2 # See more on https://drep.readthedocs.io/en/latest/module_descriptions.html
 
 
 
@@ -221,7 +217,7 @@ genome_dereplication:
 # Quantification
 ########################
 
-coverm_params: '--min-read-percent-identity 98 --min-covered-fraction 0 --min-read-aligned-percent 70'
+coverm_params: '--min-read-percent-identity 95 --min-covered-fraction 0 --min-read-aligned-percent 70'
 coverm_stats: 'relative_abundance mean trimmed_mean covered_bases variance length count reads_per_base rpkm tpm'
 
 
