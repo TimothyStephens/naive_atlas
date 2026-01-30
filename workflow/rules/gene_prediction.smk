@@ -273,10 +273,10 @@ rule gene_prediction_eukaryote:
         "logs/gene_prediction/genomes/eukaryotes/{genome}.txt",
     conda:
         "../envs/gene_prediction_eukaryotic.yaml"
-    threads: config["simplejob_threads"]
+    threads: config["medium_threads"]
     resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        mem=config["medium_memory"],
+        time=config["medium_runtime"],
     shell:
         """
         (
@@ -383,6 +383,7 @@ checkpoint move_genome_predicted_genes:
     output:
         faa_files=expand("genomes/genes/genomes/{genome}.faa",
                     genome=get_all_output_predicted_genes('')),
+        outdir=directory("genomes/genes/genomes"),
     params:
         workflow_folder=f"{workflow_folder}",
         outdir=directory("genomes/genes/genomes"),
@@ -490,8 +491,9 @@ checkpoint move_unbinned_predicted_genes:
     input:
         unbinned=get_all_unbinned_genes,
     output:
-        outdir=expand("genomes/genes/unbinned/{genome}.faa",
+        faa_files=expand("genomes/genes/unbinned/{genome}.faa",
                 genome=get_all_output_predicted_genes_unbinned('')),
+        outdir=directory("genomes/genes/unbinned"),
     params:
         workflow_folder=f"{workflow_folder}",
         outdir=directory("genomes/genes/unbinned"),

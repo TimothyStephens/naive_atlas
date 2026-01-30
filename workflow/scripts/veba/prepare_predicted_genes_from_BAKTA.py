@@ -36,6 +36,7 @@ def main(args=None):
     Running: {} v{} via Python v{} | {}""".format(__program__, __version__, sys.version.split(" ")[0], sys.executable)
     usage = "{} -i <BAKTA/PROKKA_pep_1> <BAKTA/PROKKA_pep_2> -o <output_directory> -s <stats_file>".format(__program__)
     epilog = "Copyright 2025 Timothy G. Stephens"
+    print(description)
     
     # Parser
     parser = argparse.ArgumentParser(description=description, usage=usage, epilog=epilog, formatter_class=argparse.RawTextHelpFormatter)
