@@ -88,12 +88,29 @@ rule gene_eggNOG_annotation:
 
 
 def get_all_gene_eggnog(wildcards):
-    if wildcards.dataset == "genomes":
-        all_genomes = get_all_genomes(wildcards)
-    else:
-        all_genomes = get_all_unbinned(wildcards)
-    return expand(rules.gene_eggNOG_annotation.output,
-            dataset=wildcards.dataset, genome=all_genomes)
+    """
+    Make sure we only request annotation files for *.faa files with sequences in them.
+    """
+    # Make sure we have finished moving the final gene prediction files.
+    checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
+    print(checkpoint_output)
+    
+    # Look for all *.faa files in the `genomes/genes` directory
+    # Expect: genomes/genes/{dataset}/{genome}.faa
+    FAA_FILES = glob_wildcards("genomes/genes/{dataset}/{genome}.faa")
+    
+    valid_paths = []
+    for dataset, genome in zip(FAA_FILES.dataset, FAA_FILES.genome):
+        path = f"genomes/genes/{dataset}/{genome}.faa"
+        
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            valid_paths.append(expand(rules.gene_eggNOG_annotation.output, dataset=dataset, genome=genome)[0])
+        else:
+            if config.get("debug", False):
+                print(f"[DEBUG] Skipping eggNOG for {path}: File empty or missing.")
+    
+    return valid_paths
+
 
 rule combine_gene_egg_nog_annotations:
     input:
@@ -105,6 +122,7 @@ rule combine_gene_egg_nog_annotations:
         "logs/genomes/annotations/{dataset}/genes/eggNOG/combine.log",
     resources:
         time=config["simplejob_runtime"],
+        mem=config["medium_memory"],
     run:
         try:
             import pandas as pd
@@ -178,12 +196,29 @@ rule gene_DRAM_annotation:
 
 
 def get_all_gene_dram(wildcards):
-    if wildcards.dataset == "genomes":
-        all_genomes = get_all_genomes(wildcards)
-    else:
-        all_genomes = get_all_unbinned(wildcards)
-    return expand(rules.gene_DRAM_annotation.output.annotations,
-                dataset=wildcards.dataset, genome=all_genomes)
+    """
+    Make sure we only request annotation files for *.faa files with sequences in them.
+    """
+    # Make sure we have finished moving the final gene prediction files.
+    checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
+    print(checkpoint_output)
+    
+    # Look for all *.faa files in the `genomes/genes` directory
+    # Expect: genomes/genes/{dataset}/{genome}.faa
+    FAA_FILES = glob_wildcards("genomes/genes/{dataset}/{genome}.faa")
+    
+    valid_paths = []
+    for dataset, genome in zip(FAA_FILES.dataset, FAA_FILES.genome):
+        path = f"genomes/genes/{dataset}/{genome}.faa"
+        
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            valid_paths.append(expand(rules.gene_DRAM_annotation.output, dataset=dataset, genome=genome)[0])
+        else:
+            if config.get("debug", False):
+                print(f"[DEBUG] Skipping DRAM for {path}: File empty or missing.")
+    
+    return valid_paths
+
 
 rule combine_gene_dram_genecatalog_annotations:
     input:
@@ -192,6 +227,7 @@ rule combine_gene_dram_genecatalog_annotations:
         directory("genomes/annotations/{dataset}/genes/dram"),
     resources:
         time=config["simplejob_runtime"],
+        mem=config["medium_memory"],
     log:
         "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
     script:
@@ -248,16 +284,29 @@ rule gene_mmseqs2_annotation:
 
 
 def get_all_gene_mmseqs2_annotation(wildcards):
-    if wildcards.dataset == "genomes":
-        all_genomes = get_all_genomes(wildcards)
-    else:
-        all_genomes = get_all_unbinned(wildcards)
-    return(expand(rules.gene_mmseqs2_annotation.output.results,
-                        dataset=wildcards.dataset,
-                        database_name=config["mmseqs2_database_name"],
-                        genome=all_genomes
-            )
-    )
+    """
+    Make sure we only request annotation files for *.faa files with sequences in them.
+    """
+    # Make sure we have finished moving the final gene prediction files.
+    checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
+    print(checkpoint_output)
+    
+    # Look for all *.faa files in the `genomes/genes` directory
+    # Expect: genomes/genes/{dataset}/{genome}.faa
+    FAA_FILES = glob_wildcards("genomes/genes/{dataset}/{genome}.faa")
+    
+    valid_paths = []
+    for dataset, genome in zip(FAA_FILES.dataset, FAA_FILES.genome):
+        path = f"genomes/genes/{dataset}/{genome}.faa"
+        
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            valid_paths.append(expand(rules.gene_mmseqs2_annotation.output.results, dataset=dataset, database_name=config["mmseqs2_database_name"], genome=genome))
+        else:
+            if config.get("debug", False):
+                print(f"[DEBUG] Skipping MMseqs2 for {path}: File empty or missing.")
+    
+    return valid_paths
+
 
 localrules:
     all_mmseqs2,
