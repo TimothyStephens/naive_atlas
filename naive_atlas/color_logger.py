@@ -11,7 +11,7 @@ red = "\x1b[31;21m"
 bold_red = "\x1b[31;1m"
 reset = "\x1b[0m"
 
-prefix = "[Atlas] "
+prefix = "[naive_atlas] "
 
 
 class ColorFormatter(logging.Formatter):

@@ -6,12 +6,12 @@ import multiprocessing
 import subprocess
 import click
 
-
 from snakemake.common.configfile import load_configfile
 from .make_config import validate_config
 from .init.atlas_init import run_init  # , run_init_sra
 
 from .__init__ import __version__
+from .logo import print_logo
 
 ##
 
@@ -151,7 +151,7 @@ def get_snakefile(file="workflow/Snakefile"):
 def run_workflow(
     workflow, working_dir, config_file, jobs, max_mem, profile, dryrun, snakemake_args
 ):
-    """Runs the naive_ATLAS pipline
+    """Runs the naive ATLAS pipline
     
     By default all steps are executed but a sub-workflow can be specified.
     Needs a config-file and expects to find a sample table in the working-directory. Both can be generated with 'atlas init'
@@ -168,11 +168,12 @@ def run_workflow(
     +-----------------------------------------------all-----------------------------------------------+
     # Independent of other steps:
     screen
-    download (download reference files (need ~920GB for all databases, ~1.5TB during download))
+    download (download reference databases upfront instead of as each rule needs them (need ~920GB for all databases, ~1.5TB during download))
 
     """
-
-    logger.info(f"Atlas version: {__version__}")
+    
+    print_logo()
+    logger.info("STARTING WORKFLOW!")
 
     if config_file is None:
         config_file = os.path.join(working_dir, "config.yaml")
@@ -228,7 +229,8 @@ def run_workflow(
         # removes the traceback
         logger.critical(e)
         exit(1)
-
+    
+    logger.info("FINISHED WORKFLOW!")
 
 if __name__ == "__main__":
     cli()
