@@ -52,7 +52,14 @@ db_columns = {
 
 Tables = defaultdict(list)
 
+empty_file = False
 for file in snakemake.input:
+    # Check if results file is empty.
+    if os.stat(file).st_size == 0:
+        print(f"ERROR: {file} is empty. eggNOG-mapper might have failed without reporting an error. Please remove this file and rerun workflow.")
+        empty_file = True
+        continue
+    
     df = pd.read_csv(file, index_col=0, sep="\t")
 
     # drop un-annotated genes
@@ -74,6 +81,9 @@ for file in snakemake.input:
             Tables[db].append(df[cols].dropna(axis=0, how="all"))
 
     del df
+
+if empty_file:
+    sys.exit(1)
 
 out_dir = Path(snakemake.output[0])
 out_dir.mkdir()
