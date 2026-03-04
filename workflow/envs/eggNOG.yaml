@@ -3,7 +3,7 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - eggnog-mapper >=2.1.11, <2.2
+    - eggnog-mapper=2.1.13
     - python=3.11
     - diamond =2.1
     - wget # to download_eggnog_data on macOS
