@@ -3,5 +3,4 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - checkm-genome=1.2.5
-    - python=3.6 # needs to be 3.6
+    - checkm-genome=1.2.4

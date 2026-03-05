@@ -9,7 +9,7 @@ USER="timothystephens"
 DOCKER=$(which docker)
 DOCKERFILE="dockerfile"
 VERSION=$(git describe --tags --dirty --always)
-
+DEBUG="-v"
 
 ## Build dockerfile
 echo -e "# Dockerfile to containerize naiveATLAS workflow
@@ -45,18 +45,7 @@ RUN apt-get update && \\
     && rm -rf /var/lib/apt/lists/*
 
 
-## (3/6) Create and set workflow working directory
-WORKDIR /app
-COPY . .
-RUN mamba env create --prefix /conda-envs/naive_atlas --file naive_atlasenv.yml -v
-SHELL [\"conda\", \"run\", \"-p\", \"/conda-envs/naive_atlas\", \"/bin/bash\", \"-c\"]
-RUN /conda-envs/naive_atlas/bin/pip3 install --prefix /conda-envs/naive_atlas --editable . && \\
-    /conda-envs/naive_atlas/bin/pip3 install snakemake-executor-plugin-slurm && \\
-    /conda-envs/naive_atlas/bin/pip3 install snakemake-executor-plugin-cluster-generic
-SHELL [\"/bin/sh\", \"-c\"]
-
-
-## (4/6) Install each workflow package" > "$DOCKERFILE"
+## (3/6) Install each workflow package" > "$DOCKERFILE"
 
 RUN=""
 tmp_seen=$(mktemp)
@@ -68,43 +57,42 @@ MD5SUM=$(md5sum "$YAML" | awk '{print $1}')
 # Check if we have seen this md5sum previously
 if ! grep -qFx "$MD5SUM" "$tmp_seen"; then
   # Not seen
-
-echo -e "# Conda environment:
-#   source: $YAML
-#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE"
-awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE"
-echo -e "COPY $YAML /conda-envs/$MD5SUM.yaml" >> "$DOCKERFILE"
-echo "" >> "$DOCKERFILE"
-
-# Need to run mamba create as each RUN creates a new layer, which is a lot of diskspace overhead and will cause issues if done separatly.
-NL=$'\n'
-if [ -z "$RUN" ]; then
-  RUN="RUN mamba env create --prefix /conda-envs/$MD5SUM --file /conda-envs/$MD5SUM.yaml -vvv && \\"
-else
-  RUN="${RUN}${NL}    mamba env create --prefix /conda-envs/$MD5SUM --file /conda-envs/$MD5SUM.yaml -vvv && \\"
-fi
-
+  echo "# Conda environment:" >> "$DOCKERFILE"
+  echo "#   source: $YAML" >> "$DOCKERFILE"
+  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE"
+  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE"
+  echo -e "COPY $YAML /conda-envs/$MD5SUM.yaml" >> "$DOCKERFILE"
+  echo -e "RUN mamba env create ${DEBUG} \\" >> "$DOCKERFILE"
+  echo -e "      --prefix /conda-envs/$MD5SUM \\" >> "$DOCKERFILE"
+  echo -e "      --file   /conda-envs/$MD5SUM.yaml -vvv && \\" >> "$DOCKERFILE"
+  echo -e "    mamba clean -afy" >> "$DOCKERFILE"
+  echo "" >> "$DOCKERFILE"
+  
   echo "$MD5SUM" >> "$tmp_seen"
-
+  
 else
-
-echo -e "# Conda environment:
-#   source: $YAML
-#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE"
-awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE"
-echo -e "# NOTRUN: Seen md5sum previously" >> "$DOCKERFILE"
-echo "" >> "$DOCKERFILE"
+  # Seen
+  echo "# Conda environment:" >> "$DOCKERFILE"
+  echo "#   source: $YAML" >> "$DOCKERFILE"
+  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE"
+  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE"
+  echo -e "# NOTRUN: Seen md5sum previously" >> "$DOCKERFILE"
+  echo "" >> "$DOCKERFILE"
 
 fi
 
 done
-RUN="${RUN}${NL}    mamba clean -afy"
 rm "$tmp_seen"
-echo -e "$RUN" >> "$DOCKERFILE"
-
 
 
 echo -e '
+## (4/6) Create and set workflow working directory
+WORKDIR /app
+COPY . .
+RUN mamba env create --prefix /conda-envs/naive_atlas --file naive_atlasenv_cluster.yml -v
+SHELL ["conda", "run", "-p", "/conda-envs/naive_atlas", "/bin/bash", "-c"]
+RUN /conda-envs/naive_atlas/bin/pip install --prefix /conda-envs/naive_atlas --editable .
+
 
 ## (5/6) Verify the installation by checking the version
 RUN naive_atlas --help
@@ -130,14 +118,14 @@ docker image rm XXXX
 
 
 # Once it is uploaded, test using singularity
-singularity pull naive_atlas_v${VERSION}.sif docker://$USER/naive_atlas:${VERSION}
-singularity exec naive_atlas_v${VERSION}.sif naive_atlas --help
-rm naive_atlas_v${VERSION}.sif
+singularity pull naive_atlas_${VERSION}.sif docker://$USER/naive_atlas:${VERSION}
+singularity exec naive_atlas_${VERSION}.sif naive_atlas --help
+rm naive_atlas_${VERSION}.sif
 
 # OR build a SIF file directly from a local docker image
-singularity build naive_atlas_v${VERSION}.sif docker-daemon://$USER/naive_atlas:${VERSION}
-singularity exec naive_atlas_v${VERSION}.sif naive_atlas --help
-rm naive_atlas_v${VERSION}.sif
+singularity build naive_atlas_${VERSION}.sif docker-daemon://$USER/naive_atlas:${VERSION}
+singularity exec naive_atlas_${VERSION}.sif naive_atlas --help
+rm naive_atlas_${VERSION}.sif
 
 
 docker image ls
