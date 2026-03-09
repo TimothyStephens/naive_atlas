@@ -103,3 +103,4 @@ ENV/
 .DS_Store
 example_data
 atlas/regex_formating.py
+docker_build.log

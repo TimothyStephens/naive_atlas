@@ -1,7 +1,11 @@
+#!/usr/bin/env bash
 ####
 #### Script to automatically containerize and build naiveATLAS into docker
 ####
 set -euo pipefail
+
+## Print all info to log file
+exec 1> >(tee -a "${0}.log") 2>&1
 
 
 ## Env vars
@@ -9,9 +13,63 @@ USER="timothystephens"
 DOCKER=$(which docker)
 DOCKERFILE="dockerfile"
 VERSION=$(git describe --tags --dirty --always)
-DEBUG="-v"
+BUILD_ONLY=0
+DEBUG=""
+
+
+## Useage information
+usage() {
+echo -e "##
+## $(basename ${0}) v${VERSION}
+##
+
+Script to automatically containerize and build naiveATLAS into docker
+
+Usage:
+$(basename $0) --debug
+
+Options (all optional):
+-b, --build_only           Only write 'dockerfile', dont build it.
+-v, --version              Script version (${VERSION})
+-h, --help                 This help message
+--debug                    Run debug mode
+" 1>&2
+exit 1
+}
+
+# See https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -b|--build_only)
+      BUILD_ONLY=1
+      shift # past argument
+      ;;
+    -h|--help)
+      usage
+      exit 1;
+      ;;
+    -v|--version)
+      echo "${VERSION}"
+      exit 0;
+      ;;
+    --debug)
+      set -x
+      DEBUG="-v"
+      shift # past argument
+      ;;
+    *) # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
 
 ## Build dockerfile
+echo "## Writing $DOCKERFILE"
 echo -e "# Dockerfile to containerize naiveATLAS workflow
 FROM condaforge/mambaforge:latest
 
@@ -101,12 +159,23 @@ RUN naive_atlas --help
 ## (6/6) Set the default command to show MaxBin2 help
 CMD ["naive_atlas", "--help"]
 ' >> "$DOCKERFILE"
+echo "## Done writing $DOCKERFILE"
 
 
-#exit 0
+## Stop if we only want the 'dockerfile'
+if [ $BUILD_ONLY -eq 1 ];
+then
+  echo "## Skipping docker build. Script Done!"
+  exit 0
+fi
+
+
 ## Build using docker
+echo "## Building $DOCKERFILE"
 $DOCKER build -t $USER/naive_atlas:${VERSION} .
 $DOCKER run $USER/naive_atlas:${VERSION} naive_atlas --help
+echo "## Done building $DOCKERFILE"
+
 
 ## Print commands to check the build
 echo -e "
