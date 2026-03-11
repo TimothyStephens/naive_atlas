@@ -12,6 +12,7 @@ exec 1> >(tee -a "${0}.log") 2>&1
 USER="timothystephens"
 DOCKER=$(which docker)
 DOCKERFILE="dockerfile"
+DOCKERFILE_ENV="dockerfile_env"
 VERSION=$(git describe --tags --dirty --always)
 BUILD_ONLY=0
 DEBUG=""
@@ -69,12 +70,12 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 ## Build dockerfile
-echo "## Writing $DOCKERFILE"
-echo -e "# Dockerfile to containerize naiveATLAS workflow
+echo "## Writing $DOCKERFILE_ENV"
+echo -e "# Dockerfile to containerize naiveATLAS conda envs
 FROM condaforge/mambaforge:latest
 
 
-## (1/6) Set environment variables
+## (1/3) Set environment variables
 # So we dont have to interactivly configure tzdata
 RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
 ENV DEBIAN_FRONTEND=noninteractive
@@ -91,7 +92,7 @@ RUN apt-get update && \\
     rm -rf /var/lib/apt/lists/*
 
 
-## (2/6) Install Singulairty
+## (2/3) Install Singulairty
 RUN apt-get update && \\
     apt-get install -y --no-install-recommends \\
       software-properties-common \\
@@ -103,7 +104,7 @@ RUN apt-get update && \\
     && rm -rf /var/lib/apt/lists/*
 
 
-## (3/6) Install each workflow package" > "$DOCKERFILE"
+## (3/3) Install each workflow package" > "$DOCKERFILE_ENV"
 
 RUN=""
 tmp_seen=$(mktemp)
@@ -115,50 +116,86 @@ MD5SUM=$(md5sum "$YAML" | awk '{print $1}')
 # Check if we have seen this md5sum previously
 if ! grep -qFx "$MD5SUM" "$tmp_seen"; then
   # Not seen
-  echo "# Conda environment:" >> "$DOCKERFILE"
-  echo "#   source: $YAML" >> "$DOCKERFILE"
-  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE"
-  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE"
-  echo -e "COPY $YAML /conda-envs/$MD5SUM.yaml" >> "$DOCKERFILE"
-  echo -e "RUN mamba env create ${DEBUG} \\" >> "$DOCKERFILE"
-  echo -e "      --prefix /conda-envs/$MD5SUM \\" >> "$DOCKERFILE"
-  echo -e "      --file   /conda-envs/$MD5SUM.yaml -vvv && \\" >> "$DOCKERFILE"
-  echo -e "    mamba clean -afy" >> "$DOCKERFILE"
-  echo "" >> "$DOCKERFILE"
+  echo "# Conda environment:" >> "$DOCKERFILE_ENV"
+  echo "#   source: $YAML" >> "$DOCKERFILE_ENV"
+  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE_ENV"
+  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE_ENV"
+  echo -e "COPY $YAML /conda-envs/$MD5SUM.yaml" >> "$DOCKERFILE_ENV"
+  echo -e "RUN mamba env create ${DEBUG} \\" >> "$DOCKERFILE_ENV"
+  echo -e "      --prefix /conda-envs/$MD5SUM \\" >> "$DOCKERFILE_ENV"
+  echo -e "      --file   /conda-envs/$MD5SUM.yaml -vvv && \\" >> "$DOCKERFILE_ENV"
+  echo -e "    mamba clean -afy" >> "$DOCKERFILE_ENV"
+  echo "" >> "$DOCKERFILE_ENV"
   
   echo "$MD5SUM" >> "$tmp_seen"
   
 else
   # Seen
-  echo "# Conda environment:" >> "$DOCKERFILE"
-  echo "#   source: $YAML" >> "$DOCKERFILE"
-  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE"
-  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE"
-  echo -e "# NOTRUN: Seen md5sum previously" >> "$DOCKERFILE"
-  echo "" >> "$DOCKERFILE"
+  echo "# Conda environment:" >> "$DOCKERFILE_ENV"
+  echo "#   source: $YAML" >> "$DOCKERFILE_ENV"
+  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE_ENV"
+  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE_ENV"
+  echo -e "# NOTRUN: Seen md5sum previously" >> "$DOCKERFILE_ENV"
+  echo "" >> "$DOCKERFILE_ENV"
 
 fi
 
 done
 rm "$tmp_seen"
+echo "## Done writing $DOCKERFILE_ENV"
 
 
-echo -e '
-## (4/6) Create and set workflow working directory
+## Build dockerfile
+echo "## Writing $DOCKERFILE"
+echo -e "# Dockerfile to containerize naiveATLAS workflow
+FROM condaforge/mambaforge:latest
+
+
+## (1/5) Set environment variables
+# So we dont have to interactivly configure tzdata
+RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
+ENV DEBIAN_FRONTEND=noninteractive
+
+ENV CONDA_DIR=/conda-envs
+ENV PATH=/conda-envs/naive_atlas/bin:\$PATH
+# Enhance mamba network robustness
+ENV MAMBA_NO_LOW_SPEED_LIMIT=1
+ENV CONDA_REMOTE_READ_TIMEOUT_SECS=300
+
+RUN apt-get update && \\
+    apt-get install -y \\
+      zlib1g zlib1g-dev build-essential gcc && \\
+    rm -rf /var/lib/apt/lists/*
+
+
+## (2/5) Install Singulairty
+RUN apt-get update && \\
+    apt-get install -y --no-install-recommends \\
+      software-properties-common \\
+      gnupg \\
+      ca-certificates \\
+    && add-apt-repository -y ppa:apptainer/ppa \\
+    && apt-get update \\
+    && apt-get install -y apptainer \\
+    && rm -rf /var/lib/apt/lists/*
+
+
+## (3/5) Create and set workflow working directory
 WORKDIR /app
 COPY . .
+RUN sed -e 's@#containerized: \"timothystephens/naive_atlas-envs:latest\"@containerized: \"timothystephens/naive_atlas-envs:${VERSION}\"@' -i workflow/Snakefile
 RUN mamba env create --prefix /conda-envs/naive_atlas --file naive_atlasenv_cluster.yml -v
-SHELL ["conda", "run", "-p", "/conda-envs/naive_atlas", "/bin/bash", "-c"]
+SHELL [\"conda\", \"run\", \"-p\", \"/conda-envs/naive_atlas\", \"/bin/bash\", \"-c\"]
 RUN /conda-envs/naive_atlas/bin/pip install --prefix /conda-envs/naive_atlas --editable .
 
 
-## (5/6) Verify the installation by checking the version
+## (4/5) Verify the installation by checking the version
 RUN naive_atlas --help
 
 
-## (6/6) Set the default command to show MaxBin2 help
-CMD ["naive_atlas", "--help"]
-' >> "$DOCKERFILE"
+## (5/5) Set the default command to show MaxBin2 help
+CMD [\"naive_atlas\", \"--help\"]
+" > "$DOCKERFILE"
 echo "## Done writing $DOCKERFILE"
 
 
@@ -171,8 +208,11 @@ fi
 
 
 ## Build using docker
+echo "## Building $DOCKERFILE_ENV"
+$DOCKER build -t $USER/naive_atlas-envs:${VERSION} -t $USER/naive_atlas-envs:latest -f $DOCKERFILE_ENV .
+echo "## Done building $DOCKERFILE_ENV"
 echo "## Building $DOCKERFILE"
-$DOCKER build -t $USER/naive_atlas:${VERSION} .
+$DOCKER build -t $USER/naive_atlas:${VERSION}      -t $USER/naive_atlas:latest      -f $DOCKERFILE .
 $DOCKER run $USER/naive_atlas:${VERSION} naive_atlas --help
 echo "## Done building $DOCKERFILE"
 
@@ -181,7 +221,8 @@ echo "## Done building $DOCKERFILE"
 echo -e "
 
 # Run these commands once you are happy with the containerize version
-$DOCKER push $USER/naive_atlas:${VERSION}
+docker push --all-tags $USER/naive_atlas
+docker push --all-tags $USER/naive_atlas-envs
 docker image ls
 docker image rm XXXX
 
@@ -195,10 +236,6 @@ rm naive_atlas_${VERSION}.sif
 singularity build naive_atlas_${VERSION}.sif docker-daemon://$USER/naive_atlas:${VERSION}
 singularity exec naive_atlas_${VERSION}.sif naive_atlas --help
 rm naive_atlas_${VERSION}.sif
-
-
-docker image ls
-docker image rm XXXX
 "
 
 
