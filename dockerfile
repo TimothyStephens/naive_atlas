@@ -34,7 +34,7 @@ RUN apt-get update && \
 ## (3/5) Create and set workflow working directory
 WORKDIR /app
 COPY . .
-RUN sed -e 's@#containerized: "timothystephens/naive_atlas-envs:latest"@#containerized: "timothystephens/naive_atlas-envs:v0.3.2-dirty"@' -i workflow/Snakefile
+RUN sed -e 's@timothystephens/naive_atlas-envs:latest@timothystephens/naive_atlas-envs:v0.3.3-dirty@' -i workflow/Snakefile
 RUN mamba env create --prefix /conda-envs/naive_atlas --file naive_atlasenv_cluster.yml -v
 SHELL ["conda", "run", "-p", "/conda-envs/naive_atlas", "/bin/bash", "-c"]
 RUN /conda-envs/naive_atlas/bin/pip install --prefix /conda-envs/naive_atlas --editable .
