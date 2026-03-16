@@ -483,8 +483,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --merge-level {merge_level[0]} \\
                 --prune-level {prune_level[0]} \\
                 --low-local-ratio {low_local_ratio[0]} \\
-                --memory {resources.mem}000000 \\
-                {preset[0]} {extra}
+                {preset[0]} {extra} \\
+                --memory {resources.mem}000000000
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
             """
