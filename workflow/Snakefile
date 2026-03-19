@@ -30,7 +30,7 @@ from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEA
 min_version("6.1")
 
 
-containerized: "timothystephens/naive_atlas-env:latest"
+containerized: "docker://timothystephens/naive_atlas-envs:latest"
 
 wildcard_constraints:
     binner="[A-Za-z]+",
