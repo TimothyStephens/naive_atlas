@@ -454,6 +454,21 @@ RUN mamba env create  \
     mamba clean -afy
 
 # Conda environment:
+#   source: workflow/envs/minimap2_v3.13.4_wrapper.yaml
+#   prefix: /conda-envs/b707a79bb89feec5522494e1048500b3
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - minimap2 =2.28
+COPY workflow/envs/minimap2_v3.13.4_wrapper.yaml /conda-envs/b707a79bb89feec5522494e1048500b3.yaml
+RUN mamba env create  \
+      --prefix /conda-envs/b707a79bb89feec5522494e1048500b3 \
+      --file   /conda-envs/b707a79bb89feec5522494e1048500b3.yaml -vvv && \
+    mamba clean -afy
+
+# Conda environment:
 #   source: workflow/envs/minimap.yaml
 #   prefix: /conda-envs/d91311468e70edfc304cd7bf1b2da061
 #   name: minimap2
