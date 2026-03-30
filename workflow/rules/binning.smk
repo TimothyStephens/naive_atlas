@@ -335,8 +335,7 @@ checkpoint binning_prokaryotic_dastool:
             --labels ${{S2B_ARRAY[1]}} \
             --search_engine diamond \
             --score_threshold 0.1 \
-            --write_bins 1 \
-            --create_plots 1 \
+            --write_bins \
             --threads {threads} \
             --debug
         
