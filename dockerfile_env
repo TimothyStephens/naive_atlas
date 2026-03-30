@@ -454,21 +454,6 @@ RUN mamba env create  \
     mamba clean -afy
 
 # Conda environment:
-#   source: workflow/envs/minimap2_v3.13.4_wrapper.yaml
-#   prefix: /conda-envs/b707a79bb89feec5522494e1048500b3
-#   channels:
-#     - conda-forge
-#     - bioconda
-#     - nodefaults
-#   dependencies:
-#     - minimap2 =2.28
-COPY workflow/envs/minimap2_v3.13.4_wrapper.yaml /conda-envs/b707a79bb89feec5522494e1048500b3.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/b707a79bb89feec5522494e1048500b3 \
-      --file   /conda-envs/b707a79bb89feec5522494e1048500b3.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
 #   source: workflow/envs/minimap.yaml
 #   prefix: /conda-envs/d91311468e70edfc304cd7bf1b2da061
 #   name: minimap2
@@ -688,4 +673,41 @@ RUN mamba env create  \
       --prefix /conda-envs/2d2e6a31d6cda87ec1e7252fdbbda64e \
       --file   /conda-envs/2d2e6a31d6cda87ec1e7252fdbbda64e.yaml -vvv && \
     mamba clean -afy
+
+# Conda environment:
+#   source: https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v1.19.0/bio/samtools/stats/environment.yaml
+#   prefix: /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - samtools=1.14
+#     - snakemake-wrapper-utils=0.3
+ADD https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v1.19.0/bio/samtools/stats/environment.yaml /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2.yaml
+RUN mamba env create        --prefix /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2       --file   /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2.yaml -vvv &&     mamba clean -afy
+
+# Conda environment:
+#   source: https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.13.4/bio/minimap2/index/environment.yaml
+#   prefix: /conda-envs/a2d30c5606f0ad1617dd954cca5b465b
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - minimap2 =2.28
+ADD https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.13.4/bio/minimap2/index/environment.yaml /conda-envs/a2d30c5606f0ad1617dd954cca5b465b.yaml
+RUN mamba env create        --prefix /conda-envs/a2d30c5606f0ad1617dd954cca5b465b       --file   /conda-envs/a2d30c5606f0ad1617dd954cca5b465b.yaml -vvv &&     mamba clean -afy
+
+# Conda environment:
+#   source: https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.3.6/bio/multiqc/environment.yaml
+#   prefix: /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - multiqc =1.19
+ADD https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.3.6/bio/multiqc/environment.yaml /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e.yaml
+RUN mamba env create        --prefix /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e       --file   /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e.yaml -vvv &&     mamba clean -afy
 

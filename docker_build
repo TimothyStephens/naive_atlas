@@ -142,6 +142,56 @@ fi
 
 done
 rm "$tmp_seen"
+
+# Hard coded wrappers since generating the md5sums is based on how it is listed online and not locally.
+# To prevent needing to download this info we just hard code the builds.
+echo "# Conda environment:
+#   source: https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v1.19.0/bio/samtools/stats/environment.yaml
+#   prefix: /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - samtools=1.14
+#     - snakemake-wrapper-utils=0.3
+ADD https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v1.19.0/bio/samtools/stats/environment.yaml /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2.yaml
+RUN mamba env create  \
+      --prefix /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2 \
+      --file   /conda-envs/7c07ea7ec21294e0ded29ba6e2d362e2.yaml -vvv && \
+    mamba clean -afy
+
+# Conda environment:
+#   source: https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.13.4/bio/minimap2/index/environment.yaml
+#   prefix: /conda-envs/a2d30c5606f0ad1617dd954cca5b465b
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - minimap2 =2.28
+ADD https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.13.4/bio/minimap2/index/environment.yaml /conda-envs/a2d30c5606f0ad1617dd954cca5b465b.yaml
+RUN mamba env create  \
+      --prefix /conda-envs/a2d30c5606f0ad1617dd954cca5b465b \
+      --file   /conda-envs/a2d30c5606f0ad1617dd954cca5b465b.yaml -vvv && \
+    mamba clean -afy
+
+# Conda environment:
+#   source: https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.3.6/bio/multiqc/environment.yaml
+#   prefix: /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e
+#   channels:
+#     - conda-forge
+#     - bioconda
+#     - nodefaults
+#   dependencies:
+#     - multiqc =1.19
+ADD https://raw.githubusercontent.com/snakemake/snakemake-wrappers/v3.3.6/bio/multiqc/environment.yaml /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e.yaml
+RUN mamba env create  \
+      --prefix /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e \
+      --file   /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e.yaml -vvv && \
+    mamba clean -afy
+" >> "$DOCKERFILE_ENV"
+
 echo "## Done writing $DOCKERFILE_ENV"
 
 
@@ -221,8 +271,8 @@ echo "## Done building $DOCKERFILE"
 echo -e "
 
 # Run these commands once you are happy with the containerize version
-docker push --all-tags $USER/naive_atlas
-docker push --all-tags $USER/naive_atlas-envs
+docker push $USER/naive_atlas-envs:${VERSION} && docker push $USER/naive_atlas-envs:latest
+docker push $USER/naive_atlas:${VERSION}      && docker push $USER/naive_atlas:latest
 docker image ls
 docker image rm XXXX
 
