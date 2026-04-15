@@ -1,3 +1,4 @@
+from snakemake.utils import unpack
 
 localrules:
     copy_eukaryotic_genomes,
@@ -10,8 +11,8 @@ rule copy_eukaryotic_genomes:
     log:
         "logs/gene_prediction/copy_eukaryotic_genomes.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     shell:
         "mkdir -p {output} && cp {input}/MAG_eukaryotic* {output} > {log} 2>&1"
 
@@ -28,8 +29,8 @@ rule predict_eukaryotic_genes:
     conda:
         "../envs/metabat.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     params:
         minid=config["cobinning_readmapping_id"] * 100,
     priority: 100

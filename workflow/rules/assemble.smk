@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from glob import glob
-from snakemake.utils import report
+from snakemake.utils import report, unpack
 import warnings
 from copy import deepcopy
 
@@ -92,8 +92,8 @@ rule normalize_reads_PE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -134,8 +134,8 @@ rule normalize_reads_SE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -176,8 +176,8 @@ rule normalize_reads_LR:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -258,8 +258,8 @@ rule error_correction_PE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -297,8 +297,8 @@ rule error_correction_SE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -336,8 +336,8 @@ rule error_correction_LR:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -572,8 +572,8 @@ rule run_assembly:
     conda:
         "../envs/assembly.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "run_assembly", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_assembly", mem_gb=True)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_assembly", mem_gb=True))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -587,8 +587,8 @@ rule rename_contigs:
         fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
         mapping_table="samples/{sample}/assembly/assembly/old2new_contig_names.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "rename_contigs", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "rename_contigs")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "rename_contigs"))
     log:
         "logs/samples/{sample}/assembly/post_process/rename_and_filter_size.log",
     params:
@@ -671,8 +671,8 @@ rule align_reads_to_prefilter_contigs:
     conda:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping"))
     shell:
         """
         ({params.command}) >{log} 2>&1
@@ -695,8 +695,8 @@ rule pileup_prefilter:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "pileup", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "pileup", java_mem_factor=0.85))
     shell:
         "pileup.sh ref={input.fasta} in={input.bam} "
         " threads={threads} "
@@ -727,8 +727,8 @@ rule filter_by_coverage:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "filter_by_coverage", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "filter_by_coverage", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "filter_by_coverage", java_mem_factor=0.85))
     shell:
         """filterbycoverage.sh in={input.fasta} \
         cov={input.covstats} \
@@ -765,8 +765,8 @@ rule calculate_contigs_stats:
     conda:
         "../envs/required_packages.yaml"
     threads: config["resources"]["calculate_contigs_stats"]["threads"]
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "calculate_contigs_stats", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "calculate_contigs_stats", java_mem_factor=0.85))
     log:
         "logs/samples/{sample}/assembly/post_process/contig_stats_final.log",
     benchmark:
@@ -793,8 +793,8 @@ rule align_reads_to_final_contigs:
     conda:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping"))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -823,8 +823,8 @@ rule pileup_contigs_sample:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "pileup", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "pileup", java_mem_factor=0.85))
     shell:
         "pileup.sh "
         " ref={input.fasta} "
@@ -853,8 +853,8 @@ rule samtools_stats_contigs_sample:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "samtools_stats_contigs_sample", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "samtools_stats_contigs_sample")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "samtools_stats_contigs_sample"))
     shell:
         "samtools stats "
         " {input.bam} "
@@ -872,8 +872,8 @@ rule create_bam_index:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "create_bam_index", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "create_bam_index")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "create_bam_index"))
     shell:
         "samtools index {input} > {log} 2>&1"
 
@@ -892,8 +892,8 @@ rule predict_genes:
     benchmark:
         "benchmarks/samples/{sample}/prodigal.txt"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         prodigal -i {input} -o {output.gff} -d {output.fna} \

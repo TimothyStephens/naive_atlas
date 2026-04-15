@@ -1,3 +1,4 @@
+from snakemake.utils import unpack
 wildcard_constraints:
     sra_run="[S,E,D]RR[0-9]+",
 
@@ -18,10 +19,10 @@ rule prefetch:
         "logs/benchmarks/SRAdownload/prefetch/{sra_run}.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "sra", "threads")
     resources:
-        lambda wc, input, attempt: {
+        unpack(lambda wc, input, attempt: {
             **get_all_resources(wc, input, attempt, "sra"),
             "internet_connection": 1
-        }
+        })
     conda:
         "../envs/sra.yaml"
     shell:
@@ -56,7 +57,7 @@ rule extract_run:
         "logs/benchmarks/SRAdownload/fasterqdump/{sra_run}.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "sra", "threads")
     resources:
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "sra")
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "sra"))
     conda:
         "../envs/sra.yaml"
     shell:
@@ -120,8 +121,8 @@ rule merge_runs_to_sample:
             fraction=SRA_read_fractions,
         ),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         from utils import io
 
@@ -139,5 +140,5 @@ rule download_sra:
             sample=SAMPLES,
         ),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))

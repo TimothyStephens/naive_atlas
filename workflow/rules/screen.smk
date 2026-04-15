@@ -1,3 +1,4 @@
+from snakemake.utils import unpack
 
 rule generate_sketch:
     input:
@@ -9,8 +10,8 @@ rule generate_sketch:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
     shell:
         "bbsketch.sh "
         "in={input[0]}"
@@ -34,8 +35,8 @@ rule compare_sketch:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
     shell:
         "comparesketch.sh alltoall "
         " format=3 out={output} "

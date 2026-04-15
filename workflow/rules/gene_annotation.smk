@@ -1,4 +1,5 @@
 import os
+from snakemake.utils import unpack
 
 
 #######################
@@ -24,8 +25,8 @@ rule gene_eggNOG_homology_search:
         data_dir=EGGNOG_DIR,
         prefix=lambda wc, output: output[0].replace(".emapper.seed_orthologs", ""),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -53,8 +54,8 @@ rule gene_eggNOG_annotation:
         prefix=lambda wc, output: output[0].replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -117,8 +118,8 @@ rule combine_gene_egg_nog_annotations:
     log:
         "logs/genomes/annotations/{dataset}/genes/eggNOG/combine.log",
     threads: 1
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
     run:
         try:
             import pandas as pd
@@ -167,8 +168,8 @@ rule gene_DRAM_annotation:
         ),
         genes=temp("Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/genes.faa"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
     conda:
         "../envs/dram.yaml"
     params:
@@ -221,8 +222,8 @@ rule combine_gene_dram_genecatalog_annotations:
     output:
         directory("genomes/annotations/{dataset}/genes/dram"),
     threads: 1
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
     log:
         "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
     script:
@@ -250,8 +251,8 @@ rule gene_mmseqs2_annotation:
         mmseqs2_opts=config["mmseqs2_opts"],
         results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
     conda:
         "../envs/mmseqs2.yaml"
     log:

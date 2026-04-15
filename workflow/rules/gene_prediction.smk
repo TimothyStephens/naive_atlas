@@ -1,3 +1,4 @@
+from snakemake.utils import unpack
 
 
 
@@ -110,8 +111,8 @@ rule gene_prediction_bacteria:
     conda:
         "../envs/gene_prediction_bacteria.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -147,8 +148,8 @@ rule gene_prediction_archaea:
     conda:
         "../envs/gene_prediction_archaea.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -181,8 +182,8 @@ rule gene_prediction_virus:
     conda:
         "../envs/gene_prediction_virus.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -216,8 +217,8 @@ rule gene_prediction_plasmid:
     conda:
         "../envs/gene_prediction_plasmid.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -270,8 +271,8 @@ rule gene_prediction_eukaryote:
     conda:
         "../envs/gene_prediction_eukaryotic.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -391,8 +392,8 @@ checkpoint move_genome_predicted_genes:
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -452,8 +453,8 @@ rule gene_prediction_unbinned:
     conda:
         "../envs/prodigal.yaml"
     threads: 1
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (
@@ -496,8 +497,8 @@ checkpoint move_unbinned_predicted_genes:
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
     shell:
         """
         (

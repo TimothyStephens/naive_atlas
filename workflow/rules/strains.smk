@@ -1,4 +1,4 @@
-
+from snakemake.utils import unpack
 
 
 rule instrain_profile:
@@ -18,8 +18,8 @@ rule instrain_profile:
         "../envs/instrain.yaml"
     benchmark:
         "logs/benchmarks/genomes/strains/profile/{sample}.tsv"
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_profile")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_profile"))
     shell:
         #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
         #" ; "
@@ -49,8 +49,8 @@ rule instrain_compare:
         "../envs/instrain.yaml"
     benchmark:
         "logs/benchmarks/genomes/strains/compare.tsv"
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_compare")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_compare"))
     shell:
         "inStrain compare "
         " --input {input.profiles} "

@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from glob import glob
-from snakemake.utils import report
+from snakemake.utils import report, unpack
 import warnings
 
 
@@ -114,8 +114,8 @@ rule initialize_qc_PE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -150,8 +150,8 @@ rule initialize_qc_SE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -186,8 +186,8 @@ rule initialize_qc_LR:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -262,8 +262,8 @@ rule deduplicate_reads_PE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -296,8 +296,8 @@ rule deduplicate_reads_SE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -330,8 +330,8 @@ rule deduplicate_reads_LR:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -440,8 +440,8 @@ rule apply_quality_filter_PE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -493,8 +493,8 @@ rule apply_quality_filter_SE:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -546,8 +546,8 @@ rule apply_quality_filter_LR:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85))
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -582,8 +582,8 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "build_decontamination_db", "threads")
-        resources: 
-            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "build_decontamination_db", java_mem_factor=0.85)
+        resources:
+            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "build_decontamination_db", java_mem_factor=0.85))
         shell:
             "bbsplit.sh"
             " -Xmx{resources.java_mem}M "
@@ -696,8 +696,8 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
-        resources: 
-            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85)
+        resources:
+            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85))
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -740,8 +740,8 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
-        resources: 
-            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85)
+        resources:
+            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85))
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -785,8 +785,8 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
-        resources: 
-            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85)
+        resources:
+            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85))
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -819,8 +819,8 @@ rule qcreads_PE:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_PE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -841,8 +841,8 @@ rule qcreads_SE:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_SE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -863,8 +863,8 @@ rule qcreads_LR:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_LR.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -895,8 +895,8 @@ rule copy_reads_PE:
     log:
         "logs/samples/{sample}/sequence_quality_control/copy_reads_PE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import shutil, os
         import pandas as pd
@@ -918,8 +918,8 @@ rule copy_reads_SE:
     log:
         "logs/samples/{sample}/sequence_quality_control/copy_reads_SE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import shutil, os
         import pandas as pd
@@ -941,8 +941,8 @@ rule copy_reads_LR:
     log:
         "logs/samples/{sample}/sequence_quality_control/copy_reads_LR.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import shutil, os
         import pandas as pd
@@ -991,8 +991,8 @@ rule get_read_counts:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "get_read_counts", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_counts", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_counts", java_mem_factor=0.85))
     priority: 30
     script:
         "../scripts/get_read_counts.py"
@@ -1014,8 +1014,8 @@ rule write_read_counts:
     log:
         "logs/samples/{sample}/sequence_quality_control/read_stats/write_read_counts.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         from utils.io import pandas_concat
         
@@ -1039,8 +1039,8 @@ rule combine_read_counts:
     log:
         "logs/QC/combine_read_counts.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         from utils.io import pandas_concat
         
@@ -1073,8 +1073,8 @@ rule get_read_length_hist:
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "get_read_length_hist", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_length_hist", java_mem_factor=0.85)
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_length_hist", java_mem_factor=0.85))
     script:
         "../scripts/get_read_length.py"
 
@@ -1097,8 +1097,8 @@ rule combine_read_length_hist:
     log:
         "logs/QC/combine_read_length_hist.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import pandas as pd
         import os
@@ -1133,8 +1133,8 @@ rule combine_insert_hist:
     log:
         "logs/QC/combine_insert_hist.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     run:
         import pandas as pd
         import os
@@ -1184,8 +1184,8 @@ rule build_qc_report:
     conda:
         "../envs/report.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
     script:
         "../report/qc_report.py"
 
@@ -1205,5 +1205,5 @@ rule finalize_sample_qc:
     log:
         "logs/samples/{sample}/sequence_quality_control/finalize_sample_qc.log",
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc"))

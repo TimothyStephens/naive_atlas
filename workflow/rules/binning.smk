@@ -1,4 +1,5 @@
 from glob import glob
+from snakemake.utils import unpack
 
 
 
@@ -19,8 +20,8 @@ rule get_metabat_depth_file_one_sample:
     conda:
         "../envs/metabat2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     params:
         minid=config["cobinning_readmapping_id"] * 100,
     priority: 100
@@ -46,8 +47,8 @@ rule get_metabat_depth_file_combine:
     log:
         "logs/samples/{sample}/binning/coverage/metabat_depth.log",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         {params.workflow_folder}/scripts/veba/metabat2_coverage_combined_file.py \
@@ -69,8 +70,8 @@ rule get_maxbin_depth_file:
     log:
         "logs/samples/{sample}/binning/coverage/maxbin_depth.log",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         {params.workflow_folder}/scripts/veba/maxbin_abundance_from_metabat2_coverage_file.py \
@@ -108,8 +109,8 @@ rule binning_prokaryotic_metabat:
     conda:
         "../envs/metabat2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -153,8 +154,8 @@ rule binning_prokaryotic_maxbin_107:
     container:
         "docker://timothystephens/maxbin2:2.2.7-TGSv5",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     retries: 5
     shell:
         """
@@ -224,8 +225,8 @@ rule binning_prokaryotic_maxbin_40:
     container:
         "docker://timothystephens/maxbin2:2.2.7-TGSv5",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     retries: 5
     shell:
         """
@@ -293,8 +294,8 @@ checkpoint binning_prokaryotic_dastool:
     conda:
         "../envs/dastool.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -363,8 +364,8 @@ rule binning_prokaryotic_whokaryote:
     conda:
         "../envs/whokaryote.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -399,8 +400,8 @@ rule binning_prokaryotic_mdmcleaner:
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -471,8 +472,8 @@ rule binning_prokaryotic_checkm2:
     conda:
         "../envs/checkm2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -541,8 +542,8 @@ rule binning_prokaryotic_genome_stats:
     conda:
         "../envs/seqkit.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -592,8 +593,8 @@ checkpoint binning_eukaryotic_metabat:
     conda:
         "../envs/metabat2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -631,8 +632,8 @@ rule binning_eukaryotic_whokaryote:
     conda:
         "../envs/whokaryote.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -668,8 +669,8 @@ rule binning_eukaryotic_busco:
     container:
         "docker://timothystephens/busco:6.0.0-TGSv1",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -766,8 +767,8 @@ rule binning_eukaryotic_filter:
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -808,8 +809,8 @@ rule binning_eukaryotic_genome_stats:
     conda:
         "../envs/seqkit.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -857,8 +858,8 @@ rule binning_viral_metabat:
     conda:
         "../envs/metabat2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -914,8 +915,8 @@ rule binning_viral_genomad:
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -979,8 +980,8 @@ rule binning_viral_filter:
     conda:
         "../envs/virus_filter.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
@@ -1028,8 +1029,8 @@ rule binning_viral_genome_stats:
     conda:
         "../envs/seqkit.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
-    resources: 
-        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
+    resources:
+        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning"))
     shell:
         """
         (
