@@ -8,9 +8,9 @@ rule generate_sketch:
         "logs/screen/make_sketch/{sample}.log",
     conda:
         "../envs/required_packages.yaml"
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
     shell:
         "bbsketch.sh "
         "in={input[0]}"
@@ -18,7 +18,7 @@ rule generate_sketch:
         " minkeycount=2 "
         " out={output} "
         " blacklist=nt ssu=f name0={wildcards.sample} depth=t overwrite=t "
-        " -Xmx{resources.java_mem}g "
+        " -Xmx{resources.java_mem}M "
         " &> {log}"
         # take only one read
 
@@ -33,15 +33,15 @@ rule compare_sketch:
         "logs/screen/compare_sketch.log",
     conda:
         "../envs/required_packages.yaml"
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
     shell:
         "comparesketch.sh alltoall "
         " format=3 out={output} "
         " records=5000 "
         " {input} "
-        " -Xmx{resources.java_mem}g "
+        " -Xmx{resources.java_mem}M "
         " &> {log}"
 
 

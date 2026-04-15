@@ -67,7 +67,7 @@ def get_read_stats(fraction, params_in):
         f" bqhist={subfolder}/boxplot_quality.txt "
         f" threads={snakemake.threads} "
         f" overwrite=true "
-        f" -Xmx{snakemake.resources.java_mem}G "
+        f" -Xmx{snakemake.resources.java_mem}M "
         f" 2>&1 | tee -a {snakemake.log[0]} {tmp_file} >/dev/null "
     )
     content = open(tmp_file).read()

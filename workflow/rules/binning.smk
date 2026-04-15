@@ -9,19 +9,18 @@ from glob import glob
 ###############################
 rule get_metabat_depth_file_one_sample:
     input:
-        "{sample}/sequence_alignment/{sample_reads}.bam",
+        "samples/{sample}/sequence_alignment/{sample_reads}.bam",
     output:
-        "{sample}/binning/coverage/{sample_reads}.metabat_depth.txt",
+        "samples/{sample}/binning/coverage/{sample_reads}.metabat_depth.txt",
     benchmark:
-        "{sample}/logs/benchmarks/binning/coverage/{sample_reads}.txt"
+        "benchmarks/samples/{sample}/binning/coverage/{sample_reads}.txt"
     log:
-        "{sample}/logs/binning/coverage/{sample_reads}.log",
+        "logs/samples/{sample}/binning/coverage/{sample_reads}.log",
     conda:
         "../envs/metabat2.yaml"
-    threads: config["simplejob_threads"]  # multithreaded trough OMP_NUM_THREADS
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     params:
         minid=config["cobinning_readmapping_id"] * 100,
     priority: 100
@@ -35,49 +34,49 @@ rule get_metabat_depth_file_one_sample:
 rule get_metabat_depth_file_combine:
     input:
         depths=lambda wc: expand(
-            "{{sample}}/binning/coverage/{sample_reads}.metabat_depth.txt",
+            "samples/{{sample}}/binning/coverage/{sample_reads}.metabat_depth.txt",
             sample_reads=get_alls_samples_of_group(wc),
         ),
     output:
-        depth="{sample}/binning/coverage/metabat_depth.txt",
+        depth="samples/{sample}/binning/coverage/metabat_depth.txt",
     params:
         workflow_folder=f"{workflow_folder}",
     benchmark:
-        "{sample}/logs/benchmarks/binning/coverage/metabat_depth.txt"
+        "benchmarks/samples/{sample}/binning/coverage/metabat_depth.txt"
     log:
-        "{sample}/logs/binning/coverage/metabat.log",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        "logs/samples/{sample}/binning/coverage/metabat_depth.log",
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         {params.workflow_folder}/scripts/veba/metabat2_coverage_combined_file.py \
-          -i {input.depths} \
-          -o {output.depth}
+            -i {input.depths} \
+            -o {output.depth} \
+          > {log} 2>&1
         """
 
 
 rule get_maxbin_depth_file:
     input:
-        depth="{sample}/binning/coverage/metabat_depth.txt",
+        depth="samples/{sample}/binning/coverage/metabat_depth.txt",
     output:
-        depth="{sample}/binning/coverage/maxbin_depth.txt",
+        depth="samples/{sample}/binning/coverage/maxbin_depth.txt",
     params:
         workflow_folder=f"{workflow_folder}",
     benchmark:
-        "{sample}/logs/benchmarks/binning/coverage/maxbin_depth.txt"
+        "benchmarks/samples/{sample}/binning/coverage/maxbin_depth.txt"
     log:
-        "{sample}/logs/binning/coverage/maxbin.log",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        "logs/samples/{sample}/binning/coverage/maxbin_depth.log",
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         {params.workflow_folder}/scripts/veba/maxbin_abundance_from_metabat2_coverage_file.py \
-          -i {input.depth} \
-          -o {output.depth}
+            -i {input.depth} \
+            -o {output.depth} \
+          > {log} 2>&1
         """
 
 
@@ -95,23 +94,22 @@ rule binning_prokaryotic_metabat:
         depth_file=rules.get_metabat_depth_file_combine.output,
         contigs=get_assembly,
     output:
-        s2b="{sample}/binning/veba/1_prokaryotic/1_metabat2/scaffolds_to_bins.tsv",
+        s2b="samples/{sample}/binning/veba/1_prokaryotic/1_metabat2/scaffolds_to_bins.tsv",
     params:
         workflow_folder=f"{workflow_folder}",
         minimum_contig_length=config["veba_prokaryotic"]["minimum_contig_length"],
         minimum_genome_length=config["veba_prokaryotic"]["minimum_genome_length"],
-        output_path="{sample}/binning/veba/1_prokaryotic/1_metabat2",
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/1_metabat2",
         output_prefix="{sample}__METABAT2",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/1_metabat2.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/1_metabat2.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/1_metabat2.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/1_metabat2.log",
     conda:
         "../envs/metabat2.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -139,25 +137,24 @@ rule binning_prokaryotic_maxbin_107:
         depth_file=rules.get_maxbin_depth_file.output,
         contigs=get_assembly,
     output:
-        s2b="{sample}/binning/veba/1_prokaryotic/2_maxbin2_107/scaffolds_to_bins.tsv",
+        s2b="samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107/scaffolds_to_bins.tsv",
     params:
         workflow_folder=f"{workflow_folder}",
         minimum_contig_length=config["veba_prokaryotic"]["minimum_contig_length"],
         minimum_genome_length=config["veba_prokaryotic"]["minimum_genome_length"],
-        output_path="{sample}/binning/veba/1_prokaryotic/2_maxbin2_107",
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107",
         output_prefix="{sample}__MAXBIN2-107",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/2_maxbin2_107.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/2_maxbin2_107.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.log",
     #conda:
     #    "../envs/maxbin2.yaml"
     container:
         "docker://timothystephens/maxbin2:2.2.7-TGSv5",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     retries: 5
     shell:
         """
@@ -171,8 +168,7 @@ rule binning_prokaryotic_maxbin_107:
             -abund_list {input.depth_file} \
             -min_contig_length {params.minimum_contig_length} \
             -markerset 107 \
-            -thread {threads} \
-            -verbose 
+            -thread {threads} #-verbose
         
         mkdir -p {params.output_path}/bins
         
@@ -212,25 +208,24 @@ rule binning_prokaryotic_maxbin_40:
         depth_file=rules.get_maxbin_depth_file.output,
         contigs=get_assembly,
     output:
-        s2b="{sample}/binning/veba/1_prokaryotic/3_maxbin2_40/scaffolds_to_bins.tsv",
+        s2b="samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40/scaffolds_to_bins.tsv",
     params:
         workflow_folder=f"{workflow_folder}",
         minimum_contig_length=config["veba_prokaryotic"]["minimum_contig_length"],
         minimum_genome_length=config["veba_prokaryotic"]["minimum_genome_length"],
-        output_path="{sample}/binning/veba/1_prokaryotic/3_maxbin2_40",
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40",
         output_prefix="{sample}__MAXBIN2-40",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/3_maxbin2_40.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/3_maxbin2_40.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.log",
     #conda:
     #    "../envs/maxbin2.yaml"
     container:
         "docker://timothystephens/maxbin2:2.2.7-TGSv5",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     retries: 5
     shell:
         """
@@ -244,8 +239,7 @@ rule binning_prokaryotic_maxbin_40:
             -abund_list {input.depth_file} \
             -min_contig_length {params.minimum_contig_length} \
             -markerset 40 \
-            -thread {threads} \
-            -verbose 
+            -thread {threads} #-verbose 
         
         mkdir -p {params.output_path}/bins
         
@@ -287,21 +281,20 @@ checkpoint binning_prokaryotic_dastool:
         maxbin40_s2b=rules.binning_prokaryotic_maxbin_40.output.s2b,
         contigs=get_assembly,
     output:
-        bins=directory("{sample}/binning/veba/1_prokaryotic/4_dastool/__DASTool_bins"),
+        bins=directory("samples/{sample}/binning/veba/1_prokaryotic/4_dastool/__DASTool_bins"),
     params:
         workflow_folder=f"{workflow_folder}",
-        output_path="{sample}/binning/veba/1_prokaryotic/4_dastool",
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/4_dastool",
         labels="{sample}__METABAT,{sample}__MAXBIN2-107,{sample}__MAXBIN2-40",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/4_dastool.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/4_dastool.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/4_dastool.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/4_dastool.log",
     conda:
         "../envs/dastool.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -336,8 +329,7 @@ checkpoint binning_prokaryotic_dastool:
             --search_engine diamond \
             --score_threshold 0.1 \
             --write_bins \
-            --threads {threads} \
-            --debug
+            --threads {threads} #--debug
         
         if [ ! -d "{output.bins}" ]; then
             echo "[WARNING] {output.bins} does not exist."
@@ -360,20 +352,19 @@ rule binning_prokaryotic_whokaryote:
     input:
         fasta=os.path.join(rules.binning_prokaryotic_dastool.output.bins, '{genome}.fa'),
     output:
-        fasta="{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}/prokaryotes.fasta",
+        fasta="samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}/prokaryotes.fasta",
     params:
-        output_path="{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}",
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}",
         minsize=config["veba_prokaryotic"]["minimum_contig_length"],
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/5_whokaryote/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/5_whokaryote/{genome}.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}.log",
     conda:
         "../envs/whokaryote.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -393,24 +384,23 @@ rule binning_prokaryotic_mdmcleaner:
         fasta=rules.binning_prokaryotic_whokaryote.output.fasta,
         dbdir=rules.mdmcleaner_download_db.output.dbdir,
     output:
-        fasta="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.cleaned.fa",
+        fasta="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.cleaned.fa",
     params:
-        raw_fasta="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.fa",
-        mdmcleaner_config="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.mdmcleaner.config",
-        output_path="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner",
-        output_filtered="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}/{genome}_filtered_kept_contigs.fasta.gz",
+        raw_fasta="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.fa",
+        mdmcleaner_config="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.mdmcleaner.config",
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner",
+        output_filtered="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}/{genome}_filtered_kept_contigs.fasta.gz",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.log",
     #conda:
     #    "../envs/mdmcleaner.yaml"
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -443,7 +433,7 @@ def get_cleaned_prokaryotic_bins(wildcards):
             "*.fa"
         )
     )
-    f = [ [x.split(os.path.sep)[0], os.path.basename(x)] for x in f ]
+    f = [ [x.split(os.path.sep)[1], os.path.basename(x)] for x in f ]
     f = [ [x[0], x[1].rstrip(".fa")] for x in f ]
     
     outfiles = []
@@ -464,26 +454,25 @@ rule binning_prokaryotic_checkm2:
         dbdir=rules.checkm2_download_db.output.dbdir,
         raw_bins=rules.binning_prokaryotic_dastool.output.bins,
     output:
-        bins=directory("{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/genomes"),
-        unbinned="{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/unbinned.fasta",
-        quality="{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/checkm2_results.filtered.tsv",
+        bins=directory("samples/{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/genomes"),
+        unbinned="samples/{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/unbinned.fasta",
+        quality="samples/{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/checkm2_results.filtered.tsv",
     params:
-        bin_dirs="{sample}/binning/veba/1_prokaryotic/6_mdmcleaner",
+        bin_dirs="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner",
         workflow_folder=f"{workflow_folder}",
-        output_path="{sample}/binning/veba/1_prokaryotic/7_checkm2",
-        tmpdir=temp("tmp/checkm2/{sample}"),
+        output_path="samples/{sample}/binning/veba/1_prokaryotic/7_checkm2",
+        tmpdir=temp("tmp/checkm2/samples/{sample}"),
         completeness=config["veba_prokaryotic"]["checkm2_completeness"],
         contamination=config["veba_prokaryotic"]["checkm2_contamination"],
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/7_checkm2.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/7_checkm2.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/7_checkm2.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/7_checkm2.log",
     conda:
         "../envs/checkm2.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -544,17 +533,16 @@ rule binning_prokaryotic_genome_stats:
     input:
         bins=rules.binning_prokaryotic_checkm2.output.bins,
     output:
-        stats="{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/genome_statistics.tsv",
+        stats="samples/{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/genome_statistics.tsv",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/1_prokaryotic/8_stats.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/8_stats.txt"
     log:
-        "{sample}/logs/binning/veba/1_prokaryotic/8_stats.txt",
+        "logs/samples/{sample}/binning/veba/1_prokaryotic/8_stats.log",
     conda:
         "../envs/seqkit.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -589,24 +577,23 @@ checkpoint binning_eukaryotic_metabat:
         depth_file=rules.get_metabat_depth_file_combine.output,
         contigs=rules.binning_prokaryotic_checkm2.output.unbinned,
     output:
-        s2b="{sample}/binning/veba/2_eukaryotic/1_metabat2/scaffolds_to_bins.tsv",
-        bins=directory("{sample}/binning/veba/2_eukaryotic/1_metabat2/bins"),
+        s2b="samples/{sample}/binning/veba/2_eukaryotic/1_metabat2/scaffolds_to_bins.tsv",
+        bins=directory("samples/{sample}/binning/veba/2_eukaryotic/1_metabat2/bins"),
     params:
         workflow_folder=f"{workflow_folder}",
         minimum_contig_length=config["veba_eukaryotic"]["minimum_contig_length"],
         minimum_genome_length=config["veba_eukaryotic"]["minimum_genome_length"],
-        output_path="{sample}/binning/veba/2_eukaryotic/1_metabat2",
+        output_path="samples/{sample}/binning/veba/2_eukaryotic/1_metabat2",
         output_prefix="{sample}__METABAT2",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/1_metabat2.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/1_metabat2.txt"
     log:
-        "{sample}/logs/binning/veba/2_eukaryotic/1_metabat2.txt",
+        "logs/samples/{sample}/binning/veba/2_eukaryotic/1_metabat2.log",
     conda:
         "../envs/metabat2.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -633,20 +620,19 @@ rule binning_eukaryotic_whokaryote:
     input:
         fasta=os.path.join(rules.binning_eukaryotic_metabat.output.bins, '{genome}.fa'),
     output:
-        fasta="{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}/eukaryotes.fasta",
+        fasta="samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}/eukaryotes.fasta",
     params:
-        output_path="{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}",
+        output_path="samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}",
         minsize=config["veba_eukaryotic"]["minimum_contig_length"],
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/2_whokaryote/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}.txt"
     log:
-        "{sample}/logs/binning/veba/2_eukaryotic/2_whokaryote/{genome}.txt",
+        "logs/samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}.log",
     conda:
         "../envs/whokaryote.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -666,25 +652,24 @@ rule binning_eukaryotic_busco:
         fasta=rules.binning_eukaryotic_whokaryote.output.fasta,
         dbdir=rules.busco_download_db.output.dbdir,
     output:
-        results=directory("{sample}/binning/veba/2_eukaryotic/3_busco/{genome}"),
+        results=directory("samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}"),
     params:
         workflow_folder=f"{workflow_folder}",
-        tmp_fasta="{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.fa",
+        tmp_fasta="samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.fa",
         sample="{sample}",
         completeness=config["veba_eukaryotic"]["busco_completeness"],
         contamination=config["veba_eukaryotic"]["busco_contamination"],
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/3_busco/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.txt"
     log:
-        "{sample}/logs/binning/veba/2_eukaryotic/3_busco/{genome}.txt",
+        "logs/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.log",
     #conda:
     #    "../envs/busco.yaml"
     container:
         "docker://timothystephens/busco:6.0.0-TGSv1",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -742,7 +727,7 @@ def get_cleaned_eukaryotic_bins(wildcards):
             "*.fa"
         )
     )
-    f = [ [x.split(os.path.sep)[0], os.path.basename(x)] for x in f ]
+    f = [ [x.split(os.path.sep)[1], os.path.basename(x)] for x in f ]
     f = [ [x[0], x[1].rstrip(".fa")] for x in f ]
     
     o = []
@@ -762,28 +747,27 @@ rule binning_eukaryotic_filter:
         contigs=rules.binning_prokaryotic_checkm2.output.unbinned,
         raw_bins=rules.binning_eukaryotic_metabat.output.bins,
     output:
-        outdir=directory("{sample}/binning/veba/2_eukaryotic/4_filtered"),
-        bins=directory("{sample}/binning/veba/2_eukaryotic/4_filtered/genomes"),
-        quality="{sample}/binning/veba/2_eukaryotic/4_filtered/busco_results.filtered.tsv",
-        tsv="{sample}/binning/veba/2_eukaryotic/4_filtered/busco_results.tsv",
-        unbinned="{sample}/binning/veba/2_eukaryotic/4_filtered/unbinned.fasta",
+        outdir=directory("samples/{sample}/binning/veba/2_eukaryotic/4_filtered"),
+        bins=directory("samples/{sample}/binning/veba/2_eukaryotic/4_filtered/genomes"),
+        quality="samples/{sample}/binning/veba/2_eukaryotic/4_filtered/busco_results.filtered.tsv",
+        tsv="samples/{sample}/binning/veba/2_eukaryotic/4_filtered/busco_results.tsv",
+        unbinned="samples/{sample}/binning/veba/2_eukaryotic/4_filtered/unbinned.fasta",
     params:
         workflow_folder=f"{workflow_folder}",
-        bins_dir="{sample}/binning/veba/2_eukaryotic/3_busco",
+        bins_dir="samples/{sample}/binning/veba/2_eukaryotic/3_busco",
         sample="{sample}",
         minimum_contig_length=config["veba_eukaryotic"]["minimum_contig_length"],
         completeness=config["veba_eukaryotic"]["busco_completeness"],
         contamination=config["veba_eukaryotic"]["busco_contamination"],
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/4_filter.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/4_filter.txt"
     log:
-        "{sample}/logs/binning/veba/2_eukaryotic/4_filter.txt",
+        "logs/samples/{sample}/binning/veba/2_eukaryotic/4_filter.log",
     conda:
         "../envs/python.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -816,17 +800,16 @@ rule binning_eukaryotic_genome_stats:
     input:
         bins=rules.binning_eukaryotic_filter.output.bins,
     output:
-        stats="{sample}/binning/veba/2_eukaryotic/4_filtered/genome_statistics.tsv",
+        stats="samples/{sample}/binning/veba/2_eukaryotic/4_filtered/genome_statistics.tsv",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/2_eukaryotic/5_stats.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/5_stats.txt"
     log:
-        "{sample}/logs/binning/veba/2_eukaryotic/5_stats.txt",
+        "logs/samples/{sample}/binning/veba/2_eukaryotic/5_stats.log",
     conda:
         "../envs/seqkit.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -859,24 +842,23 @@ rule binning_viral_metabat:
         depth_file=rules.get_metabat_depth_file_combine.output,
         contigs=rules.binning_eukaryotic_filter.output.unbinned,
     output:
-        s2b="{sample}/binning/veba/3_viral/1_metabat2/scaffolds_to_bins.tsv",
-        merged_bins="{sample}/binning/veba/3_viral/1_metabat2/merged_bins.tsv",
+        s2b="samples/{sample}/binning/veba/3_viral/1_metabat2/scaffolds_to_bins.tsv",
+        merged_bins="samples/{sample}/binning/veba/3_viral/1_metabat2/merged_bins.tsv",
     params:
         workflow_folder=f"{workflow_folder}",
         minimum_contig_length=config["veba_viral"]["minimum_contig_length"],
         minimum_genome_length=config["veba_viral"]["minimum_genome_length"],
-        output_path="{sample}/binning/veba/3_viral/1_metabat2",
+        output_path="samples/{sample}/binning/veba/3_viral/1_metabat2",
         output_prefix="{sample}__METABAT2",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/3_viral/1_metabat2.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/1_metabat2.txt"
     log:
-        "{sample}/logs/binning/veba/3_viral/1_metabat2.txt",
+        "logs/samples/{sample}/binning/veba/3_viral/1_metabat2.log",
     conda:
         "../envs/metabat2.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -913,28 +895,27 @@ rule binning_viral_genomad:
         fasta=rules.binning_viral_metabat.output.merged_bins,
         dbdir=rules.genomad_download_db.output.dbdir,
     output:
-        virus_summary="{sample}/binning/veba/3_viral/2_genomad/merged_bins_summary/merged_bins_virus_summary.tsv",
-        virus_taxonomy="{sample}/binning/veba/3_viral/2_genomad/merged_bins_annotate/merged_bins_taxonomy.tsv",
-        plasmid_summary="{sample}/binning/veba/3_viral/2_genomad/merged_bins_summary/merged_bins_plasmid_summary.tsv",
+        virus_summary="samples/{sample}/binning/veba/3_viral/2_genomad/merged_bins_summary/merged_bins_virus_summary.tsv",
+        virus_taxonomy="samples/{sample}/binning/veba/3_viral/2_genomad/merged_bins_annotate/merged_bins_taxonomy.tsv",
+        plasmid_summary="samples/{sample}/binning/veba/3_viral/2_genomad/merged_bins_summary/merged_bins_plasmid_summary.tsv",
     params:
-        results="{sample}/binning/veba/3_viral/2_genomad",
+        results="samples/{sample}/binning/veba/3_viral/2_genomad",
         workflow_folder=f"{workflow_folder}",
         sample="{sample}",
         empty_virus_summary=f"{workflow_folder}/data/virus_summary.tsv",
         empty_virus_taxonomy=f"{workflow_folder}/data/virus_taxonomy.tsv",
         empty_plasmid_summary=f"{workflow_folder}/data/plasmid_summary.tsv",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/3_viral/2_genomad.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/2_genomad.txt"
     log:
-        "{sample}/logs/binning/veba/3_viral/2_genomad.txt",
+        "logs/samples/{sample}/binning/veba/3_viral/2_genomad.log",
     #conda:
     #    "../envs/genomad.yaml"
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
-    threads: config["medium_threads"]
-    resources:
-        mem=config["medium_memory"],
-        time=config["medium_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -980,27 +961,26 @@ rule binning_viral_filter:
         virus_taxonomy=rules.binning_viral_genomad.output.virus_taxonomy,
         plasmid_summary=rules.binning_viral_genomad.output.plasmid_summary,
     output:
-        plasmid_bins=directory("{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genomes"),
-        plasmid_completness="{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genomad_results.filtered.tsv",
-        viral_bins=directory("{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genomes"),
-        viral_completness="{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genomad_results.filtered.tsv",
-        unbinned="{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
+        plasmid_bins=directory("samples/{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genomes"),
+        plasmid_completness="samples/{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genomad_results.filtered.tsv",
+        viral_bins=directory("samples/{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genomes"),
+        viral_completness="samples/{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genomad_results.filtered.tsv",
+        unbinned="samples/{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
     params:
-        plasmid_output=directory("{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins"),
-        viral_output=directory("{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins"),
+        plasmid_output=directory("samples/{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins"),
+        viral_output=directory("samples/{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins"),
         workflow_folder=f"{workflow_folder}",
-        outdir="{sample}/binning/veba/3_viral/2_genomad",
+        outdir="samples/{sample}/binning/veba/3_viral/2_genomad",
         sample="{sample}",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/3_viral/3_filter.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/3_filter.txt"
     log:
-        "{sample}/logs/binning/veba/3_viral/3_filter.txt",
+        "logs/samples/{sample}/binning/veba/3_viral/3_filter.log",
     conda:
         "../envs/virus_filter.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -1039,18 +1019,17 @@ rule binning_viral_genome_stats:
         plasmid_bins=rules.binning_viral_filter.output.plasmid_bins,
         viral_bins=rules.binning_viral_filter.output.viral_bins,
     output:
-        plasmid_stats="{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genome_statistics.tsv",
-        viral_stats="{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genome_statistics.tsv",
+        plasmid_stats="samples/{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genome_statistics.tsv",
+        viral_stats="samples/{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genome_statistics.tsv",
     benchmark:
-        "{sample}/logs/benchmarks/binning/veba/3_viral/4_stats.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/4_stats.txt"
     log:
-        "{sample}/logs/binning/veba/3_viral/4_stats.txt",
+        "logs/samples/{sample}/binning/veba/3_viral/4_stats.log",
     conda:
         "../envs/seqkit.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     shell:
         """
         (
@@ -1079,8 +1058,3 @@ rule binning_viral_genome_stats:
         fi
         ) &> {log}
         """
-
-
-
-
-

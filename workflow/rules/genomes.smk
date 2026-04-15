@@ -49,6 +49,9 @@ rule get_prokaryotic_bins:
         stats="Binning/raw_bins/prokaryotic.statistics.tsv",
     params:
         dir="Binning/raw_bins",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/Binning/raw_bins/get_prokaryotic_bins.log",
     run:
@@ -113,6 +116,9 @@ rule get_eukaryotic_bins:
         stats="Binning/raw_bins/eukaryotic.statistics.tsv",
     params:
         dir="Binning/raw_bins",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/Binning/raw_bins/get_eukaryotic_bins.log",
     run:
@@ -180,6 +186,9 @@ rule get_viral_bins:
         stats="Binning/raw_bins/viral.statistics.tsv",
     params:
         dir="Binning/raw_bins",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/Binning/raw_bins/get_viral_bins.log",
     run:
@@ -240,6 +249,9 @@ rule get_plasmid_bins:
         stats="Binning/raw_bins/plasmid.statistics.tsv",
     params:
         dir="Binning/raw_bins",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/Binning/raw_bins/get_plasmid_bins.log",
     run:
@@ -280,9 +292,17 @@ rule get_plasmid_bins:
         df_merged.to_csv(output.stats, sep='\t', index=True, na_rep=0.0)
 
 
+localrules:
+    get_all,
+
 checkpoint get_all:
     input:
         paths=expand("Binning/raw_bins/{lineage}.genome.paths.tsv", lineage=['prokaryotic', 'eukaryotic', 'viral', 'plasmid']),
+    log:
+        "logs/Binning/raw_bins/get_all.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     output:
         touch("Binning/raw_bins/all.done"),
 
@@ -304,14 +324,13 @@ rule run_skani:
         "Binning/raw_bins/{lineage}.distance_matrix.txt",
     log:
         "logs/Binning/dereplication/{lineage}.skani_calculation.log",
-    resources:
-        mem=config["large_memory"],
-        time_min=60 * config["large_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     params:
         lineage="{lineage}",
         min_af=config["genome_dereplication"]["overlap"] * 100,
         extra="",
-    threads: config["large_threads"]
     conda:
         "../envs/skani.yaml"
     shell:
@@ -339,9 +358,9 @@ rule skani_2_parquet:
         rules.run_skani.output,
     output:
         "Binning/raw_bins/{lineage}.genome_similarities.parquet",
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     log:
         "logs/Binning/dereplication/{lineage}.skani_2_parquet.log",
     run:
@@ -388,6 +407,9 @@ rule cluster_species:
         script="../scripts/cluster_{lineage}_species.py"
     conda:
         "../envs/species_clustering.yaml"
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     log:
         "logs/Binning/dereplication/{lineage}.species_clustering.log",
     output:
@@ -405,6 +427,9 @@ rule build_bin_report:
         report="reports/bin_report_{lineage}.html",
     params:
         script="../report/bin_report_{lineage}.py"
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     conda:
         "../envs/report.yaml"
     log:
@@ -443,6 +468,9 @@ rule rename_genomes:
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="MAG_{lineage}_",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/genomes/clustering/{lineage}.rename_genomes.log",
     script:
@@ -451,12 +479,15 @@ rule rename_genomes:
 
 rule rename_unbinned:
     input:
-        unbinned="{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
+        unbinned="samples/{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
     output:
         dir=directory("tmp/unbinned/{sample}"),
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="Unbinned_{sample}",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/genomes/clustering/{sample}.rename_unbinned.log",
     script:
@@ -483,6 +514,9 @@ rule move_genomes:
         dirs=get_genome_to_move,
     output:
         dir=directory("genomes/genomes"),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/genomes/move_mags.log",
     script:
@@ -496,10 +530,10 @@ rule move_unbinned:
         ),
     output:
         dir=directory("genomes/unbinned"),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     log:
         "logs/genomes/move_unbinned.log",
     script:
         "../scripts/move_unbinned.sh"
-
-
-

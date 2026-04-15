@@ -21,26 +21,150 @@
 #Runtime only for cluster execution
 #Threads and Memory for all executions
 
-# BBMAPs tools threads and memory - needs relatively high amount of memory: normalize_reads, error_correction, merge_pairs
-large_memory: 180 #GB
-large_threads: 24
-large_runtime: 72 #hr
-# BBMAPs tools threads and memory - needs moderate amount of memory: deduplicate_reads
-medium_memory: 60 #GB
-medium_threads: 24
-medium_runtime: 72 #hr
-# Assembly threads and memory: run_megahit, run_spades
-assembly_memory: 350 #GB
-assembly_threads: 60
-assembly_runtime: 72 #hr
-# All other major analysis rules Simple text parsing jobs
-simplejob_memory: 20 #GB
-simplejob_threads: 8
-simplejob_runtime: 24 #hr
-# Simple text parsing jobs
-mem: 2 #GB
-threads: 1 
-runtime: 4 #hr
+# Global safety cap for any single job (in MB)
+max_mem_mb: 512000 # 512 GB
+
+# Partition mapping (for SLURM or other schedulers): partition_name -> threshold (mem_mb)
+partition_ranges:
+  small: 64000
+  large: 512000
+
+# Resources for rules requiring dynamic scaling (i.e., QC or assembly jobs)
+dynamic_threads: &dynamic_default_threads 24
+dynamic_time_min: &dynamic_default_time_min 4320 # 72 hr
+
+resources:
+  # Setup and Local tasks
+  localrule:
+    base_mem_mb: 5000
+    scaling_factor: 0.0
+    threads: 2
+    time_min: 1440 # 24 hrs
+  download:
+    base_mem_mb: 20000
+    scaling_factor: 0.0
+    threads: 2
+    time_min: 4320
+  sra:
+    base_mem_mb: 4000
+    scaling_factor: 0.5
+    threads: 8
+    time_min: 2880
+  # qc.smk
+  initialize_qc:
+    base_mem_mb: 2000
+    scaling_factor: 0.2
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  deduplicate_reads:
+    base_mem_mb: 8000
+    scaling_factor: 2.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  apply_quality_filter:
+    base_mem_mb: 4000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  build_decontamination_db:
+    base_mem_mb: 12000
+    scaling_factor: 1.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  run_decontamination:
+    base_mem_mb: 12000
+    scaling_factor: 1.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  get_read_counts:
+    base_mem_mb: 2000
+    scaling_factor: 0.1
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  get_read_length_hist:
+    base_mem_mb: 4000
+    scaling_factor: 0.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  
+  # assembly.smk
+  normalize_reads:
+    base_mem_mb: 8000
+    scaling_factor: 2.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  error_correction:
+    base_mem_mb: 12000
+    scaling_factor: 3.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  run_assembly:
+    base_mem_mb: 20000
+    scaling_factor: 5.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  mapping:
+    base_mem_mb: 8000
+    scaling_factor: 1.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  pileup:
+    base_mem_mb: 4000
+    scaling_factor: 0.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  filter_by_coverage:
+    base_mem_mb: 4000
+    scaling_factor: 0.5
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  rename_contigs:
+    base_mem_mb: 2000
+    scaling_factor: 0.1
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  calculate_contigs_stats:
+    base_mem_mb: 2000
+    scaling_factor: 0.1
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  samtools_stats_contigs_sample:
+    base_mem_mb: 2000
+    scaling_factor: 0.1
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  create_bam_index:
+    base_mem_mb: 2000
+    scaling_factor: 0.1
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  predict_genes:
+    base_mem_mb: 4000
+    scaling_factor: 0.2
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  binning:
+    base_mem_mb: 4000
+    scaling_factor: 2.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  annotation:
+    base_mem_mb: 60000
+    scaling_factor: 4.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  # strains.smk
+  instrain_profile:
+    base_mem_mb: 16000
+    scaling_factor: 2.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  instrain_compare:
+    base_mem_mb: 32000
+    scaling_factor: 2.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+
 
 # directory where databases are downloaded with 'atlas download'
 database_dir: 
@@ -270,4 +394,3 @@ virtual_disk: /dev/shm   # But you need 37G extra ram
 
 ## use just in time compilation for bbmap
 usejni: false
-

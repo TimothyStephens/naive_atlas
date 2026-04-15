@@ -56,7 +56,7 @@ def calculate_insert_size_hist(params_in, params_out=None):
     if not params_in is None:
         shell(
             f"bbmerge.sh "
-            f" -Xmx{snakemake.resources.java_mem}G "
+            f" -Xmx{snakemake.resources.java_mem}M "
             f" threads={snakemake.threads} "
             f" {params_in} "
             f" {snakemake.params.flags} k={snakemake.params.kmer} "
@@ -94,5 +94,3 @@ if hasattr(snakemake.input, 'LR'):
 else:
     calculate_read_length_hist(None,                       f"{snakemake.output.lenHist_lr}")
     calculate_insert_size_hist(None,                       f"{snakemake.output.insertHist_lr}")
-
-

@@ -9,7 +9,7 @@ rule instrain_profile:
         scaffold_to_genome="genomes/clustering/contig2genome.tsv",
     output:
         directory("Intermediate/strains/{sample}"),
-    threads: config["simplejob_threads"]
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     params:
         extra=config.get("instrain_profile_extra", ""),
     log:
@@ -18,9 +18,8 @@ rule instrain_profile:
         "../envs/instrain.yaml"
     benchmark:
         "logs/benchmarks/genomes/strains/profile/{sample}.tsv"
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_profile")
     shell:
         #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
         #" ; "
@@ -41,7 +40,7 @@ rule instrain_compare:
         scaffold_to_genome="genomes/clustering/contig2genome.tsv",
     output:
         directory("genomes/strains/comparison"),
-    threads: config["simplejob_threads"]
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     params:
         extra=config.get("instrain_compare_extra", ""),
     log:
@@ -50,9 +49,8 @@ rule instrain_compare:
         "../envs/instrain.yaml"
     benchmark:
         "logs/benchmarks/genomes/strains/compare.tsv"
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_compare")
     shell:
         "inStrain compare "
         " --input {input.profiles} "

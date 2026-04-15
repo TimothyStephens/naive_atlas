@@ -2,10 +2,6 @@ wildcard_constraints:
     sra_run="[S,E,D]RR[0-9]+",
 
 
-localrules:
-    prefetch,
-
-
 SRA_read_fractions = ["_1", "_2"] if PAIRED_END else [""]
 SRA_SUBDIR_RUN = "SRA/Runs"
 
@@ -20,10 +16,12 @@ rule prefetch:
         "logs/SRAdownload/prefetch/{sra_run}.log",
     benchmark:
         "logs/benchmarks/SRAdownload/prefetch/{sra_run}.tsv"
+    threads: lambda wc: get_resource(wc, None, 1, "sra", "threads")
     resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
-        internet_connection=1,
+        lambda wc, input, attempt: {
+            **get_all_resources(wc, input, attempt, "sra"),
+            "internet_connection": 1
+        }
     conda:
         "../envs/sra.yaml"
     shell:
@@ -56,10 +54,9 @@ rule extract_run:
         "logs/SRAdownload/extract/{sra_run}.log",
     benchmark:
         "logs/benchmarks/SRAdownload/fasterqdump/{sra_run}.tsv"
-    threads: config["simplejob_threads"]
+    threads: lambda wc: get_resource(wc, None, 1, "sra", "threads")
     resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "sra")
     conda:
         "../envs/sra.yaml"
     shell:
@@ -110,6 +107,10 @@ def get_runs_for_biosample(wildcards):
     return ReadFiles
 
 
+localrules:
+    merge_runs_to_sample,
+    download_sra,
+
 rule merge_runs_to_sample:
     input:
         unpack(get_runs_for_biosample),
@@ -118,6 +119,9 @@ rule merge_runs_to_sample:
             "SRA/Samples/{{sample}}/{{sample}}{fraction}.fastq.gz",
             fraction=SRA_read_fractions,
         ),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         from utils import io
 
@@ -134,3 +138,6 @@ rule download_sra:
             fraction=SRA_read_fractions,
             sample=SAMPLES,
         ),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")

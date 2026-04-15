@@ -39,7 +39,7 @@ def get_input_fastq(wildcards):
 def get_output_fastq(wildcards, step):
     #print(f"wildcards: {wildcards}; step: {step}")
     files = expand(
-        "{{sample}}/sequence_quality_control/{step}/{{sample}}_{fraction}.fastq.gz",
+        "samples/{{sample}}/sequence_quality_control/{step}/{{sample}}_{fraction}.fastq.gz",
         step=step,
         fraction=get_fractions(wildcards.sample),
     )
@@ -97,8 +97,8 @@ rule initialize_qc_PE:
         unpack(get_input_fastq),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/1_raw_reads_R1.fastq.gz", 
-            "{sample}/sequence_quality_control/cleaning/1_raw_reads_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/cleaning/1_raw_reads_R1.fastq.gz", 
+            "samples/{sample}/sequence_quality_control/cleaning/1_raw_reads_R2.fastq.gz"
         ]),
     priority: 80
     params:
@@ -108,15 +108,14 @@ rule initialize_qc_PE:
         verifypaired="t",
         extra=config["importqc_params"],
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/1_raw_PE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/1_raw_PE.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/1_raw_PE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -126,7 +125,7 @@ rule initialize_qc_PE:
         " overwrite=true "
         " verifypaired={params.verifypaired} "
         " threads={threads} "
-        " -Xmx{resources.java_mem}G "
+        " -Xmx{resources.java_mem}M "
         " 1>{log} 2>&1 "
 
 
@@ -135,7 +134,7 @@ rule initialize_qc_SE:
         unpack(get_input_fastq),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/1_raw_reads_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/1_raw_reads_SE.fastq.gz",
         ]),
     priority: 80
     params:
@@ -145,15 +144,14 @@ rule initialize_qc_SE:
         verifypaired="f",
         extra=config["importqc_params"],
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/1_raw_SE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/1_raw_SE.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/1_raw_SE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -163,7 +161,7 @@ rule initialize_qc_SE:
         " overwrite=true "
         " verifypaired={params.verifypaired} "
         " threads={threads} "
-        " -Xmx{resources.java_mem}G "
+        " -Xmx{resources.java_mem}M "
         " 1>{log} 2>&1 "
 
 
@@ -172,7 +170,7 @@ rule initialize_qc_LR:
         unpack(get_input_fastq),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/1_raw_reads_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/1_raw_reads_LR.fastq.gz",
         ]),
     priority: 80
     params:
@@ -182,15 +180,14 @@ rule initialize_qc_LR:
         verifypaired="f",
         extra=config["importqc_params"],
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/1_raw_LR.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/1_raw_LR.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/1_raw_LR.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85)
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -200,7 +197,7 @@ rule initialize_qc_LR:
         " overwrite=true "
         " verifypaired={params.verifypaired} "
         " threads={threads} "
-        " -Xmx{resources.java_mem}G "
+        " -Xmx{resources.java_mem}M "
         " 1>{log} 2>&1 "
 
 
@@ -222,7 +219,7 @@ def deduplicate_reads_command(inputs, outputs, outdir, pairs, run_step, dupesubs
             optical={only_optical} \\
             threads={threads} \\
             pigz=t unpigz=t \\
-            -Xmx{resources.java_mem}G
+            -Xmx{resources.java_mem}M
         """
     else:
         cmd = f"""
@@ -243,14 +240,14 @@ rule deduplicate_reads_PE:
         reads=rules.initialize_qc_PE.output.reads,
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_R1.fastq.gz",
-            "{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_R1.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_R2.fastq.gz"
         ]),
     params:
         command = lambda wc, input, output, threads, resources: deduplicate_reads_command(
             inputs =io_params_for_tadpole(input.reads,   "in"),
             outputs=io_params_for_tadpole(output.reads, "out"),
-            outdir=f"{wc.sample}/sequence_quality_control/2_deduplicated",
+            outdir=f"samples/{wc.sample}/sequence_quality_control/2_deduplicated",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "DeDuplicate") else "f",
             dupesubs=config["duplicates_allow_substitutions"],
@@ -259,15 +256,14 @@ rule deduplicate_reads_PE:
             resources=resources
         )
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/2_deduplicated_PE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_PE.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/2_deduplicated_PE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["medium_memory"],
-        java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -279,13 +275,13 @@ rule deduplicate_reads_SE:
         reads=rules.initialize_qc_SE.output.reads,
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_SE.fastq.gz",
         ]),
     params:
         command = lambda wc, input, output, threads, resources: deduplicate_reads_command(
             inputs =io_params_for_tadpole(input.reads,   "in"),
             outputs=io_params_for_tadpole(output.reads, "out"),
-            outdir=f"{wc.sample}/sequence_quality_control/2_deduplicated",
+            outdir=f"samples/{wc.sample}/sequence_quality_control/2_deduplicated",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "DeDuplicate") else "f",
             dupesubs=config["duplicates_allow_substitutions"],
@@ -294,15 +290,14 @@ rule deduplicate_reads_SE:
             resources=resources
         )
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/2_deduplicated_SE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_SE.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/2_deduplicated_SE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["medium_memory"],
-        java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -314,13 +309,13 @@ rule deduplicate_reads_LR:
         reads=rules.initialize_qc_LR.output.reads,
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_reads_LR.fastq.gz",
         ]),
     params:
         command = lambda wc, input, output, threads, resources: deduplicate_reads_command(
             inputs =io_params_for_tadpole(input.reads,   "in"),
             outputs=io_params_for_tadpole(output.reads, "out"),
-            outdir=f"{wc.sample}/sequence_quality_control/2_deduplicated",
+            outdir=f"samples/{wc.sample}/sequence_quality_control/2_deduplicated",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "DeDuplicate") else "f",
             dupesubs=config["duplicates_allow_substitutions"],
@@ -329,15 +324,14 @@ rule deduplicate_reads_LR:
             resources=resources
         )
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/2_deduplicated_LR.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_LR.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/2_deduplicated_LR.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["medium_memory"],
-        java_mem=int(config["medium_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -379,7 +373,7 @@ def apply_quality_filter_command(inputs, outputs, stats, outdir, pairs, run_step
             ecco={error_correction_pe} \\
             prealloc={prealloc} \\
             pigz=t unpigz=t \\
-            -Xmx{resources.java_mem}G
+            -Xmx{resources.java_mem}M
         """
     else:
         cmd = f"""
@@ -402,16 +396,16 @@ rule apply_quality_filter_PE:
         adapters=ancient(config["preprocess_adapters"]),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_R1.fastq.gz",
-            "{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_R1.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_R2.fastq.gz"
         ]),
-        stats="{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE_stats.txt",
+        stats="samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE_stats.txt",
     params:
         command = lambda wc, input, output, threads, resources: apply_quality_filter_command(
             inputs =io_params_for_tadpole(input.reads,  "in"),
             outputs=io_params_for_tadpole(output.reads, "out"),
             stats=output.stats,
-            outdir=f"{wc.sample}/sequence_quality_control/3_quality_filtered",
+            outdir=f"samples/{wc.sample}/sequence_quality_control/3_quality_filtered",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Quality_filter") else "f",
             ref=(
@@ -440,15 +434,14 @@ rule apply_quality_filter_PE:
             resources=resources
         )
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/3_quality_filtered_PE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/3_quality_filtered_PE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -461,15 +454,15 @@ rule apply_quality_filter_SE:
         adapters=ancient(config["preprocess_adapters"]),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_SE.fastq.gz",
         ]),
-        stats="{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_SE_stats.txt",
+        stats="samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_SE_stats.txt",
     params:
         command = lambda wc, input, output, threads, resources: apply_quality_filter_command(
             inputs =io_params_for_tadpole(input.reads,  "in"),
             outputs=io_params_for_tadpole(output.reads, "out"),
             stats=output.stats,
-            outdir=f"{wc.sample}/sequence_quality_control/3_quality_filtered",
+            outdir=f"samples/{wc.sample}/sequence_quality_control/3_quality_filtered",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Quality_filter") else "f",
             ref=(
@@ -494,15 +487,14 @@ rule apply_quality_filter_SE:
             resources=resources
         )
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/3_quality_filtered_SE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_SE.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/3_quality_filtered_SE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -515,15 +507,15 @@ rule apply_quality_filter_LR:
         adapters=ancient(config["preprocess_adapters"]),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_LR.fastq.gz",
         ]),
-        stats="{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_LR_stats.txt",
+        stats="samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_LR_stats.txt",
     params:
         command = lambda wc, input, output, threads, resources: apply_quality_filter_command(
             inputs =io_params_for_tadpole(input.reads,  "in"),
             outputs=io_params_for_tadpole(output.reads, "out"),
             stats=output.stats,
-            outdir=f"{wc.sample}/sequence_quality_control/3_quality_filtered",
+            outdir=f"samples/{wc.sample}/sequence_quality_control/3_quality_filtered",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Quality_filter") else "f",
             ref=(
@@ -548,15 +540,14 @@ rule apply_quality_filter_LR:
             resources=resources
         )
     log:
-        "{sample}/logs/sequence_quality_control/cleaning/3_quality_filtered_LR.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_LR.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/cleaning/3_quality_filtered_LR.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -590,13 +581,12 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             "benchmarks/sequence_quality_control/cleaning/4_decontamination_build_db.txt"
         conda:
             "../envs/required_packages.yaml"
-        threads: config["large_threads"]
-        resources:
-            mem=config["large_memory"],
-            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        threads: lambda wc: get_resource(wc, None, 1, "build_decontamination_db", "threads")
+        resources: 
+            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "build_decontamination_db", java_mem_factor=0.85)
         shell:
             "bbsplit.sh"
-            " -Xmx{resources.java_mem}G "
+            " -Xmx{resources.java_mem}M "
             " {params.refs_in} "
             " threads={threads}"
             " k={params.k}"
@@ -622,7 +612,7 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                 local=t \\
                 machineout=t \\
                 pigz=t unpigz=t ziplevel=9 \\
-                -Xmx{resources.java_mem}G
+                -Xmx{resources.java_mem}M
             """
         elif run_step == 't' and pacbio:
             cmd = f"""
@@ -642,7 +632,7 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                 local=t \\
                 machineout=t \\
                 pigz=t unpigz=t ziplevel=9 \\
-                -Xmx{resources.java_mem}G \\
+                -Xmx{resources.java_mem}M \\
             && zcat {contaminant_folder}/*_LR.fastq.gz \\
               | reformat.sh in=stdin.fq out=stdout.fa int=f minlength=50 \\
               | grep '>' \\
@@ -675,11 +665,11 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             db="ref/genome/1/summary.txt",
         output:
             reads=temp([
-                "{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_R1.fastq.gz",
-                "{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_R2.fastq.gz"
+                "samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_R1.fastq.gz",
+                "samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_R2.fastq.gz"
             ]),
-            stats="{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_PE_stats.txt",
-            contaminant_folder=directory("{sample}/sequence_quality_control/cleaning/4_contaminated_reads_PE")
+            stats="samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_PE_stats.txt",
+            contaminant_folder=directory("samples/{sample}/sequence_quality_control/cleaning/4_contaminated_reads_PE")
         params:
             command = lambda wc, input, output, threads, resources: run_decontamination_command(
                 inputs =io_params_for_tadpole(input.reads,  "in"),
@@ -700,15 +690,14 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                 resources=resources
             )
         log:
-            "{sample}/logs/sequence_quality_control/cleaning/4_decontaminated_PE.log",
+            "logs/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_PE.log",
         benchmark:
-            "{sample}/benchmarks/sequence_quality_control/cleaning/4_decontaminated_PE.txt"
+            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_PE.txt"
         conda:
             "../envs/required_packages.yaml"
-        threads: config["large_threads"]
-        resources:
-            mem=config["large_memory"],
-            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
+        resources: 
+            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85)
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -721,10 +710,10 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             db="ref/genome/1/summary.txt",
         output:
             reads=temp([
-                "{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_SE.fastq.gz",
+                "samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_SE.fastq.gz",
             ]),
-            stats="{sample}/sequence_quality_control/cleaning/4_decontaminated_reference_SE_stats.txt",
-            contaminant_folder=directory("{sample}/sequence_quality_control/cleaning/4_contaminated_reads_SE")
+            stats="samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reference_SE_stats.txt",
+            contaminant_folder=directory("samples/{sample}/sequence_quality_control/cleaning/4_contaminated_reads_SE")
         params:
             command = lambda wc, input, output, threads, resources: run_decontamination_command(
                 inputs =io_params_for_tadpole(input.reads,  "in"),
@@ -745,15 +734,14 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                 resources=resources
             )
         log:
-            "{sample}/logs/sequence_quality_control/cleaning/4_decontaminated_SE.log",
+            "logs/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_SE.log",
         benchmark:
-            "{sample}/benchmarks/sequence_quality_control/cleaning/4_decontaminated_SE.txt"
+            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_SE.txt"
         conda:
             "../envs/required_packages.yaml"
-        threads: config["large_threads"]
-        resources:
-            mem=config["large_memory"],
-            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
+        resources: 
+            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85)
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -766,10 +754,10 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             db="ref/genome/1/summary.txt",
         output:
             reads=temp([
-                "{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_LR.fastq.gz",
+                "samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_LR.fastq.gz",
             ]),
-            stats="{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_LR_stats.txt",
-            contaminant_folder=directory("{sample}/sequence_quality_control/cleaning/4_contaminated_reads_LR")
+            stats="samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_reads_LR_stats.txt",
+            contaminant_folder=directory("samples/{sample}/sequence_quality_control/cleaning/4_contaminated_reads_LR")
         params:
             command = lambda wc, input, output, threads, resources: run_decontamination_command(
                 inputs =io_params_for_tadpole(input.reads,  "in"),
@@ -791,15 +779,14 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                 resources=resources
             )
         log:
-            "{sample}/logs/sequence_quality_control/cleaning/4_decontaminated_LR.log",
+            "logs/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_LR.log",
         benchmark:
-            "{sample}/benchmarks/sequence_quality_control/cleaning/4_decontaminated_LR.txt"
+            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_LR.txt"
         conda:
             "../envs/required_packages.yaml"
-        threads: config["large_threads"]
-        resources:
-            mem=config["large_memory"],
-            java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+        threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
+        resources: 
+            lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85)
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -826,9 +813,14 @@ rule qcreads_PE:
         ),
     output:
         reads=temp([   
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_R1.fastq.gz",
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_R1.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_R2.fastq.gz"
         ]),
+    log:
+        "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_PE.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -844,8 +836,13 @@ rule qcreads_SE:
         ),
     output:
         reads=temp([
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_SE.fastq.gz",
         ]),
+    log:
+        "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_SE.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -861,8 +858,13 @@ rule qcreads_LR:
         ),
     output:
         reads=temp([   
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_LR.fastq.gz",
         ]),
+    log:
+        "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_LR.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -882,14 +884,19 @@ localrules:
 rule copy_reads_PE:
     input:
         reads=[
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_R1.fastq.gz",
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_R1.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_R2.fastq.gz"
         ],
     output:
         reads=[
-            "{sample}/sequence_quality_control/{sample}_R1.fastq.gz",
-            "{sample}/sequence_quality_control/{sample}_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/{sample}_R1.fastq.gz",
+            "samples/{sample}/sequence_quality_control/{sample}_R2.fastq.gz"
         ],
+    log:
+        "logs/samples/{sample}/sequence_quality_control/copy_reads_PE.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import shutil, os
         import pandas as pd
@@ -902,12 +909,17 @@ rule copy_reads_PE:
 rule copy_reads_SE:
     input:
         reads=[
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_SE.fastq.gz",
         ],
     output:
         reads=[
-            "{sample}/sequence_quality_control/{sample}_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/{sample}_SE.fastq.gz",
         ],
+    log:
+        "logs/samples/{sample}/sequence_quality_control/copy_reads_SE.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import shutil, os
         import pandas as pd
@@ -920,12 +932,17 @@ rule copy_reads_SE:
 rule copy_reads_LR:
     input:
         reads=[
-            "{sample}/sequence_quality_control/cleaning/5_final_reads_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_LR.fastq.gz",
         ],
     output:
         reads=[
-            "{sample}/sequence_quality_control/{sample}_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/{sample}_LR.fastq.gz",
         ],
+    log:
+        "logs/samples/{sample}/sequence_quality_control/copy_reads_LR.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import shutil, os
         import pandas as pd
@@ -937,9 +954,9 @@ rule copy_reads_LR:
 
 def get_quality_controlled_reads(wildcards, as_dict=False, subset=None):
     if subset is None:
-        prefix=f"{wildcards.sample}/sequence_quality_control/{wildcards.sample}"
+        prefix=f"samples/{wildcards.sample}/sequence_quality_control/{wildcards.sample}"
     else:
-        prefix=f"{wildcards.sample}/sequence_quality_control/cleaning/{subset}_reads"
+        prefix=f"samples/{wildcards.sample}/sequence_quality_control/cleaning/{subset}_reads"
     if as_dict:
         files = {}
         for fraction in get_fractions(wildcards.sample):
@@ -963,20 +980,19 @@ rule get_read_counts:
     input:
         unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True, subset=f"{wc.step}")),
     output:
-        zipped_dir="{sample}/sequence_quality_control/read_stats/{step}.zip",
-        read_counts=temp("{sample}/sequence_quality_control/read_stats/{step}_read_counts.tsv"),
+        zipped_dir="samples/{sample}/sequence_quality_control/read_stats/{step}.zip",
+        read_counts=temp("samples/{sample}/sequence_quality_control/read_stats/{step}_read_counts.tsv"),
     params:
         folder=lambda wc, output: os.path.splitext(output['zipped_dir'])[0],
     log:
-        "{sample}/logs/sequence_quality_control/read_stats/{step}.log",
+        "logs/samples/{sample}/sequence_quality_control/read_stats/{step}.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/read_stats/{step}.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/read_stats/{step}.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "get_read_counts", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_counts", java_mem_factor=0.85)
     priority: 30
     script:
         "../scripts/get_read_counts.py"
@@ -990,11 +1006,16 @@ localrules:
 rule write_read_counts:
     input:
         read_count_files=expand(
-            "{{sample}}/sequence_quality_control/read_stats/{step}_read_counts.tsv",
+            "samples/{{sample}}/sequence_quality_control/read_stats/{step}_read_counts.tsv",
             step=PROCESSED_STEPS,
         ),
     output:
-        read_stats="{sample}/sequence_quality_control/read_stats/read_counts.tsv",
+        read_stats="samples/{sample}/sequence_quality_control/read_stats/read_counts.tsv",
+    log:
+        "logs/samples/{sample}/sequence_quality_control/read_stats/write_read_counts.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         from utils.io import pandas_concat
         
@@ -1010,11 +1031,16 @@ rule write_read_counts:
 rule combine_read_counts:
     input:
         expand(
-            "{sample}/sequence_quality_control/read_stats/read_counts.tsv",
+            "samples/{sample}/sequence_quality_control/read_stats/read_counts.tsv",
             sample=SAMPLES,
         ),
     output:
         "stats/read_counts.tsv",
+    log:
+        "logs/QC/combine_read_counts.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         from utils.io import pandas_concat
         
@@ -1029,27 +1055,26 @@ rule get_read_length_hist:
     input:
         unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
     output:
-        insertHist_pe="{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_PE.txt",
-        insertHist_se="{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_SE.txt",
-        insertHist_lr="{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_LR.txt",
-        lenHist_pe="{sample}/sequence_quality_control/read_stats/QC_read_length_hist_PE.txt",
-        lenHist_se="{sample}/sequence_quality_control/read_stats/QC_read_length_hist_SE.txt",
-        lenHist_lr="{sample}/sequence_quality_control/read_stats/QC_read_length_hist_LR.txt",
+        insertHist_pe="samples/{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_PE.txt",
+        insertHist_se="samples/{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_SE.txt",
+        insertHist_lr="samples/{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_LR.txt",
+        lenHist_pe="samples/{sample}/sequence_quality_control/read_stats/QC_read_length_hist_PE.txt",
+        lenHist_se="samples/{sample}/sequence_quality_control/read_stats/QC_read_length_hist_SE.txt",
+        lenHist_lr="samples/{sample}/sequence_quality_control/read_stats/QC_read_length_hist_LR.txt",
     params:
         kmer=config["merging_k"],
         extend2=config["merging_extend2"],
         flags="loose ecct",
         minprob=config.get("bbmerge_minprob", "0.8"),
     log:
-        "{sample}/logs/sequence_quality_control/read_stats/calculate_read_length.log",
+        "logs/samples/{sample}/sequence_quality_control/read_stats/calculate_read_length.log",
     benchmark:
-        "{sample}/benchmarks/sequence_quality_control/read_stats/calculate_read_length.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/read_stats/calculate_read_length.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
+    threads: lambda wc: get_resource(wc, None, 1, "get_read_length_hist", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_length_hist", java_mem_factor=0.85)
     script:
         "../scripts/get_read_length.py"
 
@@ -1063,12 +1088,17 @@ localrules:
 rule combine_read_length_hist:
     input:
         expand(
-            "{sample}/sequence_quality_control/read_stats/QC_read_length_hist_{fraction}.txt",
+            "samples/{sample}/sequence_quality_control/read_stats/QC_read_length_hist_{fraction}.txt",
             sample=SAMPLES,
             fraction=["PE", "SE", "LR"]
         ),
     output:
         "stats/read_length_stats.tsv",
+    log:
+        "logs/QC/combine_read_length_hist.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import pandas as pd
         import os
@@ -1079,7 +1109,7 @@ rule combine_read_length_hist:
         i = 0
         for length_file in input:
             i+=1
-            sample = length_file.split(os.path.sep)[0]
+            sample = length_file.split(os.path.sep)[1]
             fraction = length_file.split(os.path.sep)[-1].replace("QC_read_length_hist_", "").replace(".txt", "")
             data = parse_comments(length_file)
             data = pd.Series(data)[
@@ -1094,12 +1124,17 @@ rule combine_read_length_hist:
 rule combine_insert_hist:
     input:
         expand(
-            "{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_{fraction}.txt",
+            "samples/{sample}/sequence_quality_control/read_stats/QC_insert_size_hist_{fraction}.txt",
             sample=SAMPLES,
             fraction=["PE", "SE", "LR"]
         ),
     output:
         "stats/insert_stats.tsv",
+    log:
+        "logs/QC/combine_insert_hist.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         import pandas as pd
         import os
@@ -1110,7 +1145,7 @@ rule combine_insert_hist:
         i = 0
         for insert_file in input:
             i+=1
-            sample = insert_file.split(os.path.sep)[0]
+            sample = insert_file.split(os.path.sep)[1]
             fraction = insert_file.split(os.path.sep)[-1].replace("QC_insert_size_hist_", "").replace(".txt", "")
             data = parse_comments(insert_file)
             data = pd.Series(data)[
@@ -1133,7 +1168,7 @@ localrules:
 rule build_qc_report:
     input:
         zipfiles_QC=expand(
-            "{sample}/sequence_quality_control/read_stats/5_final.zip",
+            "samples/{sample}/sequence_quality_control/read_stats/5_final.zip",
             sample=SAMPLES
         ),
         read_counts="stats/read_counts.tsv",
@@ -1148,6 +1183,9 @@ rule build_qc_report:
         samples=SAMPLES,
     conda:
         "../envs/report.yaml"
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     script:
         "../report/qc_report.py"
 
@@ -1163,4 +1201,9 @@ rule finalize_sample_qc:
     input:
         report="reports/QC_report.html",
     output:
-        flag=touch("{sample}/sequence_quality_control/finished_QC"),
+        flag=touch("samples/{sample}/sequence_quality_control/finished_QC"),
+    log:
+        "logs/samples/{sample}/sequence_quality_control/finalize_sample_qc.log",
+    threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc")

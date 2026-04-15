@@ -23,9 +23,6 @@ def make_default_config():
         "importqc_params"
     ] = "iupacToN=t touppercase=t qout=33 addslash=t trimreaddescription=t"
 
-    config["mem"] = MEM
-    config["large_mem"] = 250
-    config["large_threads"] = 16
     config["deduplicate"] = True
 
     config["contaminant_max_indel"] = CONTAMINANT_MAX_INDEL

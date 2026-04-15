@@ -23,9 +23,9 @@ rule gene_eggNOG_homology_search:
     params:
         data_dir=EGGNOG_DIR,
         prefix=lambda wc, output: output[0].replace(".emapper.seed_orthologs", ""),
-    resources:
-        mem=config["simplejob_memory"],
-    threads: config["simplejob_threads"]
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -40,12 +40,6 @@ rule gene_eggNOG_homology_search:
         """
 
 
-def calculate_mem_eggnog():
-    return 2 * config["simplejob_memory"] + (
-        37 if config["eggNOG_use_virtual_disk"] else 0
-    )
-
-
 rule gene_eggNOG_annotation:
     input:
         eggnog_db_files=get_eggnog_db_file(),
@@ -58,9 +52,9 @@ rule gene_eggNOG_annotation:
         ),
         prefix=lambda wc, output: output[0].replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=calculate_mem_eggnog(),
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -122,9 +116,9 @@ rule combine_gene_egg_nog_annotations:
         tsv="genomes/annotations/{dataset}/genes/eggNOG.tsv.gz",
     log:
         "logs/genomes/annotations/{dataset}/genes/eggNOG/combine.log",
-    resources:
-        time=config["simplejob_runtime"],
-        mem=config["medium_memory"],
+    threads: 1
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     run:
         try:
             import pandas as pd
@@ -172,10 +166,9 @@ rule gene_DRAM_annotation:
             "Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/annotations.tsv"
         ),
         genes=temp("Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/genes.faa"),
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/dram.yaml"
     params:
@@ -227,9 +220,9 @@ rule combine_gene_dram_genecatalog_annotations:
         get_all_gene_dram,
     output:
         directory("genomes/annotations/{dataset}/genes/dram"),
-    resources:
-        time=config["simplejob_runtime"],
-        mem=config["medium_memory"],
+    threads: 1
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     log:
         "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
     script:
@@ -253,13 +246,12 @@ rule gene_mmseqs2_annotation:
         results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4.gz",
         tmp=temp(directory("Intermediate/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.tmp")),
     params:
+        mem=lambda wildcards, resources: int(resources.mem_mb * 0.8 / 1024),
         mmseqs2_opts=config["mmseqs2_opts"],
-        mem=int(config["mmseqs2_memory"]*0.8),
         results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["mmseqs2_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/mmseqs2.yaml"
     log:
@@ -318,6 +310,3 @@ rule all_mmseqs2:
         get_all_gene_mmseqs2_annotation,
     output:
         touch("genomes/annotations/{dataset}/genes/mmseqs2/finished"),
-
-
-

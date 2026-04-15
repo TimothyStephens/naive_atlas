@@ -71,6 +71,9 @@ rule get_contig2genomes:
     output:
         c2g="genomes/clustering/contig2genome.tsv",
         g2c="genomes/clustering/genome2contig.tsv",
+    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "binning")
     run:
         from glob import glob
 
@@ -107,6 +110,9 @@ rule concat_genomes:
         "genomes/alignments/all_contigs.fa",
     params:
         ext="fa",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     shell:
         "cat {input}/*{params.ext} > {output}"
 
@@ -121,9 +127,9 @@ rule index_genomes:
         "logs/genomes/alignmentsindex.log",
     params:
         index_size="12G",
-    threads: 3
-    resources:
-        mem=config["medium_memory"],
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     wrapper:
         "v3.13.4/bio/minimap2/index"
 
@@ -142,9 +148,9 @@ rule align_reads_to_genomes:
         "logs/genomes/alignments/{sample}_map.log",
     conda:
         "../envs/minimap.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -167,6 +173,9 @@ rule move_old_bam:
         "genomes/alignments/bams/{sample}.bam",
     log:
         "logs/genomes/alignments/{sample}_move.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     shell:
         "mv {input} {output} > {log}"
 
@@ -178,8 +187,9 @@ rule mapping_stats_genomes:
         "genomes/alignments/stats/{sample}.stats",
     log:
         "logs/genomes/alignments/{sample}_stats.log",
-    resources:
-        mem=config["simplejob_memory"],
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     wrapper:
         "v1.19.0/bio/samtools/stats"
 
@@ -191,6 +201,9 @@ rule multiqc_mapping_genome:
         "reports/genome_mapping/results.html",
     log:
         "logs/genomes/alignment/multiqc.log",
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     wrapper:
         "v3.3.6/bio/multiqc"
 
@@ -208,9 +221,9 @@ rule mapping_coverm_coverage:
     log:
         general="logs/coverage/coverage.log",
         coverm="logs/coverage/coverm.log",
-    threads: config["medium_threads"]
-    resources:
-        mem=config["medium_memory"],
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     conda:
         "../envs/coverm.yaml"
     shell:
@@ -233,6 +246,3 @@ rule mapping_coverm_coverage:
         " > {output.read_stats}"
         ")"
         " 1>{log.general} 2>&1"
-
-
-

@@ -11,6 +11,9 @@
 
 gtdb_dir = "genomes/annotations/genomes/taxonomy/gtdb"
 
+localrules:
+    copy_prokaryotic_genomes,
+
 rule copy_prokaryotic_genomes:
     input:
         "genomes/genomes",
@@ -18,6 +21,9 @@ rule copy_prokaryotic_genomes:
         directory("tmp/gtdbtk"),
     log:
         "logs/genomes/annotations/genomes/copy_prokaryotic_genomes.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     shell:
         "mkdir -p {output} && cp {input}/MAG_prokaryotic* {output}"
 
@@ -29,10 +35,9 @@ rule identify:
         genes_flag=rules.copy_prokaryotic_genomes.output,
     output:
         directory(f"{gtdb_dir}/identify"),
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["large_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -55,10 +60,9 @@ checkpoint align:
         f"{gtdb_dir}/identify",
     output:
         directory(f"{gtdb_dir}/align"),
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["large_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -78,10 +82,9 @@ rule classify:
         genome_dir=rules.copy_prokaryotic_genomes.output,
     output:
         directory(f"{gtdb_dir}/classify"),
-    threads: config["simplejob_threads"]  #pplacer needs much memory for not many threads
-    resources:
-        mem=config["large_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -100,6 +103,9 @@ rule classify:
         "--cpus {threads} &> {log[0]}"
 
 
+localrules:
+    combine_taxonomy,
+
 rule combine_taxonomy:
     input:
         folder=f"{gtdb_dir}/classify",
@@ -108,6 +114,9 @@ rule combine_taxonomy:
         taxonomy="genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
     log:
         "logs/genomes/annotations/genomes/taxonomy/gtdbtk/combine.txt",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     script:
         "../scripts/combine_taxonomy.py"
 
@@ -120,7 +129,9 @@ rule build_tree:
     log:
         "logs/genomes/annotations/genomes/tree/{msa}.log",
         "logs/genomes/annotations/genomes/tree/{msa}.err",
-    threads: max(config["simplejob_threads"], 3)
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     params:
         outdir=lambda wc, output: Path(output[0]).parent,
     conda:
@@ -147,9 +158,9 @@ rule root_tree:
         tree="genomes/annotations/genomes/tree/{msa}.nwk",
     conda:
         "../envs/tree.yaml"
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     log:
         "logs/genomes/annotations/genomes/tree/root_tree_{msa}.log",
     script:
@@ -164,11 +175,17 @@ def all_gtdb_trees_input(wildcards):
     return expand("genomes/annotations/genomes/tree/gtdbtk.{domain}.nwk", domain=domains)
 
 
+localrules:
+    all_gtdb_trees,
+
 rule all_gtdb_trees:
     input:
         all_gtdb_trees_input,
     output:
         touch("genomes/annotations/genomes/tree/finished_gtdb_trees"),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
 
 
 
@@ -198,10 +215,9 @@ rule genome_DRAM_annotate:
         config=get_dram_config,
     output:
         outdir=directory("genomes/annotations/{dataset}/dram/intermediate_files/{genome}"),
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/dram.yaml"
     params:
@@ -241,8 +257,9 @@ rule concat_annotations:
         get_all_genome_dram,
     output:
         "genomes/annotations/{dataset}/dram/annotations.tsv",
-    resources:
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
     run:
         from utils import io
 
@@ -262,9 +279,9 @@ rule genome_DRAM_destill:
         config=get_dram_config,
     output:
         outdir=directory("genomes/annotations/{dataset}/dram/distil"),
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/dram.yaml"
     log:
@@ -283,9 +300,9 @@ rule get_all_genome_modules:
         config=get_dram_config,
     output:
         "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/dram.yaml"
     log:
@@ -294,12 +311,18 @@ rule get_all_genome_modules:
         "../scripts/DRAM_get_all_modules.py"
 
 
+localrules:
+    dram,
+
 rule dram:
     input:
         "genomes/annotations/{dataset}/dram/distil",
         "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
     output:
         touch("genomes/annotations/{dataset}/dram/finished"),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
 
 
 
@@ -337,10 +360,9 @@ rule genome_metaeuk_annotation:
         out="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk",
         out_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined",
         mag_id=lambda wildcards: wildcards.genome,
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/metaeuk.yaml"
     log:
@@ -444,6 +466,9 @@ rule combine_genome_metaeuk:
         mag_output_table="genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv",
     params:
         genomes=get_all_genome_metaeuk,
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     log:
         "logs/genomes/annotations/{dataset}/metaeuk/combine.log",
     script:
@@ -460,6 +485,9 @@ rule all_genome_metaeuk:
         rules.combine_genome_metaeuk.output.mag_output_table,
     output:
         touch("genomes/annotations/{dataset}/metaeuk/finished"),
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
 
 
 
@@ -485,11 +513,10 @@ rule genome_mmseqs2_easy_taxonomy:
         out="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result",
         mmseqs2_easy_taxonomy=config["mmseqs2_easy_taxonomy"],
         mag_id=lambda wildcards: wildcards.genome,
-        mem=int(config["mmseqs2_memory"]*0.8),
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["mmseqs2_memory"],
-        time=config["simplejob_runtime"],
+        mem=lambda wildcards, resources: int(resources.mem_mb * 0.8 / 1024),
+    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation")
     conda:
         "../envs/mmseqs2.yaml"
     log:
@@ -531,7 +558,6 @@ rule all_genome_mmseqs2_easy_taxonomy:
         get_all_genome_mmseqs2_easy_taxonomy_results,
     output:
         touch("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished"),
-
-
-
-
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")

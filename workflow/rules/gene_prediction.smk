@@ -109,10 +109,9 @@ rule gene_prediction_bacteria:
         "logs/gene_prediction/genomes/bacteria/{genome}.txt",
     conda:
         "../envs/gene_prediction_bacteria.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -147,10 +146,9 @@ rule gene_prediction_archaea:
         "logs/gene_prediction/genomes/archaea/{genome}.txt",
     conda:
         "../envs/gene_prediction_archaea.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -182,10 +180,9 @@ rule gene_prediction_virus:
         "logs/gene_prediction/genomes/virus/{genome}.txt",
     conda:
         "../envs/gene_prediction_virus.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -218,10 +215,9 @@ rule gene_prediction_plasmid:
         "logs/gene_prediction/genomes/plasmid/{genome}.txt",
     conda:
         "../envs/gene_prediction_plasmid.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -273,10 +269,9 @@ rule gene_prediction_eukaryote:
         "logs/gene_prediction/genomes/eukaryotes/{genome}.txt",
     conda:
         "../envs/gene_prediction_eukaryotic.yaml"
-    threads: config["medium_threads"]
-    resources:
-        mem=config["medium_memory"],
-        time=config["medium_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -395,10 +390,9 @@ checkpoint move_genome_predicted_genes:
         "logs/gene_prediction/genomes/move_predicted_genes.txt",
     conda:
         "../envs/python.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -458,9 +452,8 @@ rule gene_prediction_unbinned:
     conda:
         "../envs/prodigal.yaml"
     threads: 1
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -502,10 +495,9 @@ checkpoint move_unbinned_predicted_genes:
         "logs/gene_prediction/unbinned/move_predicted_genes.txt",
     conda:
         "../envs/python.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         (
@@ -518,5 +510,3 @@ checkpoint move_unbinned_predicted_genes:
         
         ) &> {log}
         """
-
-

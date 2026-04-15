@@ -37,6 +37,7 @@ wildcard_constraints:
 
 
 include: "rules/sample_table.smk"
+include: "rules/resources.smk"
 include: "rules/sra.smk"
 include: "rules/download.smk"  # contains hard coded variables
 include: "rules/qc.smk"
@@ -284,29 +285,8 @@ rule screen:
 
 ## overwrite commands in rules/download.snakefile
 onsuccess:
-    print("ATLAS finished")
+    print("naiveATLAS finished")
     print("The last rule shows you the main output files")
 onerror:
     print("Note the path to the log file for debugging.")
-    print("Documentation is available at: https://metagenome-atlas.readthedocs.io")
-    print("Issues can be raised at: https://github.com/metagenome-atlas/atlas/issues")
-
-
-## pepulate resources for rules that don't have
-for r in workflow.rules:
-    if "mem" in r.resources:
-        r.resources["mem_mb"] = r.resources["mem"] * 1000
-    else:
-        # default
-        r.resources["mem_mb"] = config["mem"] * 1000
-
-    # add time if ot present. Simple jobs use simple time
-    if "runtime" in r.resources:
-        r.resources["time_min"] = r.resources["runtime"] * 60
-        r.resources["runtime"] = r.resources["runtime"] * 60
-    else:
-        r.resources["time_min"] = config["runtime"] * 60
-        r.resources["runtime"] = config["runtime"] * 60
-    
-    if not "runtime" in r.resources:
-        r.resources["runtime"] = config["runtime"]
+    print("Issues can be raised at: https://github.com/TimothyStephens/naive_atlas/issues")

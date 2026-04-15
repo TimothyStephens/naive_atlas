@@ -73,6 +73,9 @@ rule all_downloads:
         f"{DBDIR}/bakta/db",
     output:
         touch(f"{DBDIR}/finished")
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule")
 
 
 rule download_atlas_files:
@@ -82,6 +85,9 @@ rule download_atlas_files:
         filename="[A-Za-z0-9_.]+",
     log:
         "logs/download/download_atlas_file_{filename}.log",
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     benchmark:
         "logs/benchmarks/download/download_atlas_file_{filename}.tsv"
     run:
@@ -104,6 +110,9 @@ rule checkm2_download_db:
         dbdir=directory(f"{DBDIR}/CheckM2"),
     conda:
         "../envs/checkm2.yaml"
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/checkm2.log",
     benchmark:
@@ -119,10 +128,9 @@ rule mdmcleaner_download_db:
         dbdir=directory(f"{DBDIR}/MDMcleaner"),
     log:
         "logs/download/mdmcleaner_database.log",
-    threads: 2
-    resources:
-        mem=config["assembly_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     benchmark:
         "logs/benchmarks/download/mdmcleaner_database.tsv"
     container:
@@ -138,6 +146,9 @@ rule mdmcleaner_download_db:
 rule busco_download_db:
     output:
         dbdir=directory(f"{DBDIR}/busco_lineages"),
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/busco_lineages.log",
     benchmark:
@@ -157,6 +168,9 @@ rule genomad_download_db:
         dbdir=directory(f"{DBDIR}/geNomad"),
     params:
         db_version="v1.2",
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/genomad_lineages.log",
     benchmark:
@@ -188,6 +202,9 @@ rule download_eggNOG_files:
         f"{EGGNOG_DIR}/eggnog_proteins.dmnd",
     params:
         eggnog_dir=f"{EGGNOG_DIR}",
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/download_eggNOG_files.log",
     benchmark:
@@ -206,10 +223,9 @@ rule dram_download:
     output:
         dbdir=directory(f"{DBDIR}/DRAM/db/"),
         config=f"{DBDIR}/DRAM/DRAM.config",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/dram/download_dram.log",
     benchmark:
@@ -232,6 +248,9 @@ rule gtdb_download_db:
         temp(f"{GTDBTK_DATA_PATH}/gtdb_data.tar.gz"),
     params:
         gtdb_data_url=f"{GTDB_DATA_URL}",
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/gtdbtk.log",
     benchmark:
@@ -251,6 +270,9 @@ rule gtdb_extract:
         touch(os.path.join(GTDBTK_DATA_PATH, "downloaded_success")),
     conda:
         "../envs/gtdbtk.yaml"
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/gtdbtk_untar.log",
     benchmark:
@@ -267,10 +289,9 @@ rule mmseqs2_download:
         database=os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
     params:
         mmseqs2_database=config["mmseqs2_database"],
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["assembly_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/download_MMseqs2_database.log",
     benchmark:
@@ -301,10 +322,9 @@ rule microeukaryotic_mmseqs2_db:
         "logs/download/microeukaryotic_mmseqs2.log",
     benchmark:
         "logs/benchmarks/download/microeukaryotic_mmseqs2.tsv"
-    threads: 2
-    resources:
-        mem=config["assembly_memory"],
-        time_min=60 * config["assembly_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     conda:
         "../envs/MicroEuk.yaml"
     shell:
@@ -318,6 +338,9 @@ rule bakta_download_db:
         dbdir=directory(f"{DBDIR}/bakta/db"),
     params:
         wd=f"{DBDIR}/bakta",
+    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download")
     log:
         "logs/download/bakta.log",
     benchmark:

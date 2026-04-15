@@ -47,9 +47,12 @@ def handle_max_mem(max_mem, profile):
         else:
             max_mem = max_mem * max_system_memory
 
-        # specify max_mem_string including java mem and max mem
+        # Set Snakemake resources. java_mem is 85% of total to allow for JVM overhead.
+        # Total and Java memory are provided in MB for consistency with rule scaling logic.
+        total_mb = floor(max_mem * 1024)
+        java_mb = floor(0.85 * total_mb)
 
-        return f" --resources mem={floor(max_mem)} mem_mb={floor(max_mem*1024)} java_mem={floor(0.85* max_mem)} "
+        return f" --resources mem={floor(max_mem)} mem_mb={total_mb} java_mem={java_mb} "
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))

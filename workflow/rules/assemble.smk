@@ -7,6 +7,8 @@ import warnings
 from copy import deepcopy
 
 
+include: "common.smk"
+
 def get_preprocessing_steps(config):
     preprocessing_steps = ["QC"]
     if config.get("error_correction_before_assembly", True):
@@ -36,7 +38,7 @@ def normalize_reads_command(inputs, outputs, outdir, pairs, histin, histout, run
             target={target} \\
             prefilter=t \\
             threads={threads} \\
-            -Xmx{resources.java_mem}G
+            -Xmx{resources.java_mem}M
         """
     else:
         cmd = f"""
@@ -57,22 +59,22 @@ def normalize_reads_command(inputs, outputs, outdir, pairs, histin, histout, run
 rule normalize_reads_PE:
     input:
         reads=[
-            "{sample}/sequence_quality_control/{sample}_R1.fastq.gz",
-            "{sample}/sequence_quality_control/{sample}_R2.fastq.gz"
+            "samples/{sample}/sequence_quality_control/{sample}_R1.fastq.gz",
+            "samples/{sample}/sequence_quality_control/{sample}_R2.fastq.gz"
         ],
     output:
         reads=temp([
-            "{sample}/assembly/reads/1_normalize_reads_R1.fastq.gz",
-            "{sample}/assembly/reads/1_normalize_reads_R2.fastq.gz"
+            "samples/{sample}/assembly/reads/1_normalize_reads_R1.fastq.gz",
+            "samples/{sample}/assembly/reads/1_normalize_reads_R2.fastq.gz"
         ]),
-        histin ="{sample}/assembly/reads/1_normalize_reads_PE.histogram_before_normalization.tsv.gz",
-        histout="{sample}/assembly/reads/1_normalize_reads_PE.histogram_after_normalization.tsv.gz",
-        tmp=temp("{sample}/assembly/reads/tmp"),
+        histin ="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_before_normalization.tsv.gz",
+        histout="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_after_normalization.tsv.gz",
+        tmp=temp("samples/{sample}/assembly/reads/tmp"),
     params:
         command = lambda wc, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"{wc.sample}/assembly/reads",
+            outdir=f"samples/{wc.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             histin=output.histin,
             histout=output.histout,
@@ -84,16 +86,14 @@ rule normalize_reads_PE:
             resources=resources
         )
     log:
-        "{sample}/logs/assembly/pre_process/1_normalize_reads.log",
+        "logs/samples/{sample}/assembly/pre_process/1_normalize_reads_PE.log",
     benchmark:
-        "{sample}/benchmarks/assembly/pre_process/1_normalize_reads/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -103,20 +103,20 @@ rule normalize_reads_PE:
 rule normalize_reads_SE:
     input:
         reads=[
-            "{sample}/sequence_quality_control/{sample}_SE.fastq.gz",
+            "samples/{sample}/sequence_quality_control/{sample}_SE.fastq.gz",
         ],
     output:
         reads=temp([
-            "{sample}/assembly/reads/1_normalize_reads_SE.fastq.gz",
+            "samples/{sample}/assembly/reads/1_normalize_reads_SE.fastq.gz",
         ]),
-        histin ="{sample}/assembly/reads/1_normalize_reads_SE.histogram_before_normalization.tsv.gz",
-        histout="{sample}/assembly/reads/1_normalize_reads_SE.histogram_after_normalization.tsv.gz",
-        tmp=temp("{sample}/assembly/reads/tmp"),
+        histin ="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_before_normalization.tsv.gz",
+        histout="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_after_normalization.tsv.gz",
+        tmp=temp("samples/{sample}/assembly/reads/tmp"),
     params:
         command = lambda wc, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"{wc.sample}/assembly/reads",
+            outdir=f"samples/{wc.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             histin=output.histin,
             histout=output.histout,
@@ -128,16 +128,14 @@ rule normalize_reads_SE:
             resources=resources
         )
     log:
-        "{sample}/logs/assembly/pre_process/1_normalize_reads.log",
+        "logs/samples/{sample}/assembly/pre_process/1_normalize_reads_SE.log",
     benchmark:
-        "{sample}/benchmarks/assembly/pre_process/1_normalize_reads/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -147,20 +145,20 @@ rule normalize_reads_SE:
 rule normalize_reads_LR:
     input:
         reads=[
-            "{sample}/sequence_quality_control/{sample}_LR.fastq.gz",
+            "samples/{sample}/sequence_quality_control/{sample}_LR.fastq.gz",
         ],
     output:
         reads=temp([
-            "{sample}/assembly/reads/1_normalize_reads_LR.fastq.gz",
+            "samples/{sample}/assembly/reads/1_normalize_reads_LR.fastq.gz",
         ]),
-        histin ="{sample}/assembly/reads/1_normalize_reads_LR.histogram_before_normalization.tsv.gz",
-        histout="{sample}/assembly/reads/1_normalize_reads_LR.histogram_after_normalization.tsv.gz",
-        tmp=temp("{sample}/assembly/reads/tmp"),
+        histin ="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_before_normalization.tsv.gz",
+        histout="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_after_normalization.tsv.gz",
+        tmp=temp("samples/{sample}/assembly/reads/tmp"),
     params:
         command = lambda wc, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"{wc.sample}/assembly/reads",
+            outdir=f"samples/{wc.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             histin=output.histin,
             histout=output.histout,
@@ -172,16 +170,14 @@ rule normalize_reads_LR:
             resources=resources
         )
     log:
-        "{sample}/logs/assembly/pre_process/1_normalize_reads.log",
+        "logs/samples/{sample}/assembly/pre_process/1_normalize_reads_LR.log",
     benchmark:
-        "{sample}/benchmarks/assembly/pre_process/1_normalize_reads/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "normalize_reads", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -215,7 +211,7 @@ def error_correction_command(inputs, outputs, outdir, pairs, run_step,
                 unpigz=t \\
                 ecc=t \\
                 ecco=t \\
-                -Xmx{resources.java_mem}G
+                -Xmx{resources.java_mem}M
         """
     else:
         cmd = f"""
@@ -235,14 +231,14 @@ rule error_correction_PE:
         reads=rules.normalize_reads_PE.output.reads,
     output:
         reads=temp([
-            "{sample}/assembly/reads/2_error_correction_R1.fastq.gz",
-            "{sample}/assembly/reads/2_error_correction_R2.fastq.gz"
+            "samples/{sample}/assembly/reads/2_error_correction_R1.fastq.gz",
+            "samples/{sample}/assembly/reads/2_error_correction_R2.fastq.gz"
         ]),
     params:
         command = lambda wc, input, output, threads, resources: error_correction_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"{wc.sample}/assembly/reads",
+            outdir=f"samples/{wc.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
             prefilter=2,  # Ignore kmers with less than 2 occurance
@@ -256,16 +252,14 @@ rule error_correction_PE:
             resources=resources
         )
     log:
-        "{sample}/logs/assembly/pre_process/2_error_correction.log",
+        "logs/samples/{sample}/assembly/pre_process/2_error_correction_PE.log",
     benchmark:
-        "{sample}/benchmarks/assembly/pre_process/2_error_correction/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -277,13 +271,13 @@ rule error_correction_SE:
         reads=rules.normalize_reads_SE.output.reads,
     output:
         reads=temp([
-            "{sample}/assembly/reads/2_error_correction_SE.fastq.gz",
+            "samples/{sample}/assembly/reads/2_error_correction_SE.fastq.gz",
         ]),
     params:
         command = lambda wc, input, output, threads, resources: error_correction_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"{wc.sample}/assembly/reads",
+            outdir=f"samples/{wc.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
             prefilter=2,  # Ignore kmers with less than 2 occurance
@@ -297,16 +291,14 @@ rule error_correction_SE:
             resources=resources
         )
     log:
-        "{sample}/logs/assembly/pre_process/2_error_correction.log",
+        "logs/samples/{sample}/assembly/pre_process/2_error_correction_SE.log",
     benchmark:
-        "{sample}/benchmarks/assembly/pre_process/2_error_correction/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -318,13 +310,13 @@ rule error_correction_LR:
         reads=rules.normalize_reads_LR.output.reads,
     output:
         reads=temp([
-            "{sample}/assembly/reads/2_error_correction_LR.fastq.gz",
+            "samples/{sample}/assembly/reads/2_error_correction_LR.fastq.gz",
         ]),
     params:
         command = lambda wc, input, output, threads, resources: error_correction_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"{wc.sample}/assembly/reads",
+            outdir=f"samples/{wc.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
             prefilter=2,  # Ignore kmers with less than 2 occurance
@@ -338,16 +330,14 @@ rule error_correction_LR:
             resources=resources
         )
     log:
-        "{sample}/logs/assembly/pre_process/2_error_correction.log",
+        "logs/samples/{sample}/assembly/pre_process/2_error_correction_LR.log",
     benchmark:
-        "{sample}/benchmarks/assembly/pre_process/2_error_correction/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: config["large_threads"]
-    resources:
-        mem=config["large_memory"],    
-        java_mem=int(config["large_memory"] * JAVA_MEM_FRACTION),
-        time=config["large_runtime"], 
+    threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "error_correction", java_mem_factor=0.85)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -358,10 +348,10 @@ def get_pre_processed_reads(wildcards, as_dict=False):
     if as_dict:
         files = {}
         for fraction in get_fractions(wildcards.sample):
-            files[fraction] = f"{wildcards.sample}/assembly/reads/2_error_correction_{fraction}.fastq.gz"
+                files[fraction] = f"samples/{wildcards.sample}/assembly/reads/2_error_correction_{fraction}.fastq.gz"
     else:
         files = expand(
-            "{sample}/assembly/reads/2_error_correction_{fraction}.fastq.gz",
+                "samples/{sample}/assembly/reads/2_error_correction_{fraction}.fastq.gz",
             sample=wildcards.sample,
             fraction=get_fractions(wildcards.sample),
         )
@@ -378,7 +368,7 @@ def assembly_command(wildcards, input, output, threads, resources):
     Builds the assembly command depending on the type of data we have.
     """
     assembler = sampleTable.loc[wildcards.sample, 'Assembler']
-    output_dir = f"{wildcards.sample}/assembly/assembly"
+    output_dir = f"samples/{wildcards.sample}/assembly/assembly"
     
     # SPADES (Short Reads + long reads for scaffolding)
     if assembler.startswith('spades'):
@@ -570,21 +560,20 @@ rule run_assembly:
     input:
         unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
     output:
-        "{sample}/assembly/assembly/{sample}_raw_contigs.fasta"
+        "samples/{sample}/assembly/assembly/{sample}_raw_contigs.fasta"
     params:
         command = lambda wildcards, input, output, threads, resources: assembly_command(
             wildcards, input, output, threads, resources
         ),
     log:
-        "{sample}/logs/assembly.log",
+        "logs/samples/{sample}/assembly.log",
     benchmark:
-        "{sample}/benchmarks/assembly/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly.txt"
     conda:
         "../envs/assembly.yaml"
-    threads: config["assembly_threads"]
-    resources:
-        mem=config["assembly_memory"],
-        time_min=60 * config["assembly_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "run_assembly", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_assembly", mem_gb=True)
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -593,16 +582,15 @@ rule run_assembly:
 
 rule rename_contigs:
     input:
-        "{sample}/assembly/assembly/{sample}_raw_contigs.fasta",
+        "samples/{sample}/assembly/assembly/{sample}_raw_contigs.fasta",
     output:
-        fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-        mapping_table="{sample}/assembly/assembly/old2new_contig_names.tsv",
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        mapping_table="samples/{sample}/assembly/assembly/old2new_contig_names.tsv",
+    threads: lambda wc: get_resource(wc, None, 1, "rename_contigs", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "rename_contigs")
     log:
-        "{sample}/logs/assembly/post_process/rename_and_filter_size.log",
+        "logs/samples/{sample}/assembly/post_process/rename_and_filter_size.log",
     params:
         minlength=config["minimum_contig_length"],
     conda:
@@ -671,21 +659,20 @@ rule align_reads_to_prefilter_contigs:
         unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
         target=rules.rename_contigs.output.fasta,
     output:
-        bam=temp("{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
+        bam=temp("samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
     params:
         command = lambda wildcards, input, output, threads, resources: align_reads_command(
             wildcards, input, output, threads, resources
         ),
     benchmark:
-        "{sample}/benchmarks/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
+        "benchmarks/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
     log:
-        "{sample}/logs/assembly/post_process/align_reads_to_prefiltered_contigs.log",
+        "logs/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.log",
     conda:
         "../envs/minimap.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     shell:
         """
         ({params.command}) >{log} 2>&1
@@ -694,28 +681,26 @@ rule align_reads_to_prefilter_contigs:
 
 rule pileup_prefilter:
     input:
-        fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-        bam="{sample}/assembly/assembly/{sample}_prefilter_contigs.bam",
+        fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        bam="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam",
     output:
-        covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
+        covstats="samples/{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
     params:
         pileup_secondary="t",
         minmapq=config["minimum_map_quality"],
     benchmark:
-        "{sample}/benchmarks/assembly/post_process/pilup_prefilter_contigs.log",
+        "benchmarks/samples/{sample}/assembly/post_process/pilup_prefilter_contigs.txt",
     log:
-        "{sample}/logs/assembly/post_process/pilup_prefilter_contigs.log",
+        "logs/samples/{sample}/assembly/post_process/pilup_prefilter_contigs.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "pileup", java_mem_factor=0.85)
     shell:
         "pileup.sh ref={input.fasta} in={input.bam} "
         " threads={threads} "
-        " -Xmx{resources.java_mem}G "
+        " -Xmx{resources.java_mem}M "
         " covstats={output.covstats} "
         " concise=t "
         " minmapq={params.minmapq} "
@@ -724,26 +709,26 @@ rule pileup_prefilter:
 
 rule filter_by_coverage:
     input:
-        fasta="{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-        covstats="{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
+        fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        covstats="samples/{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
     output:
-        fasta="{sample}/assembly/assembly/{sample}_final_contigs.fasta",
-        removed_names="{sample}/assembly/assembly/{sample}_discarded_contigs.fasta",
+        fasta="samples/{sample}/assembly/assembly/{sample}_final_contigs.fasta",
+        removed_names="samples/{sample}/assembly/assembly/{sample}_discarded_contigs.fasta",
     params:
         minc=config["minimum_average_coverage"],
         minp=config["minimum_percent_covered_bases"],
         minr=config.get("minimum_mapped_reads", MINIMUM_MAPPED_READS),
         minl=config.get("minimum_contig_length", MINIMUM_CONTIG_LENGTH),
         trim=config.get("contig_trim_bp", CONTIG_TRIM_BP),
+    benchmark:
+        "benchmarks/samples/{sample}/assembly/post_process/filter_by_coverage.txt",
     log:
-        "{sample}/logs/assembly/post_process/filter_by_coverage.log",
+        "logs/samples/{sample}/assembly/post_process/filter_by_coverage.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "filter_by_coverage", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "filter_by_coverage", java_mem_factor=0.85)
     shell:
         """filterbycoverage.sh in={input.fasta} \
         cov={input.covstats} \
@@ -754,7 +739,7 @@ rule filter_by_coverage:
         minr={params.minr} \
         minl={params.minl} \
         trim={params.trim} \
-        -Xmx{resources.java_mem}G 2> {log}"""
+        -Xmx{resources.java_mem}M 2> {log}"""
 
 
 
@@ -763,47 +748,53 @@ localrules:
 
 rule finalize_contigs:
     input:
-        "{sample}/assembly/assembly/{sample}_final_contigs.fasta",
+        "samples/{sample}/assembly/assembly/{sample}_final_contigs.fasta",
     output:
-        "{sample}/assembly/{sample}.fasta",
+        "samples/{sample}/assembly/{sample}.fasta",
+    log:
+        "logs/samples/{sample}/assembly/finalize_contigs.log",
     shell:
-        "cp {input} {output}"
+        "cp {input} {output} > {log} 2>&1"
 
 
 rule calculate_contigs_stats:
     input:
         get_assembly,
     output:
-        "{sample}/assembly/contig_stats/final_contig_stats.txt",
+        "samples/{sample}/assembly/contig_stats/final_contig_stats.txt",
     conda:
         "../envs/required_packages.yaml"
+    threads: config["resources"]["calculate_contigs_stats"]["threads"]
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "calculate_contigs_stats", java_mem_factor=0.85)
     log:
-        "{sample}/logs/assembly/post_process/contig_stats_final.log",
+        "logs/samples/{sample}/assembly/post_process/contig_stats_final.log",
+    benchmark:
+        "benchmarks/samples/{sample}/assembly/post_process/contig_stats_final.txt",
     shell:
-        "stats.sh in={input} format=3 out={output} &> {log}"
+        "stats.sh in={input} format=3 out={output} -Xmx{resources.java_mem}M &> {log}"
 
 
 # generalized rule so that reads from any "sample" can be aligned to contigs from "sample_contigs"
 rule align_reads_to_final_contigs:
     input:
         unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
-        target="{sample_contigs}/assembly/{sample_contigs}.fasta",
+        target="samples/{sample_contigs}/assembly/{sample_contigs}.fasta",
     output:
-        bam=temp("{sample_contigs}/sequence_alignment/{sample}.bam"),
+        bam=temp("samples/{sample_contigs}/sequence_alignment/{sample}.bam"),
     params:
         command = lambda wildcards, input, output, threads, resources: align_reads_command(
             wildcards, input, output, threads, resources
         ),
     benchmark:
-        "logs/benchmarks/assembly/calculate_coverage/align_reads_to_filtered_contigs/{sample}_to_{sample_contigs}.txt",
+        "benchmarks/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.txt",
     log:
-        "{sample_contigs}/logs/assembly/calculate_coverage/align_reads_from_{sample}_to_filtered_contigs.log",
+        "logs/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.log",
     conda:
         "../envs/minimap.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "mapping")
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -813,11 +804,11 @@ rule align_reads_to_final_contigs:
 rule pileup_contigs_sample:
     input:
         fasta=get_assembly,
-        bam="{sample}/sequence_alignment/{sample}.bam",
+        bam="samples/{sample}/sequence_alignment/{sample}.bam",
     output:
-        covhist="{sample}/assembly/contig_stats/postfilter_coverage_histogram.txt",
-        covstats="{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
-        bincov="{sample}/assembly/contig_stats/postfilter_coverage_binned.txt",
+        covhist="samples/{sample}/assembly/contig_stats/postfilter_coverage_histogram.txt",
+        covstats="samples/{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
+        bincov="samples/{sample}/assembly/contig_stats/postfilter_coverage_binned.txt",
     params:
         pileup_secondary=(
             "t"
@@ -826,22 +817,20 @@ rule pileup_contigs_sample:
         ),
         minmapq=config["minimum_map_quality"],
     benchmark:
-        "logs/benchmarks/assembly/calculate_coverage/pileup/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/calculate_coverage/pileup.txt"
     log:
-        "{sample}/logs/assembly/calculate_coverage/pilup_final_contigs.log",  # This log file is uesd for report
+        "logs/samples/{sample}/assembly/calculate_coverage/pileup.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        java_mem=int(config["simplejob_memory"] * JAVA_MEM_FRACTION),
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "pileup", java_mem_factor=0.85)
     shell:
         "pileup.sh "
         " ref={input.fasta} "
         " in={input.bam} "
         " threads={threads} "
-        " -Xmx{resources.java_mem}G "
+        " -Xmx{resources.java_mem}M "
         " covstats={output.covstats} "
         " hist={output.covhist} "
         " concise=t "
@@ -854,19 +843,18 @@ rule pileup_contigs_sample:
 rule samtools_stats_contigs_sample:
     input:
         fasta=get_assembly,
-        bam="{sample}/sequence_alignment/{sample}.bam",
+        bam="samples/{sample}/sequence_alignment/{sample}.bam",
     output:
-        stats="{sample}/assembly/contig_stats/postfilter_samtools_stats.txt",
+        stats="samples/{sample}/assembly/contig_stats/postfilter_samtools_stats.txt",
     benchmark:
-        "logs/benchmarks/assembly/calculate_coverage/samtools_stats/{sample}.txt"
+        "benchmarks/samples/{sample}/assembly/calculate_coverage/samtools_stats.txt"
     log:
-        "{sample}/logs/assembly/calculate_coverage/samtools_stats_final_contigs.log",  # This log file is uesd for report
+        "logs/samples/{sample}/assembly/calculate_coverage/samtools_stats.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: 1
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "samtools_stats_contigs_sample", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "samtools_stats_contigs_sample")
     shell:
         "samtools stats "
         " {input.bam} "
@@ -879,32 +867,33 @@ rule create_bam_index:
         "{file}.bam",
     output:
         "{file}.bam.bai",
+    log:
+        "logs/{file}.index.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["simplejob_threads"]
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+    threads: lambda wc: get_resource(wc, None, 1, "create_bam_index", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "create_bam_index")
     shell:
-        "samtools index {input}"
+        "samtools index {input} > {log} 2>&1"
 
 
 rule predict_genes:
     input:
         get_assembly,
     output:
-        fna="{sample}/annotation/predicted_genes/{sample}.fna",
-        faa="{sample}/annotation/predicted_genes/{sample}.faa",
-        gff="{sample}/annotation/predicted_genes/{sample}.gff",
+        fna="samples/{sample}/annotation/predicted_genes/{sample}.fna",
+        faa="samples/{sample}/annotation/predicted_genes/{sample}.faa",
+        gff="samples/{sample}/annotation/predicted_genes/{sample}.gff",
     conda:
         "../envs/prodigal.yaml"
     log:
-        "{sample}/logs/gene_annotation/prodigal.txt",
+        "logs/samples/{sample}/gene_annotation/prodigal.log",
     benchmark:
-        "logs/benchmarks/prodigal/{sample}.txt"
-    resources:
-        mem=config["simplejob_memory"],
-        time=config["simplejob_runtime"],
+        "benchmarks/samples/{sample}/prodigal.txt"
+    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    resources: 
+        lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes")
     shell:
         """
         prodigal -i {input} -o {output.gff} -d {output.fna} \
@@ -918,9 +907,11 @@ localrules:
 
 rule get_contigs_from_gene_names:
     input:
-        faa="{sample}/annotation/predicted_genes/{sample}.faa",
+        faa="samples/{sample}/annotation/predicted_genes/{sample}.faa",
     output:
-        tsv="{sample}/annotation/predicted_genes/{sample}.tsv",
+        tsv="samples/{sample}/annotation/predicted_genes/{sample}.tsv",
+    log:
+        "logs/samples/{sample}/annotation/predicted_genes/get_contigs_from_gene_names.log",
     run:
         header = [
             "gene_id",
@@ -968,16 +959,16 @@ localrules:
 rule combine_contig_stats:
     input:
         contig_stats=expand(
-            "{sample}/assembly/contig_stats/final_contig_stats.txt", sample=SAMPLES
+            "samples/{sample}/assembly/contig_stats/final_contig_stats.txt", sample=SAMPLES
         ),
         gene_tables=expand(
-            "{sample}/annotation/predicted_genes/{sample}.tsv", sample=SAMPLES
+            "samples/{sample}/annotation/predicted_genes/{sample}.tsv", sample=SAMPLES
         ),
         mapping_stats=expand(
-            "{sample}/assembly/contig_stats/postfilter_coverage_stats.txt", sample=SAMPLES,
+            "samples/{sample}/assembly/contig_stats/postfilter_coverage_stats.txt", sample=SAMPLES,
         ),
         samtools_stats=expand(
-            "{sample}/assembly/contig_stats/postfilter_samtools_stats.txt", sample=SAMPLES
+            "samples/{sample}/assembly/contig_stats/postfilter_samtools_stats.txt", sample=SAMPLES
         )
     output:
         combined_contig_stats="stats/combined_contig_stats.tsv",
