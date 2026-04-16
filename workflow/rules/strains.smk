@@ -1,5 +1,3 @@
-from snakemake.utils import unpack
-
 
 rule instrain_profile:
     input:

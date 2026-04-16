@@ -1,6 +1,5 @@
 import hashlib
 import os
-from snakemake.utils import unpack
 
 
 # this values are incuded in the snakefile

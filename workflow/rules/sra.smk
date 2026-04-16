@@ -1,4 +1,3 @@
-from snakemake.utils import unpack
 wildcard_constraints:
     sra_run="[S,E,D]RR[0-9]+",
 

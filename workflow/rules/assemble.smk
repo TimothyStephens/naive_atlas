@@ -2,7 +2,6 @@ import os
 import re
 import sys
 from glob import glob
-from snakemake.utils import report, unpack
 import warnings
 from copy import deepcopy
 

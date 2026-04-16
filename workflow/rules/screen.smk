@@ -1,4 +1,3 @@
-from snakemake.utils import unpack
 
 rule generate_sketch:
     input:

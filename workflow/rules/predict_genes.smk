@@ -1,4 +1,3 @@
-from snakemake.utils import unpack
 
 localrules:
     copy_eukaryotic_genomes,

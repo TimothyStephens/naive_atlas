@@ -1,5 +1,4 @@
 from glob import glob
-from snakemake.utils import unpack
 
 
 
