@@ -24,7 +24,7 @@ rule copy_prokaryotic_genomes:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         "mkdir -p {output} && cp {input}/MAG_prokaryotic* {output}"
@@ -40,7 +40,7 @@ rule identify:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/gtdbtk.yaml"
@@ -67,7 +67,7 @@ checkpoint align:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/gtdbtk.yaml"
@@ -91,7 +91,7 @@ rule classify:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
         tmpdir=config.get("tmpdir", "/tmp"),
     conda:
@@ -126,7 +126,7 @@ rule combine_taxonomy:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     script:
         "../scripts/combine_taxonomy.py"
@@ -143,7 +143,7 @@ rule build_tree:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
         tmpdir=config.get("tmpdir", "/tmp"),
     params:
@@ -175,7 +175,7 @@ rule root_tree:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     log:
         "logs/genomes/annotations/genomes/tree/root_tree_{msa}.log",
@@ -202,7 +202,7 @@ rule all_gtdb_trees:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
@@ -236,7 +236,7 @@ rule genome_DRAM_annotate:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
@@ -280,7 +280,7 @@ rule concat_annotations:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         from utils import io
@@ -304,7 +304,7 @@ rule genome_DRAM_destill:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
@@ -327,7 +327,7 @@ rule get_all_genome_modules:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
@@ -349,7 +349,7 @@ rule dram:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
@@ -391,7 +391,7 @@ rule genome_metaeuk_annotation:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/metaeuk.yaml"
@@ -499,7 +499,7 @@ rule combine_genome_metaeuk:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     log:
         "logs/genomes/annotations/{dataset}/metaeuk/combine.log",
@@ -520,7 +520,7 @@ rule all_genome_metaeuk:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
@@ -551,7 +551,7 @@ rule genome_mmseqs2_easy_taxonomy:
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/mmseqs2.yaml"
@@ -597,5 +597,5 @@ rule all_genome_mmseqs2_easy_taxonomy:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),

@@ -111,7 +111,7 @@ rule gene_prediction_bacteria:
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
@@ -150,7 +150,7 @@ rule gene_prediction_archaea:
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
@@ -186,7 +186,7 @@ rule gene_prediction_virus:
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
@@ -223,7 +223,7 @@ rule gene_prediction_plasmid:
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
@@ -279,7 +279,7 @@ rule gene_prediction_eukaryote:
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
@@ -406,7 +406,7 @@ checkpoint move_genome_predicted_genes:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         """
@@ -469,7 +469,7 @@ rule gene_prediction_unbinned:
     threads: 1
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
@@ -518,7 +518,7 @@ checkpoint move_unbinned_predicted_genes:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         """

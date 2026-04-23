@@ -25,6 +25,7 @@
 max_mem_mb: 512000 # 512 GB
 
 # Partition mapping (for SLURM or other schedulers): partition_name -> threshold (mem_mb)
+account: "general"
 partition_ranges:
   small: 64000
   large: 512000

@@ -91,7 +91,7 @@ rule normalize_reads_PE:
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "normalize_reads", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "normalize_reads", "mem_mb") * 0.85),
     shell:
@@ -136,7 +136,7 @@ rule normalize_reads_SE:
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "normalize_reads", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "normalize_reads", "mem_mb") * 0.85),
     shell:
@@ -181,7 +181,7 @@ rule normalize_reads_LR:
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "normalize_reads", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "normalize_reads", "mem_mb") * 0.85),
     shell:
@@ -266,7 +266,7 @@ rule error_correction_PE:
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "error_correction", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "error_correction", "mem_mb") * 0.85),
     shell:
@@ -308,7 +308,7 @@ rule error_correction_SE:
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "error_correction", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "error_correction", "mem_mb") * 0.85),
     shell:
@@ -350,7 +350,7 @@ rule error_correction_LR:
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "error_correction", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "error_correction", "mem_mb") * 0.85),
     shell:
@@ -384,6 +384,7 @@ def assembly_command(wildcards, input, output, threads, resources):
     """
     assembler = sampleTable.loc[wildcards.sample, 'Assembler']
     output_dir = f"samples/{wildcards.sample}/assembly/assembly"
+    mem_gb=int(resources.mem / 1024) # MB -> GB
     
     # SPADES (Short Reads + long reads for scaffolding)
     if assembler.startswith('spades'):
@@ -428,7 +429,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 -k {k} \\
                 --checkpoints last \\
                 --threads {threads} \\
-                --memory {resources.mem} {extra}
+                --memory {mem_gb} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
             """
@@ -439,7 +440,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --restart-from last \\
                 -k {k} \\
                 --threads {threads} \\
-                --memory {resources.mem} {extra}
+                --memory {mem_gb} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
             """
@@ -492,7 +493,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --prune-level {prune_level[0]} \\
                 --low-local-ratio {low_local_ratio[0]} \\
                 {preset[0]} {extra} \\
-                --memory {resources.mem}000000000
+                --memory {mem_gb}000000000
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
             """
@@ -589,9 +590,8 @@ rule run_assembly:
     threads: lambda wc: get_resource(wc, None, 1, "run_assembly", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "run_assembly", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "account"),
-        mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "run_assembly", "mem_mb") / 1024),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -607,7 +607,7 @@ rule rename_contigs:
     threads: lambda wc: get_resource(wc, None, 1, "rename_contigs", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "rename_contigs", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "account"),
     log:
         "logs/samples/{sample}/assembly/post_process/rename_and_filter_size.log",
@@ -693,7 +693,7 @@ rule align_reads_to_prefilter_contigs:
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "mapping", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
     shell:
         """
@@ -719,7 +719,7 @@ rule pileup_prefilter:
     threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "pileup", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "pileup", "mem_mb") * 0.85),
     shell:
@@ -754,7 +754,7 @@ rule filter_by_coverage:
     threads: lambda wc: get_resource(wc, None, 1, "filter_by_coverage", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "filter_by_coverage", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "filter_by_coverage", "mem_mb") * 0.85),
     shell:
@@ -795,7 +795,7 @@ rule calculate_contigs_stats:
     threads: config["resources"]["calculate_contigs_stats"]["threads"]
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "calculate_contigs_stats", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "calculate_contigs_stats", "mem_mb") * 0.85),
     log:
@@ -826,7 +826,7 @@ rule align_reads_to_final_contigs:
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "mapping", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
     shell:
         """
@@ -858,7 +858,7 @@ rule pileup_contigs_sample:
     threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "pileup", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "pileup", "mem_mb") * 0.85),
     shell:
@@ -891,7 +891,7 @@ rule samtools_stats_contigs_sample:
     threads: lambda wc: get_resource(wc, None, 1, "samtools_stats_contigs_sample", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "samtools_stats_contigs_sample", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "account"),
     shell:
         "samtools stats "
@@ -912,7 +912,7 @@ rule create_bam_index:
     threads: lambda wc: get_resource(wc, None, 1, "create_bam_index", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "create_bam_index", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "account"),
     shell:
         "samtools index {input} > {log} 2>&1"
@@ -934,7 +934,7 @@ rule predict_genes:
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """

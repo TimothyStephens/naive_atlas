@@ -11,7 +11,7 @@ rule generate_sketch:
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "generate_sketch", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "generate_sketch", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "generate_sketch", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "generate_sketch", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "generate_sketch", "mem_mb") * 0.85),
     shell:
@@ -39,7 +39,7 @@ rule compare_sketch:
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "compare_sketch", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "compare_sketch", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "compare_sketch", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "compare_sketch", "account"),
         java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "compare_sketch", "mem_mb") * 0.85),
     shell:

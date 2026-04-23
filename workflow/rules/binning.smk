@@ -21,7 +21,7 @@ rule get_metabat_depth_file_one_sample:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     params:
         minid=config["cobinning_readmapping_id"] * 100,
@@ -50,7 +50,7 @@ rule get_metabat_depth_file_combine:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -75,7 +75,7 @@ rule get_maxbin_depth_file:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -116,7 +116,7 @@ rule binning_prokaryotic_metabat:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -163,7 +163,7 @@ rule binning_prokaryotic_maxbin_107:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     retries: 5
     shell:
@@ -236,7 +236,7 @@ rule binning_prokaryotic_maxbin_40:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     retries: 5
     shell:
@@ -307,7 +307,7 @@ checkpoint binning_prokaryotic_dastool:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -379,7 +379,7 @@ rule binning_prokaryotic_whokaryote:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -417,7 +417,7 @@ rule binning_prokaryotic_mdmcleaner:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -491,7 +491,7 @@ rule binning_prokaryotic_checkm2:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -563,7 +563,7 @@ rule binning_prokaryotic_genome_stats:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -616,7 +616,7 @@ checkpoint binning_eukaryotic_metabat:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -657,7 +657,7 @@ rule binning_eukaryotic_whokaryote:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -696,7 +696,7 @@ rule binning_eukaryotic_busco:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -796,7 +796,7 @@ rule binning_eukaryotic_filter:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -840,7 +840,7 @@ rule binning_eukaryotic_genome_stats:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         """
@@ -891,7 +891,7 @@ rule binning_viral_metabat:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -950,7 +950,7 @@ rule binning_viral_genomad:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -1017,7 +1017,7 @@ rule binning_viral_filter:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """
@@ -1068,7 +1068,7 @@ rule binning_viral_genome_stats:
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "binning", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "binning", "account"),
     shell:
         """

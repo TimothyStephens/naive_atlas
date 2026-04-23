@@ -52,7 +52,7 @@ rule get_prokaryotic_bins:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_prokaryotic_bins.log",
@@ -121,7 +121,7 @@ rule get_eukaryotic_bins:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_eukaryotic_bins.log",
@@ -193,7 +193,7 @@ rule get_viral_bins:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_viral_bins.log",
@@ -258,7 +258,7 @@ rule get_plasmid_bins:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_plasmid_bins.log",
@@ -311,7 +311,7 @@ checkpoint get_all:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     output:
         touch("Binning/raw_bins/all.done"),
@@ -337,7 +337,7 @@ rule run_skani:
     threads: lambda wc: get_resource(wc, None, 1, "run_skani", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "run_skani", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_skani", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_skani", "account"),
     params:
         lineage="{lineage}",
@@ -373,7 +373,7 @@ rule skani_2_parquet:
     threads: lambda wc: get_resource(wc, None, 1, "skani_2_parquet", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "skani_2_parquet", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "skani_2_parquet", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "skani_2_parquet", "account"),
     log:
         "logs/Binning/dereplication/{lineage}.skani_2_parquet.log",
@@ -424,7 +424,7 @@ rule cluster_species:
     threads: lambda wc: get_resource(wc, None, 1, "cluster_species", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "cluster_species", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "cluster_species", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "cluster_species", "account"),
     log:
         "logs/Binning/dereplication/{lineage}.species_clustering.log",
@@ -446,7 +446,7 @@ rule build_bin_report:
     threads: lambda wc: get_resource(wc, None, 1, "build_bin_report", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "build_bin_report", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "build_bin_report", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "build_bin_report", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "build_bin_report", "account"),
     conda:
         "../envs/report.yaml"
@@ -489,7 +489,7 @@ rule rename_genomes:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/clustering/{lineage}.rename_genomes.log",
@@ -508,7 +508,7 @@ rule rename_unbinned:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/clustering/{sample}.rename_unbinned.log",
@@ -539,7 +539,7 @@ rule move_genomes:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/move_mags.log",
@@ -557,7 +557,7 @@ rule move_unbinned:
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/move_unbinned.log",

@@ -64,7 +64,7 @@ def handle_max_mem(max_mem, profile):
         total_mb = floor(max_mem * 1024)
         java_mb = floor(0.85 * total_mb)
 
-        return f" --resources 'mem={floor(max_mem)}' 'mem_mb={total_mb}' 'java_mem={java_mb}' "
+        return f" --resources 'mem_mb={total_mb}' 'java_mem={java_mb}' "
 
 
 @click.group(cls=LogoGroup, context_settings=dict(help_option_names=["-h", "--help"]))

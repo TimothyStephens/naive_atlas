@@ -18,7 +18,7 @@ rule instrain_profile:
         "logs/benchmarks/genomes/strains/profile/{sample}.tsv"
     resources:
         mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "instrain_profile", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "account"),
     shell:
         #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
@@ -51,7 +51,7 @@ rule instrain_compare:
         "logs/benchmarks/genomes/strains/compare.tsv"
     resources:
         mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "instrain_compare", "partition"),
+        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "partition"),
         account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "account"),
     shell:
         "inStrain compare "
