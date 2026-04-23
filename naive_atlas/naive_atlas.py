@@ -15,6 +15,18 @@ from .logo import print_logo
 
 ##
 
+class LogoCommand(click.Command):
+    """Click Command subclass that prints the logo before the help message."""
+    def format_help(self, ctx, formatter):
+        print_logo()
+        super().format_help(ctx, formatter)
+
+class LogoGroup(click.Group):
+    """Click Group subclass that prints the logo before the help message."""
+    def format_help(self, ctx, formatter):
+        print_logo()
+        super().format_help(ctx, formatter)
+
 
 def handle_max_mem(max_mem, profile):
     "Specify maximum virtual memory to use by atlas."
@@ -52,10 +64,10 @@ def handle_max_mem(max_mem, profile):
         total_mb = floor(max_mem * 1024)
         java_mb = floor(0.85 * total_mb)
 
-        return f" --resources mem={floor(max_mem)} mem_mb={total_mb} java_mem={java_mb} "
+        return f" --resources 'mem={floor(max_mem)}' 'mem_mb={total_mb}' 'java_mem={java_mb}' "
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.group(cls=LogoGroup, context_settings=dict(help_option_names=["-h", "--help"]))
 @click.version_option(__version__)
 @click.pass_context
 def cli(obj):
@@ -66,14 +78,13 @@ def cli(obj):
     """
 
 
-cli.add_command(run_init)
-
-
+# TODO
+# cli.add_command(run_init)
 # cli.add_command(run_init_sra)
 
 
 def get_snakefile(file="workflow/Snakefile"):
-    sf = os.path.join(os.path.dirname(os.path.abspath(__file__)), file)
+    sf = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), file)
     if not os.path.exists(sf):
         sys.exit("Unable to locate the Snakemake workflow file; tried %s" % sf)
     return sf
@@ -84,6 +95,7 @@ def get_snakefile(file="workflow/Snakefile"):
 
 @cli.command(
     "run",
+    cls=LogoCommand,
     context_settings=dict(ignore_unknown_options=True),
     short_help="run atlas main workflow",
 )
@@ -124,12 +136,30 @@ def get_snakefile(file="workflow/Snakefile"):
     help="config-file generated with 'atlas init'",
 )
 @click.option(
+    "--cluster-type",
+    type=click.Choice(["slurm", "pbs", "lsf"]),
+    default=None,
+    help="Type of cluster to use. If set, --profile, --local-cores, and --jobs are sent to Snakemake. Otherwise, --cores is used.",
+)
+@click.option(
+    "--cores",
+    type=int,
+    default=multiprocessing.cpu_count(),
+    help="Number of cores for Snakemake. Defaults to max system cores. Only used if --cluster-type is NOT set.",
+)
+@click.option(
+    "--local-cores",
+    type=int,
+    default=multiprocessing.cpu_count(),
+    help="Number of local cores for Snakemake. Defaults to max system cores. Only used if --cluster-type IS set.",
+)
+@click.option(
     "-j",
     "--jobs",
     type=int,
-    default=multiprocessing.cpu_count(),
+    default=250,
     show_default=True,
-    help="use at most this many jobs in parallel (see cluster submission for more details).",
+    help="Use at most this many jobs in parallel. Only used if --cluster-type IS set.",
 )
 @click.option(
     "--max-mem",
@@ -140,7 +170,7 @@ def get_snakefile(file="workflow/Snakefile"):
 @click.option(
     "--profile",
     default=None,
-    help="snakemake profile e.g. for cluster execution.",
+    help="Snakemake profile for cluster execution. Default '<cluster-type>_config'.",
 )
 @click.option(
     "-n",
@@ -150,9 +180,122 @@ def get_snakefile(file="workflow/Snakefile"):
     show_default=True,
     help="Test execution.",
 )
+@click.option(
+    "--rerun-triggers",
+    default="mtime",
+    show_default=True,
+    help="Define what triggers the rerunning of a job. [{code,input,mtime,params,software-env} ...]",
+)
+@click.option(
+    "--nolock/--lock",
+    default=True,
+    show_default=True,
+    help="Do not lock the working directory.",
+)
+@click.option(
+    "--show-failed-logs/--no-show-failed-logs",
+    default=True,
+    show_default=True,
+    help="Automatically display logs of failed jobs.",
+)
+@click.option(
+    "--scheduler",
+    default="greedy",
+    show_default=True,
+    help="Specifies if jobs are selected by a greedy algorithm or by solving an ilp. [{ilp,greedy}]",
+)
+@click.option(
+    "--printshellcmds/--no-printshellcmds",
+    default=True,
+    show_default=True,
+    help="Print out the shell commands that will be executed.",
+)
+@click.option(
+    "--debug-dag/--no-debug-dag",
+    default=True,
+    show_default=True,
+    help="Print candidate and selected jobs (including their wildcards) while inferring DAG.",
+)
+@click.option(
+    "--verbose/--quiet",
+    default=True,
+    show_default=True,
+    help="Print logging output.",
+)
+@click.option(
+    "--keep-incomplete/--no-keep-incomplete",
+    default=True,
+    show_default=True,
+    help="Do not remove incomplete output files by failed jobs.",
+)
+@click.option(
+    "--keep-going/--no-keep-going",
+    default=True,
+    show_default=True,
+    help="Go on with independent jobs if a job fails.",
+)
+@click.option(
+    "--rerun-incomplete/--no-rerun-incomplete",
+    default=True,
+    show_default=True,
+    help="Re-run jobs that have incomplete output files.",
+)
+@click.option(
+    "--sdm",
+    "--software-deployment-method",
+    "sdm",
+    multiple=True,
+    default=["apptainer", "conda"],
+    show_default=True,
+    help="Software deployment methods (e.g. apptainer, conda).",
+)
+@click.option(
+    "--singularity-args",
+    default="--no-home --containall --cleanenv",
+    show_default=True,
+    help="Arguments passed to singularity/apptainer.",
+)
+@click.option(
+    "--latency-wait",
+    type=int,
+    default=60,
+    show_default=True,
+    help="Wait given seconds if an output file of a job is not present after the job finished. This helps if your filesystem suffers from latency.",
+)
+@click.option(
+    "--retries",
+    type=int,
+    default=1,
+    show_default=True,
+    help="Number of times to retry failed jobs.",
+)
 @click.argument("snakemake_args", nargs=-1, type=click.UNPROCESSED)
 def run_workflow(
-    workflow, working_dir, config_file, jobs, max_mem, profile, dryrun, snakemake_args
+    workflow,
+    working_dir,
+    config_file,
+    jobs,
+    cores,
+    local_cores,
+    max_mem,
+    profile,
+    cluster_type,
+    dryrun,
+    rerun_triggers,
+    nolock,
+    show_failed_logs,
+    scheduler,
+    printshellcmds,
+    debug_dag,
+    verbose,
+    keep_incomplete,
+    keep_going,
+    rerun_incomplete,
+    sdm,
+    singularity_args,
+    latency_wait,
+    retries,
+    snakemake_args,
 ):
     """Runs the naive ATLAS pipline
     
@@ -160,8 +303,6 @@ def run_workflow(
     Needs a config-file and expects to find a sample table in the working-directory. Both can be generated with 'atlas init'
     
     Most snakemake arguments can be appended to the command for more info see 'snakemake --help'
-    
-    For more details, see: https://metagenome-atlas.readthedocs.io
     
     \b
     # OPTIONS:
@@ -177,6 +318,15 @@ def run_workflow(
     
     print_logo()
     logger.info("STARTING WORKFLOW!")
+
+    if cluster_type:
+        if profile is None:
+            profile = cluster_type + '_config'
+        core_str = " --local-cores {} --jobs {} ".format(
+            local_cores, jobs
+        )
+    else:
+        core_str = " --cores {} ".format(cores)
 
     if config_file is None:
         config_file = os.path.join(working_dir, "config.yaml")
@@ -198,32 +348,82 @@ def run_workflow(
 
     validate_config(config_file, workflow)
 
-    conf = load_configfile(config_file)
-
-    db_dir = conf["database_dir"]
+    # Helper to generate presence-only flags
+    def get_flag(val, name):
+        return f" --{name} " if val else ""
 
     cmd = (
-        "snakemake --snakefile {snakefile} --directory {working_dir} "
-        " --rerun-triggers mtime "
-        "{jobs} --rerun-incomplete "
-        "--configfile '{config_file}' --nolock "
-        " --show-failed-logs "
-        " {profile} --use-conda {conda_prefix} {dryrun} "
-        " {max_mem_string} "
-        " --scheduler greedy "
+        "snakemake "
+
+        # Snakemake setup
+        " --snakefile '{snakefile}' "
+        " --configfile '{config_file}' "
+        " --directory '{working_dir}' "
+        " {profile} "
         " {target_rule} "
+        
+        # Snakemake run behavior params
+        " --rerun-triggers {rerun_triggers} "
+        " {nolock} "
+        " --scheduler {scheduler} "
+        " {keep_going} "
+        " {rerun_incomplete} "
+        " {keep_incomplete} "
+        " --latency-wait {latency} "
+        " --retries {retries} "
+        
+        # Logging
+        " {printshellcmds} "
+        " {show_failed_logs} "
+        " {verbose} "
+        " {debug_dag} "
+
+        # Env setup
+        " --software-deployment-method {sdm} "
+        " --singularity-args '{sing_args}' "
+
+        # Resource limits
+        " {core_str} "
+        " {max_mem_string} "
+
+        # Extra params & dryrun
         " {args} "
+        " {dryrun} "
     ).format(
+        # Snakemake setup
         snakefile=get_snakefile(),
-        working_dir=working_dir,
-        jobs="--jobs {}".format(jobs) if jobs is not None else "",
         config_file=config_file,
+        working_dir=working_dir,
         profile="" if (profile is None) else "--profile {}".format(profile),
-        dryrun="--dryrun" if dryrun else "",
-        args=" ".join(snakemake_args),
         target_rule=workflow if workflow != "None" else "",
-        conda_prefix="--conda-prefix " + os.path.join(db_dir, "conda_envs"),
+
+        # Snakemake run behavior params
+        rerun_triggers=rerun_triggers,
+        nolock=get_flag(nolock, "nolock"),
+        scheduler=scheduler,
+        keep_going=get_flag(keep_going, "keep-going"),
+        rerun_incomplete=get_flag(rerun_incomplete, "rerun-incomplete"),
+        keep_incomplete=get_flag(keep_incomplete, "keep-incomplete"),
+        latency=latency_wait,
+        retries=retries,
+
+        # Logging
+        printshellcmds=get_flag(printshellcmds, "printshellcmds"),
+        show_failed_logs=get_flag(show_failed_logs, "show-failed-logs"),
+        verbose=get_flag(verbose, "verbose"),
+        debug_dag=get_flag(debug_dag, "debug-dag"),
+        
+        # Env setup
+        sdm=" ".join(sdm),
+        sing_args=singularity_args,
+
+        # Resource limits
+        core_str=f"{core_str}",
         max_mem_string=handle_max_mem(max_mem, profile),
+
+        # Extra params & dryrun
+        args=" ".join(snakemake_args),
+        dryrun="--dryrun" if dryrun else "",
     )
     logger.info("Executing: %s" % cmd)
     try:

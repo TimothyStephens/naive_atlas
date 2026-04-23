@@ -27,9 +27,9 @@ from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEA
 
 
 # minimum required snakemake version
-min_version("6.1")
+min_version("8.5")
 
-
+container: "docker:mambaorg/micromamba:2.5.0-cuda11.8.0-ubuntu22.04"
 containerized: "docker://timothystephens/naive_atlas-envs:latest"
 
 wildcard_constraints:
@@ -120,7 +120,7 @@ rule download:
 ## ---- ##
 rule qc:
     input:
-        expand("{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
+        expand("samples/{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
         read_counts="stats/read_counts.tsv",
         read_length_stats=(
             ["stats/insert_stats.tsv", "stats/read_length_stats.tsv"]
@@ -136,15 +136,15 @@ rule qc:
 rule assembly_one_sample:
     input:
         get_assembly,
-        "{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
-        "{sample}/assembly/contig_stats/final_contig_stats.txt",
+        "samples/{sample}/assembly/contig_stats/postfilter_coverage_stats.txt",
+        "samples/{sample}/assembly/contig_stats/final_contig_stats.txt",
     output:
-        touch("{sample}/finished_assembly"),
+        touch("samples/{sample}/finished_assembly"),
 
 rule assembly:
     input:
         "finished_QC",
-        expand("{sample}/finished_assembly", sample=SAMPLES),
+        expand("samples/{sample}/finished_assembly", sample=SAMPLES),
         "reports/assembly_report.html",
     output:
         touch("finished_assembly"),

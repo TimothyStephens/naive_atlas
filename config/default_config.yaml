@@ -1,15 +1,15 @@
-###################################################################
-####                 _______   _                    _____      ####
-####         /\     |__   __| | |          /\      / ____|     ####
-####        /  \       | |    | |         /  \    | (___       ####
-####       / /\ \      | |    | |        / /\ \    \___ \      ####
-####      / ____ \     | |    | |____   / ____ \   ____) |     ####
-####     /_/    \_\    |_|    |______| /_/    \_\ |_____/      ####
-####                                                           ####
-###################################################################
-
-#  For more details about the config values see:
-#  https://metagenome-atlas.rtfd.io
+#==========================================================================================
+#
+#                    ..
+#      _ __    __ _  _   _   _   ___     █████╗ ████████╗██╗      █████╗ ███████╗
+#     | '_ \  / _` || | | | | | / _ \   ██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
+#     | | | | |(_| || | | |_| | | __/   ███████║   ██║   ██║     ███████║███████╗
+#     |_| |_| \__,_||_|  \___/  \___|   ██╔══██║   ██║   ██║     ██╔══██║╚════██║
+#                                       ██║  ██║   ██║   ███████╗██║  ██║███████║
+#                                       ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝
+#
+#
+#==========================================================================================
 
 
 
@@ -29,27 +29,16 @@ partition_ranges:
   small: 64000
   large: 512000
 
+# Default resources for simple or low resource jobs (not requiring dynamic scaling)
+simple_job_mem_mb: 5000
+simple_job_threads: 8
+simple_job_time_min: 1440 # 24 hr
+
 # Resources for rules requiring dynamic scaling (i.e., QC or assembly jobs)
 dynamic_threads: &dynamic_default_threads 24
 dynamic_time_min: &dynamic_default_time_min 4320 # 72 hr
 
 resources:
-  # Setup and Local tasks
-  localrule:
-    base_mem_mb: 5000
-    scaling_factor: 0.0
-    threads: 2
-    time_min: 1440 # 24 hrs
-  download:
-    base_mem_mb: 20000
-    scaling_factor: 0.0
-    threads: 2
-    time_min: 4320
-  sra:
-    base_mem_mb: 4000
-    scaling_factor: 0.5
-    threads: 8
-    time_min: 2880
   # qc.smk
   initialize_qc:
     base_mem_mb: 2000
@@ -138,34 +127,49 @@ resources:
     scaling_factor: 0.1
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-  predict_genes:
-    base_mem_mb: 4000
-    scaling_factor: 0.2
-    threads: *dynamic_default_threads
-    time_min: *dynamic_default_time_min
+
+  # binning.smk
   binning:
     base_mem_mb: 4000
     scaling_factor: 2.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
+
+  # download.smk
+  download:
+    base_mem_mb: 20000
+    scaling_factor: 0.0
+    threads: 2
+    time_min: *dynamic_default_time_min
+
+  # gene_prediction.smk
+  predict_genes:
+    base_mem_mb: 4000
+    scaling_factor: 0.2
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+
+  # gene_annotation.smk and genome_annotation.smk
   annotation:
     base_mem_mb: 60000
     scaling_factor: 4.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-  # strains.smk
-  instrain_profile:
-    base_mem_mb: 16000
-    scaling_factor: 2.0
-    threads: *dynamic_default_threads
-    time_min: *dynamic_default_time_min
-  instrain_compare:
-    base_mem_mb: 32000
-    scaling_factor: 2.0
-    threads: *dynamic_default_threads
-    time_min: *dynamic_default_time_min
+
+  # All local rules ('touch' or combine rules - run on main node if using SLURM/etc.)
+  localrule:
+    base_mem_mb: 5000
+    scaling_factor: 0.0
+    threads: 1
+    time_min: 1440 # 24 hrs
 
 
+
+
+
+########################
+# Paths to reference genomes and databases
+########################
 # directory where databases are downloaded with 'atlas download'
 database_dir: 
   /user/project/dir/databases

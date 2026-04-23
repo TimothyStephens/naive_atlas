@@ -57,33 +57,3 @@ def get_resource(wildcards, input, attempt, rule_key, resource_name):
         return sorted_ranges[-1][0]
 
     return 0
-
-def get_all_resources(wildcards, input, attempt, rule_key, java_mem_factor=None, mem_gb=False):
-    """
-    Dynamically expands resources for a rule.
-    Returns a dictionary of all standard and scheduler-specific resources.
-    """
-    mem_mb = get_resource(wildcards, input, attempt, rule_key, "mem_mb")
-    
-    res = {
-        "mem_mb": mem_mb,
-        "threads": get_resource(wildcards, input, attempt, rule_key, "threads"),
-        "time_min": get_resource(wildcards, input, attempt, rule_key, "time_min")
-    }
-
-    if java_mem_factor is not None:
-        res["java_mem"] = int(mem_mb * java_mem_factor)
-        
-    if mem_gb:
-        res["mem"] = int(mem_mb / 1024)
-
-    # Scheduler-specific dynamic mapping
-    scheduler = config.get("scheduler", "slurm")
-    partition = get_resource(wildcards, input, attempt, rule_key, "partition")
-    if partition:
-        res[f"{scheduler}_partition"] = partition
-    account = get_resource(wildcards, input, attempt, rule_key, "account")
-    if account:
-        res[f"{scheduler}_account"] = account
-
-    return res

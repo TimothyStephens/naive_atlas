@@ -110,7 +110,9 @@ rule gene_prediction_bacteria:
         "../envs/gene_prediction_bacteria.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -147,7 +149,9 @@ rule gene_prediction_archaea:
         "../envs/gene_prediction_archaea.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -181,7 +185,9 @@ rule gene_prediction_virus:
         "../envs/gene_prediction_virus.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -216,7 +222,9 @@ rule gene_prediction_plasmid:
         "../envs/gene_prediction_plasmid.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -270,7 +278,9 @@ rule gene_prediction_eukaryote:
         "../envs/gene_prediction_eukaryotic.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -366,6 +376,10 @@ def get_all_output_predicted_genes(wildcards):
     genomes.extend(get_genomes_for_gene_prediction("plasmid"))
     return(genomes)
 
+
+localrules:
+    move_genome_predicted_genes
+
 checkpoint move_genome_predicted_genes:
     input:
         bacteria=get_bacteria_predicted_genes,
@@ -389,9 +403,11 @@ checkpoint move_genome_predicted_genes:
         "logs/gene_prediction/genomes/move_predicted_genes.txt",
     conda:
         "../envs/python.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         """
         (
@@ -452,7 +468,9 @@ rule gene_prediction_unbinned:
         "../envs/prodigal.yaml"
     threads: 1
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "predict_genes", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -479,6 +497,9 @@ def get_all_output_predicted_genes_unbinned(wildcards):
     genomes = get_all_unbinned(wildcards)
     return(genomes)
 
+localrules:
+    move_unbinned_predicted_genes
+
 checkpoint move_unbinned_predicted_genes:
     input:
         unbinned=get_all_unbinned_genes,
@@ -494,9 +515,11 @@ checkpoint move_unbinned_predicted_genes:
         "logs/gene_prediction/unbinned/move_predicted_genes.txt",
     conda:
         "../envs/python.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "predict_genes"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         """
         (

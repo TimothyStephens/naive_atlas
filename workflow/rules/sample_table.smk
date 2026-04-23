@@ -190,4 +190,4 @@ def get_assembly(wildcards):
     except FileNotInSampleTableException:
         # return files as named by atlas pipeline
 
-        return "{sample}/assembly/{sample}.fasta".format(sample=wildcards.sample)
+        return "samples/{sample}/assembly/{sample}.fasta".format(sample=wildcards.sample)

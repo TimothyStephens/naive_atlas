@@ -114,7 +114,10 @@ rule initialize_qc_PE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "initialize_qc", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "initialize_qc", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "initialize_qc", "mem_mb") * 0.85),
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -150,7 +153,10 @@ rule initialize_qc_SE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "initialize_qc", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "initialize_qc", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "initialize_qc", "mem_mb") * 0.85),
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -186,7 +192,10 @@ rule initialize_qc_LR:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "initialize_qc", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "initialize_qc", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "initialize_qc", "mem_mb") * 0.85),
     shell:
         "reformat.sh "
         " {params.inputs} "
@@ -262,7 +271,10 @@ rule deduplicate_reads_PE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "deduplicate_reads", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "deduplicate_reads", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "deduplicate_reads", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "deduplicate_reads", "mem_mb") * 0.85),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -296,7 +308,10 @@ rule deduplicate_reads_SE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "deduplicate_reads", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "deduplicate_reads", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "deduplicate_reads", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "deduplicate_reads", "mem_mb") * 0.85),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -330,7 +345,10 @@ rule deduplicate_reads_LR:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "deduplicate_reads", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "deduplicate_reads", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "deduplicate_reads", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "deduplicate_reads", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "deduplicate_reads", "mem_mb") * 0.85),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -440,7 +458,10 @@ rule apply_quality_filter_PE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "apply_quality_filter", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "apply_quality_filter", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "apply_quality_filter", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "apply_quality_filter", "mem_mb") * 0.85),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -493,7 +514,10 @@ rule apply_quality_filter_SE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "apply_quality_filter", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "apply_quality_filter", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "apply_quality_filter", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "apply_quality_filter", "mem_mb") * 0.85),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -546,7 +570,10 @@ rule apply_quality_filter_LR:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "apply_quality_filter", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "apply_quality_filter", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "apply_quality_filter", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "apply_quality_filter", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "apply_quality_filter", "mem_mb") * 0.85),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -582,7 +609,10 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "build_decontamination_db", "threads")
         resources:
-            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "build_decontamination_db", java_mem_factor=0.85))
+            mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "build_decontamination_db", "mem_mb"),
+            partition=lambda wildcards, input, attempt: get_queue(input, attempt, "build_decontamination_db", "partition"),
+            account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "build_decontamination_db", "account"),
+            java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "build_decontamination_db", "mem_mb") * 0.85),
         shell:
             "bbsplit.sh"
             " -Xmx{resources.java_mem}M "
@@ -696,7 +726,10 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
         resources:
-            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85))
+            mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_decontamination", "mem_mb"),
+            partition=lambda wildcards, input, attempt: get_queue(input, attempt, "run_decontamination", "partition"),
+            account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_decontamination", "account"),
+            java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "run_decontamination", "mem_mb") * 0.85),
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -740,7 +773,10 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
         resources:
-            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85))
+            mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_decontamination", "mem_mb"),
+            partition=lambda wildcards, input, attempt: get_queue(input, attempt, "run_decontamination", "partition"),
+            account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_decontamination", "account"),
+            java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "run_decontamination", "mem_mb") * 0.85),
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -785,7 +821,10 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
         resources:
-            unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "run_decontamination", java_mem_factor=0.85))
+            mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_decontamination", "mem_mb"),
+            partition=lambda wildcards, input, attempt: get_queue(input, attempt, "run_decontamination", "partition"),
+            account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_decontamination", "account"),
+            java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "run_decontamination", "mem_mb") * 0.85),
         shell:
             """
             ({params.command}) > {log} 2>&1
@@ -819,7 +858,9 @@ rule qcreads_PE:
         "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_PE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -841,7 +882,9 @@ rule qcreads_SE:
         "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_SE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -863,7 +906,9 @@ rule qcreads_LR:
         "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_LR.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import shutil
         for i, f in enumerate(input.reads):
@@ -895,7 +940,9 @@ rule copy_reads_PE:
         "logs/samples/{sample}/sequence_quality_control/copy_reads_PE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import shutil, os
         import pandas as pd
@@ -918,7 +965,9 @@ rule copy_reads_SE:
         "logs/samples/{sample}/sequence_quality_control/copy_reads_SE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import shutil, os
         import pandas as pd
@@ -941,7 +990,9 @@ rule copy_reads_LR:
         "logs/samples/{sample}/sequence_quality_control/copy_reads_LR.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import shutil, os
         import pandas as pd
@@ -991,7 +1042,10 @@ rule get_read_counts:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "get_read_counts", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_counts", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "get_read_counts", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "get_read_counts", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "get_read_counts", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "get_read_counts", "mem_mb") * 0.85),
     priority: 30
     script:
         "../scripts/get_read_counts.py"
@@ -1014,7 +1068,9 @@ rule write_read_counts:
         "logs/samples/{sample}/sequence_quality_control/read_stats/write_read_counts.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         from utils.io import pandas_concat
         
@@ -1039,7 +1095,9 @@ rule combine_read_counts:
         "logs/QC/combine_read_counts.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         from utils.io import pandas_concat
         
@@ -1073,7 +1131,10 @@ rule get_read_length_hist:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "get_read_length_hist", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "get_read_length_hist", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "get_read_length_hist", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "get_read_length_hist", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "get_read_length_hist", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "get_read_length_hist", "mem_mb") * 0.85),
     script:
         "../scripts/get_read_length.py"
 
@@ -1097,7 +1158,9 @@ rule combine_read_length_hist:
         "logs/QC/combine_read_length_hist.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import pandas as pd
         import os
@@ -1133,7 +1196,9 @@ rule combine_insert_hist:
         "logs/QC/combine_insert_hist.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         import pandas as pd
         import os
@@ -1184,7 +1249,9 @@ rule build_qc_report:
         "../envs/report.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     script:
         "../report/qc_report.py"
 
@@ -1205,4 +1272,6 @@ rule finalize_sample_qc:
         "logs/samples/{sample}/sequence_quality_control/finalize_sample_qc.log",
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "initialize_qc", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "initialize_qc", "account"),

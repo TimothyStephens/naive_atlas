@@ -7,7 +7,7 @@ rule instrain_profile:
         scaffold_to_genome="genomes/clustering/contig2genome.tsv",
     output:
         directory("Intermediate/strains/{sample}"),
-    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "instrain_profile", "threads")
     params:
         extra=config.get("instrain_profile_extra", ""),
     log:
@@ -17,7 +17,9 @@ rule instrain_profile:
     benchmark:
         "logs/benchmarks/genomes/strains/profile/{sample}.tsv"
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_profile"))
+        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "instrain_profile", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "account"),
     shell:
         #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
         #" ; "
@@ -38,7 +40,7 @@ rule instrain_compare:
         scaffold_to_genome="genomes/clustering/contig2genome.tsv",
     output:
         directory("genomes/strains/comparison"),
-    threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "instrain_compare", "threads")
     params:
         extra=config.get("instrain_compare_extra", ""),
     log:
@@ -48,7 +50,9 @@ rule instrain_compare:
     benchmark:
         "logs/benchmarks/genomes/strains/compare.tsv"
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "instrain_compare"))
+        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "instrain_compare", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "account"),
     shell:
         "inStrain compare "
         " --input {input.profiles} "

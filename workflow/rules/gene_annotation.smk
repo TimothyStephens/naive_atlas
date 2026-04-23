@@ -25,7 +25,9 @@ rule gene_eggNOG_homology_search:
         prefix=lambda wc, output: output[0].replace(".emapper.seed_orthologs", ""),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -54,7 +56,9 @@ rule gene_eggNOG_annotation:
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -118,7 +122,9 @@ rule combine_gene_egg_nog_annotations:
         "logs/genomes/annotations/{dataset}/genes/eggNOG/combine.log",
     threads: 1
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     run:
         try:
             import pandas as pd
@@ -168,7 +174,9 @@ rule gene_DRAM_annotation:
         genes=temp("Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/genes.faa"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
     params:
@@ -220,9 +228,11 @@ rule combine_gene_dram_genecatalog_annotations:
         get_all_gene_dram,
     output:
         directory("genomes/annotations/{dataset}/genes/dram"),
-    threads: 1
+    threads: lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
     script:
@@ -251,7 +261,9 @@ rule gene_mmseqs2_annotation:
         results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/mmseqs2.yaml"
     log:

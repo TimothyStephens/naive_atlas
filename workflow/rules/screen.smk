@@ -10,7 +10,10 @@ rule generate_sketch:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "generate_sketch", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "generate_sketch", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "generate_sketch", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "generate_sketch", "mem_mb") * 0.85),
     shell:
         "bbsketch.sh "
         "in={input[0]}"
@@ -35,7 +38,10 @@ rule compare_sketch:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "initialize_qc", java_mem_factor=0.85))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "compare_sketch", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "compare_sketch", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "compare_sketch", "account"),
+        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "compare_sketch", "mem_mb") * 0.85),
     shell:
         "comparesketch.sh alltoall "
         " format=3 out={output} "

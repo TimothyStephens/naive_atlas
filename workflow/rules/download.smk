@@ -75,7 +75,9 @@ rule all_downloads:
         touch(f"{DBDIR}/finished")
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
 rule download_atlas_files:
@@ -87,7 +89,9 @@ rule download_atlas_files:
         "logs/download/download_atlas_file_{filename}.log",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     benchmark:
         "logs/benchmarks/download/download_atlas_file_{filename}.tsv"
     run:
@@ -112,7 +116,9 @@ rule checkm2_download_db:
         "../envs/checkm2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/checkm2.log",
     benchmark:
@@ -130,7 +136,9 @@ rule mdmcleaner_download_db:
         "logs/download/mdmcleaner_database.log",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     benchmark:
         "logs/benchmarks/download/mdmcleaner_database.tsv"
     container:
@@ -148,7 +156,9 @@ rule busco_download_db:
         dbdir=directory(f"{DBDIR}/busco_lineages"),
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/busco_lineages.log",
     benchmark:
@@ -170,7 +180,9 @@ rule genomad_download_db:
         db_version="v1.2",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/genomad_lineages.log",
     benchmark:
@@ -204,7 +216,9 @@ rule download_eggNOG_files:
         eggnog_dir=f"{EGGNOG_DIR}",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/download_eggNOG_files.log",
     benchmark:
@@ -225,7 +239,9 @@ rule dram_download:
         config=f"{DBDIR}/DRAM/DRAM.config",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/dram/download_dram.log",
     benchmark:
@@ -250,7 +266,9 @@ rule gtdb_download_db:
         gtdb_data_url=f"{GTDB_DATA_URL}",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/gtdbtk.log",
     benchmark:
@@ -272,7 +290,9 @@ rule gtdb_extract:
         "../envs/gtdbtk.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/gtdbtk_untar.log",
     benchmark:
@@ -291,7 +311,9 @@ rule mmseqs2_download:
         mmseqs2_database=config["mmseqs2_database"],
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/download_MMseqs2_database.log",
     benchmark:
@@ -324,7 +346,9 @@ rule microeukaryotic_mmseqs2_db:
         "logs/benchmarks/download/microeukaryotic_mmseqs2.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     conda:
         "../envs/MicroEuk.yaml"
     shell:
@@ -340,7 +364,9 @@ rule bakta_download_db:
         wd=f"{DBDIR}/bakta",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "download"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "download", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
     log:
         "logs/download/bakta.log",
     benchmark:

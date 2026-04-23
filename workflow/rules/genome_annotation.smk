@@ -23,7 +23,9 @@ rule copy_prokaryotic_genomes:
         "logs/genomes/annotations/genomes/copy_prokaryotic_genomes.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         "mkdir -p {output} && cp {input}/MAG_prokaryotic* {output}"
 
@@ -37,7 +39,9 @@ rule identify:
         directory(f"{gtdb_dir}/identify"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -62,7 +66,9 @@ checkpoint align:
         directory(f"{gtdb_dir}/align"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -84,7 +90,10 @@ rule classify:
         directory(f"{gtdb_dir}/classify"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
+        tmpdir=config.get("tmpdir", "/tmp"),
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -116,7 +125,9 @@ rule combine_taxonomy:
         "logs/genomes/annotations/genomes/taxonomy/gtdbtk/combine.txt",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     script:
         "../scripts/combine_taxonomy.py"
 
@@ -131,7 +142,10 @@ rule build_tree:
         "logs/genomes/annotations/genomes/tree/{msa}.err",
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
+        tmpdir=config.get("tmpdir", "/tmp"),
     params:
         outdir=lambda wc, output: Path(output[0]).parent,
     conda:
@@ -160,7 +174,9 @@ rule root_tree:
         "../envs/tree.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     log:
         "logs/genomes/annotations/genomes/tree/root_tree_{msa}.log",
     script:
@@ -185,7 +201,9 @@ rule all_gtdb_trees:
         touch("genomes/annotations/genomes/tree/finished_gtdb_trees"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
 
@@ -217,7 +235,9 @@ rule genome_DRAM_annotate:
         outdir=directory("genomes/annotations/{dataset}/dram/intermediate_files/{genome}"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
     params:
@@ -259,7 +279,9 @@ rule concat_annotations:
         "genomes/annotations/{dataset}/dram/annotations.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         from utils import io
 
@@ -281,7 +303,9 @@ rule genome_DRAM_destill:
         outdir=directory("genomes/annotations/{dataset}/dram/distil"),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
     log:
@@ -302,7 +326,9 @@ rule get_all_genome_modules:
         "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/dram.yaml"
     log:
@@ -322,7 +348,9 @@ rule dram:
         touch("genomes/annotations/{dataset}/dram/finished"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
 
@@ -362,7 +390,9 @@ rule genome_metaeuk_annotation:
         mag_id=lambda wildcards: wildcards.genome,
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/metaeuk.yaml"
     log:
@@ -468,7 +498,9 @@ rule combine_genome_metaeuk:
         genomes=get_all_genome_metaeuk,
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     log:
         "logs/genomes/annotations/{dataset}/metaeuk/combine.log",
     script:
@@ -487,7 +519,9 @@ rule all_genome_metaeuk:
         touch("genomes/annotations/{dataset}/metaeuk/finished"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
 
 
 
@@ -516,7 +550,9 @@ rule genome_mmseqs2_easy_taxonomy:
         mem=lambda wildcards, resources: int(resources.mem_mb * 0.8 / 1024),
     threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "annotation"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "annotation", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "annotation", "account"),
     conda:
         "../envs/mmseqs2.yaml"
     log:
@@ -560,4 +596,6 @@ rule all_genome_mmseqs2_easy_taxonomy:
         touch("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        unpack(lambda wc, input, attempt: get_all_resources(wc, input, attempt, "localrule"))
+        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        partition=lambda wildcards, input, attempt: get_queue(input, attempt, "localrule", "partition"),
+        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
