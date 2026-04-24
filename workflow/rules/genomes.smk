@@ -51,9 +51,10 @@ rule get_prokaryotic_bins:
         dir="Binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_prokaryotic_bins.log",
     run:
@@ -120,9 +121,10 @@ rule get_eukaryotic_bins:
         dir="Binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_eukaryotic_bins.log",
     run:
@@ -192,9 +194,10 @@ rule get_viral_bins:
         dir="Binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_viral_bins.log",
     run:
@@ -257,9 +260,10 @@ rule get_plasmid_bins:
         dir="Binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_plasmid_bins.log",
     run:
@@ -310,9 +314,10 @@ checkpoint get_all:
         "logs/Binning/raw_bins/get_all.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     output:
         touch("Binning/raw_bins/all.done"),
 
@@ -336,9 +341,10 @@ rule run_skani:
         "logs/Binning/dereplication/{lineage}.skani_calculation.log",
     threads: lambda wc: get_resource(wc, None, 1, "run_skani", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_skani", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_skani", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "account"),
     params:
         lineage="{lineage}",
         min_af=config["genome_dereplication"]["overlap"] * 100,
@@ -372,9 +378,10 @@ rule skani_2_parquet:
         "Binning/raw_bins/{lineage}.genome_similarities.parquet",
     threads: lambda wc: get_resource(wc, None, 1, "skani_2_parquet", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "skani_2_parquet", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "skani_2_parquet", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "account"),
     log:
         "logs/Binning/dereplication/{lineage}.skani_2_parquet.log",
     run:
@@ -423,9 +430,10 @@ rule cluster_species:
         "../envs/species_clustering.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "cluster_species", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "cluster_species", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "cluster_species", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "account"),
     log:
         "logs/Binning/dereplication/{lineage}.species_clustering.log",
     output:
@@ -443,11 +451,12 @@ rule build_bin_report:
         report="reports/bin_report_{lineage}.html",
     params:
         script="../report/bin_report_{lineage}.py"
-    threads: lambda wc: get_resource(wc, None, 1, "build_bin_report", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "build_bin_report", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "build_bin_report", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "build_bin_report", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     conda:
         "../envs/report.yaml"
     log:
@@ -488,9 +497,10 @@ rule rename_genomes:
         prefix="MAG_{lineage}_",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/clustering/{lineage}.rename_genomes.log",
     script:
@@ -507,9 +517,10 @@ rule rename_unbinned:
         prefix="Unbinned_{sample}",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/clustering/{sample}.rename_unbinned.log",
     script:
@@ -538,9 +549,10 @@ rule move_genomes:
         dir=directory("genomes/genomes"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/move_mags.log",
     script:
@@ -556,10 +568,13 @@ rule move_unbinned:
         dir=directory("genomes/unbinned"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/move_unbinned.log",
     script:
         "../scripts/move_unbinned.sh"
+
+

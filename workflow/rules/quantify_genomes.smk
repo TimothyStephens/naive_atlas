@@ -73,9 +73,10 @@ rule get_contig2genomes:
         g2c="genomes/clustering/genome2contig.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     run:
         from glob import glob
 
@@ -114,9 +115,10 @@ rule concat_genomes:
         ext="fa",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
         "cat {input}/*{params.ext} > {output}"
 
@@ -133,9 +135,10 @@ rule index_genomes:
         index_size="12G",
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
     wrapper:
         "v3.13.4/bio/minimap2/index"
 
@@ -147,8 +150,8 @@ rule align_reads_to_genomes:
     output:
         "genomes/alignments/bams/{sample}.bam",
     params:
-        command = lambda wildcards, input, output, threads, resources: align_reads_command(
-            wildcards, input, output, threads, resources
+        command = lambda wc, input, output, threads, resources: align_reads_command(
+            wc, input, output, threads, resources
         ),
     log:
         "logs/genomes/alignments/{sample}_map.log",
@@ -156,9 +159,10 @@ rule align_reads_to_genomes:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -183,9 +187,10 @@ rule move_old_bam:
         "logs/genomes/alignments/{sample}_move.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
         "mv {input} {output} > {log}"
 
@@ -199,9 +204,10 @@ rule mapping_stats_genomes:
         "logs/genomes/alignments/{sample}_stats.log",
     threads: lambda wc: get_resource(wc, None, 1, "mapping_stats_genomes", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping_stats_genomes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping_stats_genomes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping_stats_genomes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_stats_genomes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_stats_genomes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_stats_genomes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_stats_genomes", "account"),
     wrapper:
         "v1.19.0/bio/samtools/stats"
 
@@ -215,9 +221,10 @@ rule multiqc_mapping_genome:
         "logs/genomes/alignment/multiqc.log",
     threads: lambda wc: get_resource(wc, None, 1, "multiqc_mapping_genome", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "multiqc_mapping_genome", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "multiqc_mapping_genome", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "multiqc_mapping_genome", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "multiqc_mapping_genome", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "multiqc_mapping_genome", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "multiqc_mapping_genome", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "multiqc_mapping_genome", "account"),
     wrapper:
         "v3.3.6/bio/multiqc"
 
@@ -237,9 +244,10 @@ rule mapping_coverm_coverage:
         coverm="logs/coverage/coverm.log",
     threads: lambda wc: get_resource(wc, None, 1, "mapping_coverm_coverage", "threads")
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping_coverm_coverage", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping_coverm_coverage", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping_coverm_coverage", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_coverm_coverage", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_coverm_coverage", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_coverm_coverage", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_coverm_coverage", "account"),
     conda:
         "../envs/coverm.yaml"
     shell:
@@ -262,3 +270,5 @@ rule mapping_coverm_coverage:
         " > {output.read_stats}"
         ")"
         " 1>{log.general} 2>&1"
+
+

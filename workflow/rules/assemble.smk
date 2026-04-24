@@ -90,10 +90,11 @@ rule normalize_reads_PE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "normalize_reads", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -135,10 +136,11 @@ rule normalize_reads_SE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "normalize_reads", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -180,10 +182,11 @@ rule normalize_reads_LR:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "normalize_reads", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -265,10 +268,11 @@ rule error_correction_PE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "error_correction", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -307,10 +311,11 @@ rule error_correction_SE:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "error_correction", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -349,10 +354,11 @@ rule error_correction_LR:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "error_correction", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -578,8 +584,8 @@ rule run_assembly:
     output:
         "samples/{sample}/assembly/assembly/{sample}_raw_contigs.fasta"
     params:
-        command = lambda wildcards, input, output, threads, resources: assembly_command(
-            wildcards, input, output, threads, resources
+        command = lambda wc, input, output, threads, resources: assembly_command(
+            wc, input, output, threads, resources
         ),
     log:
         "logs/samples/{sample}/assembly.log",
@@ -589,9 +595,10 @@ rule run_assembly:
         "../envs/assembly.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "run_assembly", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -606,9 +613,10 @@ rule rename_contigs:
         mapping_table="samples/{sample}/assembly/assembly/old2new_contig_names.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "rename_contigs", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "account"),
     log:
         "logs/samples/{sample}/assembly/post_process/rename_and_filter_size.log",
     params:
@@ -681,8 +689,8 @@ rule align_reads_to_prefilter_contigs:
     output:
         bam=temp("samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
     params:
-        command = lambda wildcards, input, output, threads, resources: align_reads_command(
-            wildcards, input, output, threads, resources
+        command = lambda wc, input, output, threads, resources: align_reads_command(
+            wc, input, output, threads, resources
         ),
     benchmark:
         "benchmarks/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
@@ -692,9 +700,10 @@ rule align_reads_to_prefilter_contigs:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
     shell:
         """
         ({params.command}) >{log} 2>&1
@@ -718,10 +727,11 @@ rule pileup_prefilter:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "pileup", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "account"),
     shell:
         "pileup.sh ref={input.fasta} in={input.bam} "
         " threads={threads} "
@@ -753,10 +763,11 @@ rule filter_by_coverage:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "filter_by_coverage", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "filter_by_coverage", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "account"),
     shell:
         """filterbycoverage.sh in={input.fasta} \
         cov={input.covstats} \
@@ -781,6 +792,12 @@ rule finalize_contigs:
         "samples/{sample}/assembly/{sample}.fasta",
     log:
         "logs/samples/{sample}/assembly/finalize_contigs.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources:
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
         "cp {input} {output} > {log} 2>&1"
 
@@ -792,12 +809,13 @@ rule calculate_contigs_stats:
         "samples/{sample}/assembly/contig_stats/final_contig_stats.txt",
     conda:
         "../envs/required_packages.yaml"
-    threads: config["resources"]["calculate_contigs_stats"]["threads"]
+    threads: lambda wc: get_resource(wc, None, 1, "calculate_contigs_stats", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "calculate_contigs_stats", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "account"),
     log:
         "logs/samples/{sample}/assembly/post_process/contig_stats_final.log",
     benchmark:
@@ -814,8 +832,8 @@ rule align_reads_to_final_contigs:
     output:
         bam=temp("samples/{sample_contigs}/sequence_alignment/{sample}.bam"),
     params:
-        command = lambda wildcards, input, output, threads, resources: align_reads_command(
-            wildcards, input, output, threads, resources
+        command = lambda wc, input, output, threads, resources: align_reads_command(
+            wc, input, output, threads, resources
         ),
     benchmark:
         "benchmarks/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.txt",
@@ -825,9 +843,10 @@ rule align_reads_to_final_contigs:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -857,10 +876,11 @@ rule pileup_contigs_sample:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
-        java_mem=lambda wc, input, attempt: int(get_resource(wc, input, attempt, "pileup", "mem_mb") * 0.85),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
+        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "java_mem"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "account"),
     shell:
         "pileup.sh "
         " ref={input.fasta} "
@@ -890,9 +910,10 @@ rule samtools_stats_contigs_sample:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "samtools_stats_contigs_sample", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "account"),
     shell:
         "samtools stats "
         " {input.bam} "
@@ -911,9 +932,10 @@ rule create_bam_index:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "create_bam_index", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "account"),
     shell:
         "samtools index {input} > {log} 2>&1"
 
@@ -933,9 +955,10 @@ rule predict_genes:
         "benchmarks/samples/{sample}/prodigal.txt"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         prodigal -i {input} -o {output.gff} -d {output.fna} \
@@ -954,6 +977,12 @@ rule get_contigs_from_gene_names:
         tsv="samples/{sample}/annotation/predicted_genes/{sample}.tsv",
     log:
         "logs/samples/{sample}/annotation/predicted_genes/get_contigs_from_gene_names.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources:
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     run:
         header = [
             "gene_id",
@@ -1018,6 +1047,12 @@ rule combine_contig_stats:
         samples=SAMPLES,
     log:
         "logs/assembly/combine_contig_stats.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources:
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     script:
         "../scripts/combine_contig_stats.py"
 
@@ -1031,5 +1066,13 @@ rule build_assembly_report:
         "../envs/report.yaml"
     log:
         "logs/assembly/report.log",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    resources:
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     script:
         "../report/assembly_report.py"
+
+

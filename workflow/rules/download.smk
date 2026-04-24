@@ -75,9 +75,10 @@ rule all_downloads:
         touch(f"{DBDIR}/finished")
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
 
 
 rule download_atlas_files:
@@ -89,11 +90,12 @@ rule download_atlas_files:
         "logs/download/download_atlas_file_{filename}.log",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     benchmark:
-        "logs/benchmarks/download/download_atlas_file_{filename}.tsv"
+        "benchmarks/download/download_atlas_file_{filename}.tsv"
     run:
         shell(
             "wget -O {output} 'https://zenodo.org/record/{ZENODO_ARCHIVE}/files/{wildcards.filename}' "
@@ -116,16 +118,17 @@ rule checkm2_download_db:
         "../envs/checkm2.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/checkm2.log",
     benchmark:
-        "logs/benchmarks/download/checkm2.tsv"
+        "benchmarks/download/checkm2.tsv"
     shell:
         """
-        checkm2 database --download --path {output} &> {log}
+        checkm2 database --download --path {output} --no_write_json_db &> {log}
         """
 
 
@@ -136,11 +139,12 @@ rule mdmcleaner_download_db:
         "logs/download/mdmcleaner_database.log",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     benchmark:
-        "logs/benchmarks/download/mdmcleaner_database.tsv"
+        "benchmarks/download/mdmcleaner_database.tsv"
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv2",
     #conda:
@@ -156,13 +160,14 @@ rule busco_download_db:
         dbdir=directory(f"{DBDIR}/busco_lineages"),
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/busco_lineages.log",
     benchmark:
-        "logs/benchmarks/download/busco_lineages.tsv"
+        "benchmarks/download/busco_lineages.tsv"
     conda:
         "../envs/busco.yaml"
     shell:
@@ -180,13 +185,14 @@ rule genomad_download_db:
         db_version="v1.2",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/genomad_lineages.log",
     benchmark:
-        "logs/benchmarks/download/genomad_lineages.tsv"
+        "benchmarks/download/genomad_lineages.tsv"
     #conda:
     #    "../envs/genomad.yaml"
     container:
@@ -216,13 +222,14 @@ rule download_eggNOG_files:
         eggnog_dir=f"{EGGNOG_DIR}",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/download_eggNOG_files.log",
     benchmark:
-        "logs/benchmarks/download/download_eggNOG_files.tsv"
+        "benchmarks/download/download_eggNOG_files.tsv"
     #conda:
     #    "../envs/eggNOG.yaml"
     container:
@@ -239,13 +246,14 @@ rule dram_download:
         config=f"{DBDIR}/DRAM/DRAM.config",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/dram/download_dram.log",
     benchmark:
-        "logs/benchmarks/dram/download_dram.tsv"
+        "benchmarks/dram/download_dram.tsv"
     conda:
         "../envs/dram.yaml"
     shell:
@@ -266,13 +274,14 @@ rule gtdb_download_db:
         gtdb_data_url=f"{GTDB_DATA_URL}",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/gtdbtk.log",
     benchmark:
-        "logs/benchmarks/download/gtdbtk.tsv"
+        "benchmarks/download/gtdbtk.tsv"
     conda:
         "../envs/gtdbtk.yaml"
     shell:
@@ -290,13 +299,14 @@ rule gtdb_extract:
         "../envs/gtdbtk.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/gtdbtk_untar.log",
     benchmark:
-        "logs/benchmarks/download/gtdbtk_untar.tsv"
+        "benchmarks/download/gtdbtk_untar.tsv"
     shell:
         """
         tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 &> {log}
@@ -311,13 +321,14 @@ rule mmseqs2_download:
         mmseqs2_database=config["mmseqs2_database"],
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/download_MMseqs2_database.log",
     benchmark:
-        "logs/benchmarks/download/download_MetaEuk_database.tsv"
+        "benchmarks/download/download_MetaEuk_database.tsv"
     container:
         # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
         "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
@@ -343,12 +354,13 @@ rule microeukaryotic_mmseqs2_db:
     log:
         "logs/download/microeukaryotic_mmseqs2.log",
     benchmark:
-        "logs/benchmarks/download/microeukaryotic_mmseqs2.tsv"
+        "benchmarks/download/microeukaryotic_mmseqs2.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     conda:
         "../envs/MicroEuk.yaml"
     shell:
@@ -364,13 +376,14 @@ rule bakta_download_db:
         wd=f"{DBDIR}/bakta",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "download", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
         "logs/download/bakta.log",
     benchmark:
-        "logs/benchmarks/download/bakta.tsv"
+        "benchmarks/download/bakta.tsv"
     conda:
         "../envs/gene_prediction_bacteria.yaml"
     shell:

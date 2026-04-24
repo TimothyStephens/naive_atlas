@@ -1,6 +1,6 @@
 import os
 
-def get_resource(wildcards, input, attempt, rule_key, resource_name):
+def get_resource(wildcards, input, attempt, rule_key, resource_name, java_mem_ratio=0.85):
     """
     Generic resource calculator for threads, memory, time, and partition.
     """
@@ -32,6 +32,9 @@ def get_resource(wildcards, input, attempt, rule_key, resource_name):
     # 3. Return the specific resource requested
     if resource_name == "mem_mb":
         return mem_mb
+
+    if resource_name == "java_mem":
+        return int(mem_mb * java_mem_ratio)
 
     if resource_name == "threads":
         return res_cfg.get("threads", config.get("simple_job_threads", 1))

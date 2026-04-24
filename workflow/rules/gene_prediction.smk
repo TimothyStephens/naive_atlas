@@ -110,9 +110,10 @@ rule gene_prediction_bacteria:
         "../envs/gene_prediction_bacteria.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -149,9 +150,10 @@ rule gene_prediction_archaea:
         "../envs/gene_prediction_archaea.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -185,9 +187,10 @@ rule gene_prediction_virus:
         "../envs/gene_prediction_virus.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -222,9 +225,10 @@ rule gene_prediction_plasmid:
         "../envs/gene_prediction_plasmid.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -278,9 +282,10 @@ rule gene_prediction_eukaryote:
         "../envs/gene_prediction_eukaryotic.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -405,9 +410,10 @@ checkpoint move_genome_predicted_genes:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
         """
         (
@@ -468,9 +474,10 @@ rule gene_prediction_unbinned:
         "../envs/prodigal.yaml"
     threads: 1
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
     shell:
         """
         (
@@ -497,6 +504,8 @@ def get_all_output_predicted_genes_unbinned(wildcards):
     genomes = get_all_unbinned(wildcards)
     return(genomes)
 
+
+
 localrules:
     move_unbinned_predicted_genes
 
@@ -517,9 +526,10 @@ checkpoint move_unbinned_predicted_genes:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
         """
         (
@@ -532,3 +542,5 @@ checkpoint move_unbinned_predicted_genes:
         
         ) &> {log}
         """
+
+

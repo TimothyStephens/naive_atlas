@@ -18,9 +18,10 @@ rule prefetch:
         "logs/benchmarks/SRAdownload/prefetch/{sra_run}.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "prefetch", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "prefetch", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "prefetch", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "prefetch", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "prefetch", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "prefetch", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "prefetch", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "prefetch", "account"),
         internet_connection=1,
     conda:
         "../envs/sra.yaml"
@@ -56,9 +57,10 @@ rule extract_run:
         "logs/benchmarks/SRAdownload/fasterqdump/{sra_run}.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "extract_run", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "extract_run", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "extract_run", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "extract_run", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "extract_run", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "extract_run", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "extract_run", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "extract_run", "account"),
         tmpdir=config.get("tmpdir", "/tmp"),
     conda:
         "../envs/sra.yaml"
@@ -124,9 +126,10 @@ rule merge_runs_to_sample:
         ),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     run:
         from utils import io
 
@@ -145,6 +148,9 @@ rule download_sra:
         ),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb=lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+
+

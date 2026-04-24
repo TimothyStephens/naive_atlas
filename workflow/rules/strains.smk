@@ -17,9 +17,10 @@ rule instrain_profile:
     benchmark:
         "logs/benchmarks/genomes/strains/profile/{sample}.tsv"
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_profile", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "account"),
     shell:
         #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
         #" ; "
@@ -50,9 +51,10 @@ rule instrain_compare:
     benchmark:
         "logs/benchmarks/genomes/strains/compare.tsv"
     resources:
-        mem_mb=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "mem_mb"),
-        partition=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "partition"),
-        account=lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "instrain_compare", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "account"),
     shell:
         "inStrain compare "
         " --input {input.profiles} "
