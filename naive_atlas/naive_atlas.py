@@ -1,6 +1,7 @@
 import os
 import sys
 from .color_logger import logger
+from pathlib import Path
 
 import multiprocessing
 import subprocess
@@ -14,6 +15,10 @@ from .__init__ import __version__
 from .logo import print_logo
 
 ##
+
+# Get working dir and scripts dir
+cwd = Path.cwd()
+script_dir = Path(__file__).resolve().parent
 
 class LogoCommand(click.Command):
     """Click Command subclass that prints the logo before the help message."""
@@ -118,16 +123,14 @@ def get_snakefile(file="workflow/Snakefile"):
             "all",
             "test",
         ]
-    ),
-    #    show_default=True,
-    #    help="Execute only subworkflow.",
+    )
 )
 @click.option(
     "-w",
     "--working-dir",
     type=click.Path(dir_okay=True, writable=True, resolve_path=True),
     help="location to run atlas.",
-    default=".",
+    default=cwd,
 )
 @click.option(
     "-c",
@@ -137,9 +140,15 @@ def get_snakefile(file="workflow/Snakefile"):
 )
 @click.option(
     "--cluster-type",
-    type=click.Choice(["slurm", "pbs", "lsf"]),
+    type=click.Choice(["slurm", "generic"]),
     default=None,
     help="Type of cluster to use. If set, --profile, --local-cores, and --jobs are sent to Snakemake. Otherwise, --cores is used.",
+)
+@click.option(
+    "--cluster-slurm-params",
+    type=str,
+    default=f"--slurm-requeue --slurm-efficiency-report --slurm-efficiency-report-path {cwd}{os.sep}efficiency_reports --slurm-efficiency-threshold 100",
+    help="Params to use for SLURM cluster. Only used if --cluster-type IS set.",
 )
 @click.option(
     "--cores",
@@ -170,7 +179,7 @@ def get_snakefile(file="workflow/Snakefile"):
 @click.option(
     "--profile",
     default=None,
-    help="Snakemake profile for cluster execution. Default '<cluster-type>_config'.",
+    help="Snakemake profile for cluster execution. Default '<cluster-type>_profile'.",
 )
 @click.option(
     "-n",
@@ -251,7 +260,7 @@ def get_snakefile(file="workflow/Snakefile"):
 )
 @click.option(
     "--singularity-args",
-    default="--no-home --containall --cleanenv",
+    default=f"--no-home --containall --cleanenv --bind {script_dir.parent}:{script_dir.parent} --bind {cwd}:{cwd} ",
     show_default=True,
     help="Arguments passed to singularity/apptainer.",
 )
@@ -280,6 +289,7 @@ def run_workflow(
     max_mem,
     profile,
     cluster_type,
+    cluster_slurm_params,
     dryrun,
     rerun_triggers,
     nolock,
@@ -319,12 +329,15 @@ def run_workflow(
     print_logo()
     logger.info("STARTING WORKFLOW!")
 
+    cluster_params = ""
     if cluster_type:
         if profile is None:
-            profile = cluster_type + '_config'
+            profile = cluster_type + '_profile'
         core_str = " --local-cores {} --jobs {} ".format(
             local_cores, jobs
         )
+        if cluster_type == "slurm":
+            cluster_params = cluster_slurm_params
     else:
         core_str = " --cores {} ".format(cores)
 
@@ -387,6 +400,7 @@ def run_workflow(
         " {max_mem_string} "
 
         # Extra params & dryrun
+        " {cluster_params} "
         " {args} "
         " {dryrun} "
     ).format(
@@ -422,6 +436,7 @@ def run_workflow(
         max_mem_string=handle_max_mem(max_mem, profile),
 
         # Extra params & dryrun
+        cluster_params=f"{cluster_params}",
         args=" ".join(snakemake_args),
         dryrun="--dryrun" if dryrun else "",
     )
