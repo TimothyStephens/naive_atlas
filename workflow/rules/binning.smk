@@ -44,6 +44,8 @@ rule get_metabat_depth_file_combine:
         depth="samples/{sample}/binning/coverage/metabat_depth.txt",
     params:
         workflow_folder=f"{workflow_folder}",
+    conda:
+        "../envs/python.yaml"
     benchmark:
         "benchmarks/samples/{sample}/binning/coverage/metabat_depth.txt"
     log:
@@ -70,6 +72,8 @@ rule get_maxbin_depth_file:
         depth="samples/{sample}/binning/coverage/maxbin_depth.txt",
     params:
         workflow_folder=f"{workflow_folder}",
+    conda:
+        "../envs/python.yaml"
     benchmark:
         "benchmarks/samples/{sample}/binning/coverage/maxbin_depth.txt"
     log:

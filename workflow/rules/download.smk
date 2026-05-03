@@ -333,10 +333,11 @@ rule mmseqs2_download:
         # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
         "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
     shell:
-        "mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp "
+        "(mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp "
         " --compressed 1 "
         " --threads {threads} "
-        " &> {log}"
+        " && rm -fr {output.dbdir}/tmp "
+        " ) &> {log}"
 
 
 

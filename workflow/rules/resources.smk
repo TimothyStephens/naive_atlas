@@ -32,9 +32,12 @@ def get_resource(wildcards, input, attempt, rule_key, resource_name, java_mem_ra
     # 3. Return the specific resource requested
     if resource_name == "mem_mb":
         return mem_mb
-
+    
+    if resource_name == "mem_gb":
+        return mem_mb // 1024
+    
     if resource_name == "java_mem":
-        return int(mem_mb * java_mem_ratio)
+        return mem_mb * java_mem_ratio // 1 # To prevent lazy evaluation issues.
 
     if resource_name == "threads":
         return res_cfg.get("threads", config.get("simple_job_threads", 1))

@@ -68,14 +68,14 @@ rule normalize_reads_PE:
         histout="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_after_normalization.tsv.gz",
         tmp=temp("samples/{sample}/assembly/reads/tmp"),
     params:
-        command = lambda wc, input, output, threads, resources: normalize_reads_command(
+        command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"samples/{wc.sample}/assembly/reads",
+            outdir=f"samples/{wildcards.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             histin=output.histin,
             histout=output.histout,
-            run_step="t" if check_bool(wc, "Normalize_reads_before_assembly") else "f",
+            run_step="t" if check_bool(wildcards, "Normalize_reads_before_assembly") else "f",
             k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
             target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
             mindepth=config["normalization_minimum_kmer_depth"],
@@ -88,13 +88,13 @@ rule normalize_reads_PE:
         "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "normalize_reads", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -114,14 +114,14 @@ rule normalize_reads_SE:
         histout="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_after_normalization.tsv.gz",
         tmp=temp("samples/{sample}/assembly/reads/tmp"),
     params:
-        command = lambda wc, input, output, threads, resources: normalize_reads_command(
+        command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"samples/{wc.sample}/assembly/reads",
+            outdir=f"samples/{wildcards.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             histin=output.histin,
             histout=output.histout,
-            run_step="t" if check_bool(wc, "Normalize_reads_before_assembly") else "f",
+            run_step="t" if check_bool(wildcards, "Normalize_reads_before_assembly") else "f",
             k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
             target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
             mindepth=config["normalization_minimum_kmer_depth"],
@@ -134,13 +134,13 @@ rule normalize_reads_SE:
         "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "normalize_reads", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -160,14 +160,14 @@ rule normalize_reads_LR:
         histout="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_after_normalization.tsv.gz",
         tmp=temp("samples/{sample}/assembly/reads/tmp"),
     params:
-        command = lambda wc, input, output, threads, resources: normalize_reads_command(
+        command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"samples/{wc.sample}/assembly/reads",
+            outdir=f"samples/{wildcards.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             histin=output.histin,
             histout=output.histout,
-            run_step="t" if check_bool(wc, "Normalize_reads_before_assembly") else "f",
+            run_step="t" if check_bool(wildcards, "Normalize_reads_before_assembly") else "f",
             k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
             target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
             mindepth=config["normalization_minimum_kmer_depth"],
@@ -180,13 +180,13 @@ rule normalize_reads_LR:
         "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "normalize_reads", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "normalize_reads", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "normalize_reads", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -244,12 +244,12 @@ rule error_correction_PE:
             "samples/{sample}/assembly/reads/2_error_correction_R2.fastq.gz"
         ]),
     params:
-        command = lambda wc, input, output, threads, resources: error_correction_command(
+        command = lambda wildcards, input, output, threads, resources: error_correction_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"samples/{wc.sample}/assembly/reads",
+            outdir=f"samples/{wildcards.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
-            run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
+            run_step="t" if check_bool(wildcards, "Error_correction_before_assembly") else "f",
             prefilter=2,  # Ignore kmers with less than 2 occurance
             minprob=config["error_correction_minprob"],
             tossdepth=config["error_correction_minimum_kmer_depth"],
@@ -266,13 +266,13 @@ rule error_correction_PE:
         "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_PE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "error_correction", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -287,12 +287,12 @@ rule error_correction_SE:
             "samples/{sample}/assembly/reads/2_error_correction_SE.fastq.gz",
         ]),
     params:
-        command = lambda wc, input, output, threads, resources: error_correction_command(
+        command = lambda wildcards, input, output, threads, resources: error_correction_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"samples/{wc.sample}/assembly/reads",
+            outdir=f"samples/{wildcards.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
-            run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
+            run_step="t" if check_bool(wildcards, "Error_correction_before_assembly") else "f",
             prefilter=2,  # Ignore kmers with less than 2 occurance
             minprob=config["error_correction_minprob"],
             tossdepth=config["error_correction_minimum_kmer_depth"],
@@ -309,13 +309,13 @@ rule error_correction_SE:
         "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_SE.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "error_correction", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -330,12 +330,12 @@ rule error_correction_LR:
             "samples/{sample}/assembly/reads/2_error_correction_LR.fastq.gz",
         ]),
     params:
-        command = lambda wc, input, output, threads, resources: error_correction_command(
+        command = lambda wildcards, input, output, threads, resources: error_correction_command(
             inputs=io_params_for_tadpole(input.reads),
             outputs=io_params_for_tadpole(output.reads, key="out"),
-            outdir=f"samples/{wc.sample}/assembly/reads",
+            outdir=f"samples/{wildcards.sample}/assembly/reads",
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
-            run_step="t" if check_bool(wc, "Error_correction_before_assembly") else "f",
+            run_step="t" if check_bool(wildcards, "Error_correction_before_assembly") else "f",
             prefilter=2,  # Ignore kmers with less than 2 occurance
             minprob=config["error_correction_minprob"],
             tossdepth=config["error_correction_minimum_kmer_depth"],
@@ -352,13 +352,13 @@ rule error_correction_LR:
         "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_LR.txt"
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "error_correction", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "error_correction", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "error_correction", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -390,7 +390,11 @@ def assembly_command(wildcards, input, output, threads, resources):
     """
     assembler = sampleTable.loc[wildcards.sample, 'Assembler']
     output_dir = f"samples/{wildcards.sample}/assembly/assembly"
-    mem_gb=int(resources.mem / 1024) # MB -> GB
+
+    #mem_gb = 1
+    # To prevent lazy evaluation issues. Will be undefined or str during DAG construction, can only be calculated during rule execution.
+    #if isinstance(resources.mem, (int, float)):
+    #  mem_gb = resources.mem // 1024 # MB -> GB
     
     # SPADES (Short Reads + long reads for scaffolding)
     if assembler.startswith('spades'):
@@ -435,7 +439,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 -k {k} \\
                 --checkpoints last \\
                 --threads {threads} \\
-                --memory {mem_gb} {extra}
+                --memory ${{MEM_GB}} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
             """
@@ -446,7 +450,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --restart-from last \\
                 -k {k} \\
                 --threads {threads} \\
-                --memory {mem_gb} {extra}
+                --memory ${{MEM_GB}} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
             """
@@ -463,20 +467,20 @@ def assembly_command(wildcards, input, output, threads, resources):
         else:
             raise ValueError(f"No trimmed short reads found for assembler '{assembler}' and sample '{sample_id}'.")
         
-        min_count=config.get("megahit_min_count", MEGAHIT_MIN_COUNT),
-        k_min=config.get("megahit_k_min", MEGAHIT_K_MIN),
-        k_max=config.get("megahit_k_max", MEGAHIT_K_MAX),
-        k_step=config.get("megahit_k_step", MEGAHIT_K_STEP),
-        merge_level=config.get("megahit_merge_level", MEGAHIT_MERGE_LEVEL),
-        prune_level=config.get("megahit_prune_level", MEGAHIT_PRUNE_LEVEL),
-        low_local_ratio=config["megahit_low_local_ratio"],
-        min_contig_len=config["minimum_contig_length"],
+        min_count=config.get("megahit_min_count", MEGAHIT_MIN_COUNT)
+        k_min=config.get("megahit_k_min", MEGAHIT_K_MIN)
+        k_max=config.get("megahit_k_max", MEGAHIT_K_MAX)
+        k_step=config.get("megahit_k_step", MEGAHIT_K_STEP)
+        merge_level=config.get("megahit_merge_level", MEGAHIT_MERGE_LEVEL)
+        prune_level=config.get("megahit_prune_level", MEGAHIT_PRUNE_LEVEL)
+        low_local_ratio=config["megahit_low_local_ratio"]
+        min_contig_len=config["minimum_contig_length"]
         assembly_params = {
             "default": "",
             "meta-sensitive": "--presets meta-sensitive",
             "meta-large": " --presets meta-large",
         }
-        preset=assembly_params[config["megahit_preset"]],
+        preset=assembly_params[config["megahit_preset"]]
         extra = config.get("megahit_extra", '')
         
         # If we see megahit has already run, we can continue to save time.
@@ -490,16 +494,15 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --out-prefix {wildcards.sample}_prefilter \\
                 --tmp-dir {resources.tmpdir} \\
                 --num-cpu-threads {threads} \\
-                --k-min {k_min[0]} \\
-                --k-max {k_max[0]} \\
-                --k-step {k_step[0]} \\
-                --min-contig-len {min_contig_len[0]} \\
-                --min-count {min_count[0]} \\
-                --merge-level {merge_level[0]} \\
-                --prune-level {prune_level[0]} \\
-                --low-local-ratio {low_local_ratio[0]} \\
-                {preset[0]} {extra} \\
-                --memory {mem_gb}000000000
+                --k-min {k_min} \\
+                --k-max {k_max} \\
+                --k-step {k_step} \\
+                --min-contig-len {min_contig_len} \\
+                --min-count {min_count} \\
+                --merge-level {merge_level} \\
+                --prune-level {prune_level} \\
+                --low-local-ratio {low_local_ratio} \\
+                --memory ${{MEM_GB}}000000000 {preset} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
             """
@@ -507,6 +510,8 @@ def assembly_command(wildcards, input, output, threads, resources):
             cmd = f"""
             megahit \\
                 --out-dir {output_dir} \\
+                --num-cpu-threads {threads} \\
+                --memory ${{MEM_GB}}000000000 \\
                 --continue
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
@@ -580,12 +585,12 @@ def assembly_command(wildcards, input, output, threads, resources):
 
 rule run_assembly:
     input:
-        unpack(lambda wc: get_pre_processed_reads(wc, as_dict=True)),
+        unpack(lambda wildcards: get_pre_processed_reads(wildcards, as_dict=True)),
     output:
         "samples/{sample}/assembly/assembly/{sample}_raw_contigs.fasta"
     params:
-        command = lambda wc, input, output, threads, resources: assembly_command(
-            wc, input, output, threads, resources
+        command = lambda wildcards, input, output, threads, resources: assembly_command(
+            wildcards, input, output, threads, resources
         ),
     log:
         "logs/samples/{sample}/assembly.log",
@@ -593,15 +598,18 @@ rule run_assembly:
         "benchmarks/samples/{sample}/assembly.txt"
     conda:
         "../envs/assembly.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "run_assembly", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "run_assembly", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_assembly", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "mem_mb"),
+        mem_gb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "mem_gb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        (
+        MEM_GB={resources.mem_gb}
+        {params.command}) > {log} 2>&1
         """
 
 
@@ -611,12 +619,12 @@ rule rename_contigs:
     output:
         fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
         mapping_table="samples/{sample}/assembly/assembly/old2new_contig_names.tsv",
-    threads: lambda wc: get_resource(wc, None, 1, "rename_contigs", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "rename_contigs", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "rename_contigs", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "account"),
     log:
         "logs/samples/{sample}/assembly/post_process/rename_and_filter_size.log",
     params:
@@ -684,13 +692,13 @@ def align_reads_command(wildcards, input, output, threads, resources):
 
 rule align_reads_to_prefilter_contigs:
     input:
-        unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
+        unpack(lambda wildcards: get_quality_controlled_reads(wildcards, as_dict=True)),
         target=rules.rename_contigs.output.fasta,
     output:
         bam=temp("samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
     params:
-        command = lambda wc, input, output, threads, resources: align_reads_command(
-            wc, input, output, threads, resources
+        command = lambda wildcards, input, output, threads, resources: align_reads_command(
+            wildcards, input, output, threads, resources
         ),
     benchmark:
         "benchmarks/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
@@ -698,12 +706,12 @@ rule align_reads_to_prefilter_contigs:
         "logs/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.log",
     conda:
         "../envs/minimap.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "mapping", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
     shell:
         """
         ({params.command}) >{log} 2>&1
@@ -725,13 +733,13 @@ rule pileup_prefilter:
         "logs/samples/{sample}/assembly/post_process/pilup_prefilter_contigs.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "pileup", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
     shell:
         "pileup.sh ref={input.fasta} in={input.bam} "
         " threads={threads} "
@@ -761,13 +769,13 @@ rule filter_by_coverage:
         "logs/samples/{sample}/assembly/post_process/filter_by_coverage.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "filter_by_coverage", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "filter_by_coverage", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "filter_by_coverage", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "account"),
     shell:
         """filterbycoverage.sh in={input.fasta} \
         cov={input.covstats} \
@@ -792,12 +800,12 @@ rule finalize_contigs:
         "samples/{sample}/assembly/{sample}.fasta",
     log:
         "logs/samples/{sample}/assembly/finalize_contigs.log",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "localrule", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
         "cp {input} {output} > {log} 2>&1"
 
@@ -809,13 +817,13 @@ rule calculate_contigs_stats:
         "samples/{sample}/assembly/contig_stats/final_contig_stats.txt",
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "calculate_contigs_stats", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "calculate_contigs_stats", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "calculate_contigs_stats", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "account"),
     log:
         "logs/samples/{sample}/assembly/post_process/contig_stats_final.log",
     benchmark:
@@ -827,13 +835,13 @@ rule calculate_contigs_stats:
 # generalized rule so that reads from any "sample" can be aligned to contigs from "sample_contigs"
 rule align_reads_to_final_contigs:
     input:
-        unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
+        unpack(lambda wildcards: get_quality_controlled_reads(wildcards, as_dict=True)),
         target="samples/{sample_contigs}/assembly/{sample_contigs}.fasta",
     output:
         bam=temp("samples/{sample_contigs}/sequence_alignment/{sample}.bam"),
     params:
-        command = lambda wc, input, output, threads, resources: align_reads_command(
-            wc, input, output, threads, resources
+        command = lambda wildcards, input, output, threads, resources: align_reads_command(
+            wildcards, input, output, threads, resources
         ),
     benchmark:
         "benchmarks/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.txt",
@@ -841,12 +849,12 @@ rule align_reads_to_final_contigs:
         "logs/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.log",
     conda:
         "../envs/minimap.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "mapping", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
     shell:
         """
         ({params.command}) > {log} 2>&1
@@ -874,13 +882,13 @@ rule pileup_contigs_sample:
         "logs/samples/{sample}/assembly/calculate_coverage/pileup.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "pileup", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "pileup", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "mem_mb"),
-        java_mem        = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "java_mem"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "pileup", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "mem_mb"),
+        java_mem        = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "java_mem"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
     shell:
         "pileup.sh "
         " ref={input.fasta} "
@@ -908,12 +916,12 @@ rule samtools_stats_contigs_sample:
         "logs/samples/{sample}/assembly/calculate_coverage/samtools_stats.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "samtools_stats_contigs_sample", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "samtools_stats_contigs_sample", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "samtools_stats_contigs_sample", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "account"),
     shell:
         "samtools stats "
         " {input.bam} "
@@ -930,12 +938,12 @@ rule create_bam_index:
         "logs/{file}.index.log",
     conda:
         "../envs/required_packages.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "create_bam_index", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "create_bam_index", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "create_bam_index", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "account"),
     shell:
         "samtools index {input} > {log} 2>&1"
 
@@ -953,12 +961,12 @@ rule predict_genes:
         "logs/samples/{sample}/gene_annotation/prodigal.log",
     benchmark:
         "benchmarks/samples/{sample}/prodigal.txt"
-    threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "predict_genes", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
         prodigal -i {input} -o {output.gff} -d {output.fna} \
@@ -977,12 +985,12 @@ rule get_contigs_from_gene_names:
         tsv="samples/{sample}/annotation/predicted_genes/{sample}.tsv",
     log:
         "logs/samples/{sample}/annotation/predicted_genes/get_contigs_from_gene_names.log",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "localrule", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     run:
         header = [
             "gene_id",
@@ -1045,14 +1053,16 @@ rule combine_contig_stats:
         combined_contig_stats="stats/combined_contig_stats.tsv",
     params:
         samples=SAMPLES,
+    conda:
+        "../envs/python.yaml"
     log:
         "logs/assembly/combine_contig_stats.log",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "localrule", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     script:
         "../scripts/combine_contig_stats.py"
 
@@ -1066,12 +1076,12 @@ rule build_assembly_report:
         "../envs/report.yaml"
     log:
         "logs/assembly/report.log",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wildcards: get_resource(wildcards, None, 1, "localrule", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     script:
         "../report/assembly_report.py"
 

@@ -611,9 +611,9 @@ if len(config.get("contaminant_references", {}).keys()) > 0:
                 ]
             ),
         log:
-            "logs/sequence_quality_control/cleaning/4_decontamination_build_db.log",
+            "logs/qc/sequence_quality_control/cleaning/4_decontamination_build_db.log",
         benchmark:
-            "benchmarks/sequence_quality_control/cleaning/4_decontamination_build_db.txt"
+            "benchmarks/qc/sequence_quality_control/cleaning/4_decontamination_build_db.txt"
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "build_decontamination_db", "threads")
@@ -1113,7 +1113,7 @@ rule combine_read_counts:
     output:
         "stats/read_counts.tsv",
     log:
-        "logs/QC/combine_read_counts.log",
+        "logs/qc/sequence_quality_control/read_stats/combine_read_counts.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -1178,7 +1178,7 @@ rule combine_read_length_hist:
     output:
         "stats/read_length_stats.tsv",
     log:
-        "logs/QC/combine_read_length_hist.log",
+        "logs/qc/sequence_quality_control/read_stats/combine_read_length_hist.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -1217,7 +1217,7 @@ rule combine_insert_hist:
     output:
         "stats/insert_stats.tsv",
     log:
-        "logs/QC/combine_insert_hist.log",
+        "logs/qc/sequence_quality_control/read_stats/combine_insert_hist.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -1266,7 +1266,7 @@ rule build_qc_report:
     output:
         report="reports/QC_report.html",
     log:
-        "logs/QC/report.log",
+        "logs/qc/sequence_quality_control/read_stats/report.log",
     params:
         min_quality=config["preprocess_minimum_base_quality"],
         samples=SAMPLES,
