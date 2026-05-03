@@ -22,13 +22,13 @@
 #Threads and Memory for all executions
 
 # Global safety cap for any single job (in MB)
-max_mem_mb: 512000 # 512 GB
+max_mem_mb: 1500000 # 1,500 GB
 
 # Partition mapping (for SLURM or other schedulers): partition_name -> threshold (mem_mb)
 account: "general"
 partition_ranges:
-  small: 64000
-  large: 512000
+  main: 160000
+  mem: 1500000
 
 # Default resources for simple or low resource jobs (not requiring dynamic scaling)
 simple_job_mem_mb: 5000
@@ -72,8 +72,8 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   get_read_length_hist:
-    base_mem_mb: 4000
-    scaling_factor: 0.5
+    base_mem_mb: 8000
+    scaling_factor: 10.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   
