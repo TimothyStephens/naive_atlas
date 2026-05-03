@@ -147,7 +147,7 @@ def get_snakefile(file="workflow/Snakefile"):
 @click.option(
     "--cluster-slurm-params",
     type=str,
-    default=f"--slurm-requeue --slurm-efficiency-report --slurm-efficiency-report-path {cwd}{os.sep}efficiency_reports --slurm-efficiency-threshold 100",
+    default=f"--slurm-requeue --slurm-efficiency-report --slurm-efficiency-report-path {cwd}{os.sep}efficiency_reports --slurm-efficiency-threshold 1",
     help="Params to use for SLURM cluster. Only used if --cluster-type IS set.",
 )
 @click.option(
