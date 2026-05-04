@@ -106,7 +106,6 @@ rule classify:
     params:
         outdir=gtdb_dir,
         extension="fa",
-        mashdir=Path(GTDBTK_DATA_PATH) / "mash_db",
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk classify --genome_dir {input.genome_dir} --align_dir {params.outdir} "

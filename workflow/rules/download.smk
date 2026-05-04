@@ -9,8 +9,8 @@ ZENODO_ARCHIVE = "1134890"
 EGGNOG_VERSION = "5"
 EGGNOG_DIR = os.path.join(DBDIR, "EggNOG_V" + EGGNOG_VERSION)
 
-GTDB_VERSION = "R226"
-GTDB_DATA_URL = "https://data.ace.uq.edu.au/public/gtdb/data/releases/release226/226.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r226_data.tar.gz"
+GTDB_VERSION = "R232"
+GTDB_DATA_URL = "https://data.ace.uq.edu.au/public/gtdb/data/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz"
 #GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
 GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_" + GTDB_VERSION)
 
