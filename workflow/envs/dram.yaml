@@ -3,6 +3,7 @@ channels:
   - bioconda
 dependencies:
   - python >=3.8
+  - setuptools <82.0.0
   - altair >=4
   - networkx
   - numpy

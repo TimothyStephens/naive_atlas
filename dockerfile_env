@@ -69,33 +69,18 @@ RUN mamba env create  \
 
 # Conda environment:
 #   source: workflow/envs/checkm2.yaml
-#   prefix: /conda-envs/df153c97c6b9f88f8d483af0a35e1402
+#   prefix: /conda-envs/9977202c567b6df513ae7951a4b617b8
 #   channels:
 #     - conda-forge
 #     - bioconda
 #     - defaults
 #   dependencies:
-#     - checkm2>=1.1.0
+#     - checkm2=1.0.2
 #     - biopython=1.79
-COPY workflow/envs/checkm2.yaml /conda-envs/df153c97c6b9f88f8d483af0a35e1402.yaml
+COPY workflow/envs/checkm2.yaml /conda-envs/9977202c567b6df513ae7951a4b617b8.yaml
 RUN mamba env create  \
-      --prefix /conda-envs/df153c97c6b9f88f8d483af0a35e1402 \
-      --file   /conda-envs/df153c97c6b9f88f8d483af0a35e1402.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
-#   source: workflow/envs/checkm.yaml
-#   prefix: /conda-envs/70c51d37c49a9da0979ed4257f1d558c
-#   channels:
-#       - conda-forge
-#       - bioconda
-#       - defaults
-#   dependencies:
-#       - checkm-genome=1.2.4
-COPY workflow/envs/checkm.yaml /conda-envs/70c51d37c49a9da0979ed4257f1d558c.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/70c51d37c49a9da0979ed4257f1d558c \
-      --file   /conda-envs/70c51d37c49a9da0979ed4257f1d558c.yaml -vvv && \
+      --prefix /conda-envs/9977202c567b6df513ae7951a4b617b8 \
+      --file   /conda-envs/9977202c567b6df513ae7951a4b617b8.yaml -vvv && \
     mamba clean -afy
 
 # Conda environment:
@@ -162,12 +147,13 @@ RUN mamba env create  \
 
 # Conda environment:
 #   source: workflow/envs/dram.yaml
-#   prefix: /conda-envs/ca7d65e3e4c5c9a6e6b02e648cc3601b
+#   prefix: /conda-envs/6f2dec118d6685713436faab5942606a
 #   channels:
 #     - conda-forge
 #     - bioconda
 #   dependencies:
 #     - python >=3.8
+#     - setuptools <82.0.0
 #     - altair >=4
 #     - networkx
 #     - numpy
@@ -188,10 +174,10 @@ RUN mamba env create  \
 #     - pip
 #     - pip:
 #       - git+https://github.com/SilasK/DRAM.git
-COPY workflow/envs/dram.yaml /conda-envs/ca7d65e3e4c5c9a6e6b02e648cc3601b.yaml
+COPY workflow/envs/dram.yaml /conda-envs/6f2dec118d6685713436faab5942606a.yaml
 RUN mamba env create  \
-      --prefix /conda-envs/ca7d65e3e4c5c9a6e6b02e648cc3601b \
-      --file   /conda-envs/ca7d65e3e4c5c9a6e6b02e648cc3601b.yaml -vvv && \
+      --prefix /conda-envs/6f2dec118d6685713436faab5942606a \
+      --file   /conda-envs/6f2dec118d6685713436faab5942606a.yaml -vvv && \
     mamba clean -afy
 
 # Conda environment:
@@ -323,17 +309,17 @@ RUN mamba env create  \
 
 # Conda environment:
 #   source: workflow/envs/gtdbtk.yaml
-#   prefix: /conda-envs/697aed27f4f24eed9d0d588b8ebca7d1
+#   prefix: /conda-envs/da3b0d8e18ab54e9de5d545680f60794
 #   channels:
 #   - conda-forge
 #   - bioconda
 #   - defaults
 #   dependencies:
-#   - gtdbtk=2.6.1
-COPY workflow/envs/gtdbtk.yaml /conda-envs/697aed27f4f24eed9d0d588b8ebca7d1.yaml
+#   - gtdbtk=2.7.1
+COPY workflow/envs/gtdbtk.yaml /conda-envs/da3b0d8e18ab54e9de5d545680f60794.yaml
 RUN mamba env create  \
-      --prefix /conda-envs/697aed27f4f24eed9d0d588b8ebca7d1 \
-      --file   /conda-envs/697aed27f4f24eed9d0d588b8ebca7d1.yaml -vvv && \
+      --prefix /conda-envs/da3b0d8e18ab54e9de5d545680f60794 \
+      --file   /conda-envs/da3b0d8e18ab54e9de5d545680f60794.yaml -vvv && \
     mamba clean -afy
 
 # Conda environment:
