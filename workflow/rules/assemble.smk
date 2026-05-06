@@ -66,7 +66,7 @@ rule normalize_reads_PE:
         ]),
         histin ="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_before_normalization.tsv.gz",
         histout="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_after_normalization.tsv.gz",
-        tmp=temp("samples/{sample}/assembly/reads/tmp"),
+        tmp=temp(directory("samples/{sample}/assembly/reads/tmp")),
     params:
         command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -112,7 +112,7 @@ rule normalize_reads_SE:
         ]),
         histin ="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_before_normalization.tsv.gz",
         histout="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_after_normalization.tsv.gz",
-        tmp=temp("samples/{sample}/assembly/reads/tmp"),
+        tmp=temp(directory("samples/{sample}/assembly/reads/tmp")),
     params:
         command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -158,7 +158,7 @@ rule normalize_reads_LR:
         ]),
         histin ="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_before_normalization.tsv.gz",
         histout="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_after_normalization.tsv.gz",
-        tmp=temp("samples/{sample}/assembly/reads/tmp"),
+        tmp=temp(directory("samples/{sample}/assembly/reads/tmp")),
     params:
         command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
