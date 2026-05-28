@@ -726,9 +726,6 @@ rule binning_eukaryotic_busco:
             exit 0
         fi
         
-        export PATH="$CONDA_PREFIX/bin:$PATH"
-        export PYTHONPATH="$CONDA_PREFIX/lib/python3.9/site-packages"
-        
         mkdir -p {output.results}
         cp {input.fasta} {params.tmp_fasta}
         

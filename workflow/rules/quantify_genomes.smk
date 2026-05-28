@@ -36,7 +36,7 @@ def get_all_genomes(wildcards):
     
     if len(genomes) == 0:
         logger.error(
-            f"No genomes found with fa extension in {genome_dir} "
+            f"No genomes found with fasta extension in {genome_dir} "
             "You don't have any Metagenome assembled genomes with sufficient quality. "
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."
@@ -123,6 +123,9 @@ rule concat_genomes:
         "cat {input}/*{params.ext} > {output}"
 
 
+# Skip indexing becuase it hard sets k-mer size and other params which we need to be flexible for 
+# different input read types. I.e., optimal k-mer size varies between Nanopore vs. PacBio vs. Illumina
+# reads. Thus having it hard set for all samples will lead to reduced accuray results for some samples.
 rule index_genomes:
     input:
         target=rules.concat_genomes.output,
@@ -146,7 +149,8 @@ rule index_genomes:
 rule align_reads_to_genomes:
     input:
         unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
-        target=rules.index_genomes.output,
+        #target=rules.index_genomes.output,
+        target=rules.concat_genomes.output,
     output:
         "genomes/alignments/bams/{sample}.bam",
     params:

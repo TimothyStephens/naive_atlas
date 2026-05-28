@@ -66,7 +66,6 @@ rule all_downloads:
         # Annotation
         get_eggnog_db_file(),
         os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
-        f"{DBDIR}/DRAM/db/",
         os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
         # Gene Prediction
         f"{DBDIR}/MicroEuk",
@@ -146,7 +145,7 @@ rule mdmcleaner_download_db:
     benchmark:
         "benchmarks/download/mdmcleaner_database.tsv"
     container:
-        "docker://timothystephens/mdmcleaner:0.8.7-TGSv2",
+        "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
     #conda:
     #    "../envs/mdmcleaner.yaml"
     shell:
@@ -240,33 +239,6 @@ rule download_eggNOG_files:
         """
 
 
-rule dram_download:
-    output:
-        dbdir=directory(f"{DBDIR}/DRAM/db/"),
-        config=f"{DBDIR}/DRAM/DRAM.config",
-    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
-    log:
-        "logs/dram/download_dram.log",
-    benchmark:
-        "benchmarks/dram/download_dram.tsv"
-    conda:
-        "../envs/dram.yaml"
-    shell:
-        " DRAM-setup.py prepare_databases "
-        " --output_dir {output.dbdir} "
-        " --threads {threads} "
-        " --verbose "
-        " --skip_uniref "
-        " &> {log} "
-        " ; "
-        " DRAM-setup.py export_config --output_file {output.config}"
-
-
 rule gtdb_download_db:
     output:
         temp(f"{GTDBTK_DATA_PATH}/gtdb_data.tar.gz"),
@@ -333,6 +305,7 @@ rule mmseqs2_download:
         # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
         "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
     shell:
+        "export TMPDIR='{output.dbdir}/tmp'; "
         "(mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp "
         " --compressed 1 "
         " --threads {threads} "

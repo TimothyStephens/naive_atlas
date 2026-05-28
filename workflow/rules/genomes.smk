@@ -57,6 +57,8 @@ rule get_prokaryotic_bins:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_prokaryotic_bins.log",
+    conda:
+        "../envs/python.yaml"
     run:
         import pandas as pd
         from pathlib import Path
@@ -127,6 +129,8 @@ rule get_eukaryotic_bins:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_eukaryotic_bins.log",
+    conda:
+        "../envs/python.yaml"
     run:
         import pandas as pd
         from pathlib import Path
@@ -200,6 +204,8 @@ rule get_viral_bins:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_viral_bins.log",
+    conda:
+        "../envs/python.yaml"
     run:
         import pandas as pd
         from pathlib import Path
@@ -266,6 +272,8 @@ rule get_plasmid_bins:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/Binning/raw_bins/get_plasmid_bins.log",
+    conda:
+        "../envs/python.yaml"
     run:
         import pandas as pd
         from pathlib import Path
@@ -384,6 +392,8 @@ rule skani_2_parquet:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "account"),
     log:
         "logs/Binning/dereplication/{lineage}.skani_2_parquet.log",
+    conda:
+        "../envs/python.yaml"
     run:
         try:
             skani_column_dtypes = {
@@ -495,6 +505,8 @@ rule rename_genomes:
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="MAG_{lineage}_",
+    conda:
+        "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -515,6 +527,8 @@ rule rename_unbinned:
     params:
         rename_contigs=config["rename_mags_contigs"],
         prefix="Unbinned_{sample}",
+    conda:
+        "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -547,6 +561,8 @@ rule move_genomes:
         dirs=get_genome_to_move,
     output:
         dir=directory("genomes/genomes"),
+    conda:
+        "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -566,6 +582,8 @@ rule move_unbinned:
         ),
     output:
         dir=directory("genomes/unbinned"),
+    conda:
+        "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),

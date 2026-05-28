@@ -23,14 +23,12 @@ rule gene_eggNOG_homology_search:
     params:
         data_dir=EGGNOG_DIR,
         prefix=lambda wc, output: output[0].replace(".emapper.seed_orthologs", ""),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "gene_annot_eggnog", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    #conda:
-    #    "../envs/eggNOG.yaml"
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "account"),
     container:
         "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     log:
@@ -55,14 +53,12 @@ rule gene_eggNOG_annotation:
         ),
         prefix=lambda wc, output: output[0].replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "gene_annot_eggnog", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    #conda:
-    #    "../envs/eggNOG.yaml"
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_eggnog", "account"),
     container:
         "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     log:
@@ -122,12 +118,12 @@ rule combine_gene_egg_nog_annotations:
         tsv="genomes/annotations/{dataset}/genes/eggNOG.tsv.gz",
     log:
         "logs/genomes/annotations/{dataset}/genes/eggNOG/combine.log",
-    threads: 1
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     run:
         try:
             import pandas as pd
@@ -162,93 +158,6 @@ rule combine_gene_egg_nog_annotations:
 
 ######################
 ####              ####
-####     DRAM     ####
-####              ####
-######################
-
-rule gene_DRAM_annotation:
-    input:
-        faa="genomes/genes/{dataset}/{genome}.faa",
-        config=get_dram_config,
-    output:
-        annotations=temp(
-            "Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/annotations.tsv"
-        ),
-        genes=temp("Intermediate/genecatalog/annotations/{dataset}/genes/dram/{genome}/genes.faa"),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/dram.yaml"
-    params:
-        extra=config.get("dram_extra", ""),
-        outdir=lambda wc, output: Path(output[0]).parent,
-    log:
-        "logs/Genecatalog/annotations/{dataset}/genes/dram/{genome}.log",
-        "logs/Genecatalog/annotations/{dataset}/genes/dram/{genome}.logfile",
-    shell:
-        " rm -rf {params.outdir} &> {log[0]};"
-        "\n"
-        " DRAM.py annotate_genes "
-        " --input_faa {input.faa}"
-        " --config_loc {input.config} "
-        " --output_dir {params.outdir} "
-        " --threads {threads} "
-        " {params.extra} "
-        " --log_file_path {log[1]} "
-        " --verbose &>> {log[0]}"
-
-
-def get_all_gene_dram(wildcards):
-    """
-    Make sure we only request annotation files for *.faa files with sequences in them.
-    """
-    # Make sure we have finished moving the final gene prediction files.
-    checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
-    print(checkpoint_output)
-    
-    # Look for all *.faa files in the `genomes/genes` directory
-    # Expect: genomes/genes/{wildcards.dataset}/{genome}.faa
-    FAA_FILES = glob_wildcards("genomes/genes/{wildcards.dataset}/{genome}.faa")
-    
-    valid_paths = []
-    for genome in zip(FAA_FILES.genome):
-        path = f"genomes/genes/{wildcards.dataset}/{genome}.faa"
-        
-        if os.path.exists(path) and os.path.getsize(path) > 0:
-            valid_paths.append(expand(rules.gene_DRAM_annotation.output, dataset=wildcards.dataset, genome=genome)[0])
-        else:
-            if config.get("debug", False):
-                print(f"[DEBUG] Skipping DRAM for {path}: File empty or missing.")
-    
-    return valid_paths
-
-
-rule combine_gene_dram_genecatalog_annotations:
-    input:
-        get_all_gene_dram,
-    output:
-        directory("genomes/annotations/{dataset}/genes/dram"),
-    threads: lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-    log:
-        "logs/genomes/annotations/{dataset}/genes/dram/combine.log",
-    script:
-        "../scripts/combine_dram_gene_annotations.py"
-
-
-
-
-
-######################
-####              ####
 ####   MMSEQS2    ####
 ####              ####
 ######################
@@ -258,30 +167,30 @@ rule gene_mmseqs2_annotation:
         faa="genomes/genes/{dataset}/{genome}.faa",
         database=rules.mmseqs2_download.output.database,
     output:
-        results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4.gz",
-        tmp=temp(directory("Intermediate/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.tmp")),
+        results="genomes/annotations/{dataset}/genes/mmseqs2_easy_search/{genome}.faa.mmseqs2_{database_name}.m4.gz",
+        tmp=temp(directory("Intermediate/annotations/{dataset}/genes/mmseqs2_easy_search/{genome}.faa.mmseqs2_{database_name}.tmp")),
     params:
-        mem=lambda resources: int(resources.mem_mb * 0.8 / 1024),
         mmseqs2_opts=config["mmseqs2_opts"],
-        results="genomes/annotations/{dataset}/genes/mmseqs2/{genome}.faa.mmseqs2_{database_name}.m4",
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+        results="genomes/annotations/{dataset}/genes/mmseqs2_easy_search/{genome}.faa.mmseqs2_{database_name}.m4",
+    threads: lambda wc: get_resource(wc, None, 1, "gene_annot_mmseqs2_easy_search", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/mmseqs2.yaml"
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "mem_mb"),
+        mem_gb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "mem_gb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "account"),
+    container:
+        "docker://ghcr.io/soedinglab/mmseqs2:18-8cc5c"
     log:
-        "logs/genomes/annotations/{dataset}/genes/mmseqs2/{database_name}/{genome}.log",
+        "logs/genomes/annotations/{dataset}/genes/mmseqs2_easy_search/{database_name}/{genome}.log",
     benchmark:
-        "logs/benchmarks/genomes/annotations/{dataset}/genes/mmseqs2/{database_name}/{genome}.tsv"
+        "logs/benchmarks/genomes/annotations/{dataset}/genes/mmseqs2_easy_search/{database_name}/{genome}.tsv"
     shell:
         """
         (
         mmseqs easy-search \
             --threads {threads} \
-            --split-memory-limit {params.mem}G \
+            --split-memory-limit {resources.mem_gb}G \
             --compressed 1 \
             --format-mode 4 \
             --format-output query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader \
@@ -301,23 +210,34 @@ def get_all_gene_mmseqs2_annotation(wildcards):
     """
     # Make sure we have finished moving the final gene prediction files.
     checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
-    print(checkpoint_output)
     
     # Look for all *.faa files in the `genomes/genes` directory
-    # Expect: genomes/genes/{wildcards.dataset}/{genome}.faa
-    FAA_FILES = glob_wildcards("genomes/genes/{wildcards.dataset}/{genome}.faa")
+    # Use an f-string to resolve 'wildcards.dataset' into 'unbinned' or 'genomes'
+    search_pattern = f"genomes/genes/{wildcards.dataset}/{{genome}}.faa"
+    
+    # Now glob_wildcards only sees '{genome}'
+    FAA_FILES = glob_wildcards(search_pattern)
     
     valid_paths = []
-    for genome in zip(FAA_FILES.genome):
+    for genome in FAA_FILES.genome:
         path = f"genomes/genes/{wildcards.dataset}/{genome}.faa"
         
+        # Check if file exists and has content
         if os.path.exists(path) and os.path.getsize(path) > 0:
-            valid_paths.append(expand(rules.gene_mmseqs2_annotation.output.results, dataset=wildcards.dataset, database_name=config["mmseqs2_database_name"], genome=genome))
+            # Append the expected output path for the annotation rule
+            valid_paths.append(
+                expand(rules.gene_mmseqs2_annotation.output.results,
+                       dataset=wildcards.dataset,
+                       database_name=config["mmseqs2_database_name"],
+                       genome=genome)[0]
+            )
         else:
             if config.get("debug", False):
                 print(f"[DEBUG] Skipping MMseqs2 for {path}: File empty or missing.")
     
     return valid_paths
+
+
 
 
 localrules:
@@ -327,7 +247,7 @@ rule all_mmseqs2:
     input:
         get_all_gene_mmseqs2_annotation,
     output:
-        touch("genomes/annotations/{dataset}/genes/mmseqs2/finished"),
+        touch("genomes/annotations/{dataset}/genes/mmseqs2_easy_search/finished"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),

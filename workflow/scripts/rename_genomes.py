@@ -26,14 +26,18 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     )
 
 
+def gen_names_for_range(N, prefix="", start=1):
+    """generates a range of IDS with leading zeros so sorting will be ok"""
+    n_leading_zeros = len(str(N))
+    format_int = prefix + "{:0" + str(n_leading_zeros) + "d}"
+    return [format_int.format(i) for i in range(start, N + start)]
+
+
 # Install exception handler
 sys.excepthook = handle_exception
 
 
 # start
-
-
-from naive_atlas import utils
 import pandas as pd
 
 # genome  SpeciesNr       Species Representative
@@ -48,7 +52,7 @@ mapping = pd.read_csv(
 # MAG001 ....
 representatives = mapping.Representative.unique()
 old2new_name = dict(
-    zip(representatives, utils.gen_names_for_range(len(representatives), prefix=snakemake.params.prefix))
+    zip(representatives, gen_names_for_range(len(representatives), prefix=snakemake.params.prefix))
 )
 mapping["MAG"] = mapping.Representative.map(old2new_name)
 

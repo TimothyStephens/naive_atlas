@@ -38,12 +38,13 @@ rule identify:
         genes_flag=rules.copy_prokaryotic_genomes.output,
     output:
         directory(f"{gtdb_dir}/identify"),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_gtdbtk", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "account"),
+        tmpdir=config.get("tmpdir", "/tmp"),
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -58,6 +59,7 @@ rule identify:
         "--genome_dir {input.genes_flag} "
         "--out_dir {params.outdir} "
         "--extension {params.extension} "
+        "--tmpdir {resources.tmpdir} "
         "--cpus {threads} &> {log[0]}"
 
 
@@ -66,12 +68,13 @@ checkpoint align:
         f"{gtdb_dir}/identify",
     output:
         directory(f"{gtdb_dir}/align"),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_gtdbtk", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "account"),
+        tmpdir=config.get("tmpdir", "/tmp"),
     conda:
         "../envs/gtdbtk.yaml"
     log:
@@ -82,6 +85,7 @@ checkpoint align:
     shell:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk align --identify_dir {params.outdir} --out_dir {params.outdir} "
+        "--tmpdir {resources.tmpdir} "
         "--cpus {threads} &> {log[0]}"
 
 
@@ -91,12 +95,12 @@ rule classify:
         genome_dir=rules.copy_prokaryotic_genomes.output,
     output:
         directory(f"{gtdb_dir}/classify"),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_gtdbtk", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "account"),
         tmpdir=config.get("tmpdir", "/tmp"),
     conda:
         "../envs/gtdbtk.yaml"
@@ -126,6 +130,8 @@ rule combine_taxonomy:
         taxonomy="genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
     log:
         "logs/genomes/annotations/genomes/taxonomy/gtdbtk/combine.txt",
+    conda:
+        "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -144,12 +150,12 @@ rule build_tree:
     log:
         "logs/genomes/annotations/genomes/tree/{msa}.log",
         "logs/genomes/annotations/genomes/tree/{msa}.err",
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_gtdbtk_tree", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "account"),
         tmpdir=config.get("tmpdir", "/tmp"),
     params:
         outdir=lambda wc, output: Path(output[0]).parent,
@@ -159,7 +165,7 @@ rule build_tree:
         'export GTDBTK_DATA_PATH="{GTDBTK_DATA_PATH}" ; '
         "gtdbtk infer --msa_file {input} "
         " --out_dir {params.outdir} "
-        " --prefix {wildcards.msa} "
+        " --prefix {wildcards.msa} "        
         " --cpus {threads} "
         "--tmpdir {resources.tmpdir} > {log[0]} 2> {log[1]}"
 
@@ -177,12 +183,12 @@ rule root_tree:
         tree="genomes/annotations/genomes/tree/{msa}.nwk",
     conda:
         "../envs/tree.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_gtdbtk_tree", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "account"),
     log:
         "logs/genomes/annotations/genomes/tree/root_tree_{msa}.log",
     script:
@@ -205,158 +211,6 @@ rule all_gtdb_trees:
         all_gtdb_trees_input,
     output:
         touch("genomes/annotations/genomes/tree/finished_gtdb_trees"),
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-
-
-
-
-
-###############################
-####                       ####
-####         DRAM          ####
-####                       ####
-###############################
-
-DBDIR = config["database_dir"]
-
-def get_dram_config(wildcards):
-    old_dram_path = f"{DBDIR}/Dram"
-    if Path(old_dram_path).exists():
-        logger.error(
-            f"Detected an old database for DRAM in {old_dram_path}. You can delete it."
-        )
-
-    return config.get("dram_config_file", f"{DBDIR}/DRAM/DRAM.config")
-
-
-rule genome_DRAM_annotate:
-    input:
-        fasta="genomes/{dataset}/{genome}.fa",
-        config=get_dram_config,
-    output:
-        outdir=directory("genomes/annotations/{dataset}/dram/intermediate_files/{genome}"),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/dram.yaml"
-    params:
-        extra=config.get("dram_extra", ""),
-        min_contig_size=config.get("minimum_contig_length", "1000"),
-    log:
-        "logs/annotations/{dataset}/dram/run_dram/{genome}.log",
-    benchmark:
-        "logs/benchmarks/annotations/{dataset}/dram/run_dram/{genome}.tsv"
-    shell:
-        " DRAM.py annotate "
-        " --config_loc {input.config} "
-        " --input_fasta {input.fasta}"
-        " --output_dir {output.outdir} "
-        " --threads {threads} "
-        " --min_contig_size {params.min_contig_size} "
-        " {params.extra} "
-        " --verbose &> {log}"
-        #" --gtdb_taxonomy {input.gtdb_dir}/{params.gtdb_file} "
-        #" --checkm_quality {input.checkm} "
-
-
-def get_all_genome_dram(wildcards):
-    if wildcards.dataset == "genomes":
-        all_genomes = get_all_genomes(wildcards)
-    else:
-        all_genomes = get_all_unbinned(wildcards)
-    return expand(rules.genome_DRAM_annotate.output.outdir,
-            dataset=wildcards.dataset, genome=all_genomes)
-
-
-localrules:
-    concat_annotations,
-
-rule concat_annotations:
-    input:
-        get_all_genome_dram,
-    output:
-        "genomes/annotations/{dataset}/dram/annotations.tsv",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-    run:
-        from utils import io
-
-        for i, annotation_file in enumerate(["annotations.tsv"]):
-            input_files = [
-                os.path.join(dram_folder, annotation_file) for dram_folder in input
-            ]
-
-            io.pandas_concat(
-                input_files, output[i], sep="\t", index_col=0, axis=0, disk_based=True
-            )
-
-
-rule genome_DRAM_destill:
-    input:
-        rules.concat_annotations.output,
-        config=get_dram_config,
-    output:
-        outdir=directory("genomes/annotations/{dataset}/dram/distil"),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/dram.yaml"
-    log:
-        "logs/annotations/{dataset}/dram/distil.log",
-    shell:
-        " DRAM.py distill "
-        " --config_loc {input.config} "
-        " --input_file {input[0]}"
-        " --output_dir {output} "
-        "  &> {log}"
-
-
-rule get_all_genome_modules:
-    input:
-        annotations="genomes/annotations/{dataset}/dram/annotations.tsv",
-        config=get_dram_config,
-    output:
-        "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/dram.yaml"
-    log:
-        "logs/annotations/{dataset}/dram/get_all_modules.log",
-    script:
-        "../scripts/DRAM_get_all_modules.py"
-
-
-localrules:
-    dram,
-
-rule dram:
-    input:
-        "genomes/annotations/{dataset}/dram/distil",
-        "genomes/annotations/{dataset}/dram/kegg_modules.tsv",
-    output:
-        touch("genomes/annotations/{dataset}/dram/finished"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -400,14 +254,14 @@ rule genome_metaeuk_annotation:
         out="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk",
         out_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined",
         mag_id=lambda wc: wc.genome,
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_metaeuk", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/metaeuk.yaml"
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_metaeuk", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_metaeuk", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_metaeuk", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_metaeuk", "account"),
+    container:
+        "docker://ghcr.io/soedinglab/metaeuk:7-bba0d80"
     log:
         "logs/genomes/annotations/{dataset}/metaeuk/{genome}.log",
     benchmark:
@@ -509,12 +363,14 @@ rule combine_genome_metaeuk:
         mag_output_table="genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv",
     params:
         genomes=get_all_genome_metaeuk,
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    conda:
+        "../envs/python.yaml"
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
         "logs/genomes/annotations/{dataset}/metaeuk/combine.log",
     script:
@@ -553,28 +409,28 @@ rule genome_mmseqs2_easy_taxonomy:
         fasta="genomes/{dataset}/{genome}.fa",
         database=rules.mmseqs2_download.output.database,
     output:
-        result_lca="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_lca.tsv",
-        result_report="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_report",
-        result_tophit_aln="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_tophit_aln",
-        result_tophit_report="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result_tophit_report",
-        tmp=temp(directory("genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy.tmp")),
+        result_lca="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_lca.tsv",
+        result_report="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_report",
+        result_tophit_aln="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_tophit_aln",
+        result_tophit_report="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_tophit_report",
+        tmp=temp(directory("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy.tmp")),
     params:
-        out="genomes/annotations/{dataset}/mmseqs2/{genome}.easy_taxonomy_result",
+        out="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result",
         mmseqs2_easy_taxonomy=config["mmseqs2_easy_taxonomy"],
         mag_id=lambda wc: wc.genome,
-        mem=lambda resources: int(resources.mem_mb * 0.8 / 1024),
-    threads: lambda wc: get_resource(wc, None, 1, "annotation", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_mmseqs2_easy_taxonomy", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "annotation", "account"),
-    conda:
-        "../envs/mmseqs2.yaml"
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "mem_mb"),
+        mem_gb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "mem_gb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "account"),
+    container:
+        "docker://ghcr.io/soedinglab/mmseqs2:18-8cc5c"
     log:
-        "logs/genomes/annotations/{dataset}/mmseqs2/{genome}.log",
+        "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.log",
     benchmark:
-        "logs/benchmarks/genomes/annotations/{dataset}/mmseqs2/{genome}.tsv"
+        "logs/benchmarks/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.tsv"
     shell:
         """
         (
@@ -584,7 +440,7 @@ rule genome_mmseqs2_easy_taxonomy:
           {params.out} {output.tmp} \
           {params.mmseqs2_easy_taxonomy} \
           --threads {threads} \
-          --split-memory-limit {params.mem}G
+          --split-memory-limit {resources.mem_gb}G
         ) &> {log}
         """
 
@@ -609,7 +465,7 @@ rule all_genome_mmseqs2_easy_taxonomy:
     input:
         get_all_genome_mmseqs2_easy_taxonomy_results,
     output:
-        touch("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished"),
+        touch("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/finished"),
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),

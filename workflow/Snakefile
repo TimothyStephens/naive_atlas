@@ -195,12 +195,10 @@ def get_genome_annotations():
     annotation_file_names = {
         "gtdb_tree":                      "genomes/annotations/genomes/tree/finished_gtdb_trees",
         "gtdb_taxonomy":                  "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
-        "dram":                           expand("genomes/annotations/{dataset}/dram/finished", dataset="genomes"),
-        "dram_unbinned":                  expand("genomes/annotations/{dataset}/dram/finished", dataset="unbinned"),
         "metaeuk":                        expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="genomes"),
         "metaeuk_unbinned":               expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="unbinned"),
-        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished", dataset="genomes"),
-        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2/easy_taxonomy_finished", dataset="unbinned"),
+        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/finished", dataset="genomes"),
+        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/finished", dataset="unbinned"),
     }
     annotations_requested = config["genome_annotations"]
 
@@ -237,12 +235,10 @@ rule gene_prediction:
 ## ---- ##
 def get_gene_annotations():
     annotation_file_names = {
-        "eggNOG":           expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="genomes"),
-        "eggNOG_unbinned":  expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="unbinned"),
-        "dram":             expand("genomes/annotations/{dataset}/genes/dram", dataset="genomes"),
-        "dram_unbinned":    expand("genomes/annotations/{dataset}/genes/dram", dataset="unbinned"),
-        "mmseqs2":          expand("genomes/annotations/{dataset}/genes/mmseqs2/finished", dataset="genomes"),
-        "mmseqs2_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2/finished", dataset="unbinned"),
+        "eggNOG":                       expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="genomes"),
+        "eggNOG_unbinned":              expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="unbinned"),
+        "mmseqs2_easy_search":          expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search/finished", dataset="genomes"),
+        "mmseqs2_easy_search_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search/finished", dataset="unbinned"),
     }
     annotations_requested = config.get("gene_annotations", [])
 

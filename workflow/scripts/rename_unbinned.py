@@ -31,10 +31,6 @@ sys.excepthook = handle_exception
 
 
 # start
-
-
-from naive_atlas import utils
-
 rename_contigs = snakemake.params.rename_contigs
 
 output_dir = snakemake.output.dir

@@ -40,7 +40,9 @@ dynamic_threads: &dynamic_default_threads 24
 dynamic_time_min: &dynamic_default_time_min 4320 # 72 hr
 
 resources:
-  # qc.smk
+  ################
+  #### qc.smk ####
+  ################
   initialize_qc:
     base_mem_mb: 2000
     scaling_factor: 0.2
@@ -77,7 +79,9 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   
-  # assembly.smk
+  ######################
+  #### assembly.smk ####
+  ######################
   normalize_reads:
     base_mem_mb: 8000
     scaling_factor: 2.0
@@ -128,36 +132,75 @@ resources:
     scaling_factor: 0.1
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-
-  # binning.smk
+  
+  #####################
+  #### binning.smk ####
+  #####################
   binning:
-    base_mem_mb: 4000
+    base_mem_mb: 20000
     scaling_factor: 2.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-
-  # download.smk
+  
+  ######################
+  #### download.smk ####
+  ######################
   download:
-    base_mem_mb: 20000
+    base_mem_mb: 60000
     scaling_factor: 0.0
     threads: 2
     time_min: *dynamic_default_time_min
-
-  # gene_prediction.smk
+  
+  #############################
+  #### gene_prediction.smk ####
+  #############################
   predict_genes:
-    base_mem_mb: 4000
-    scaling_factor: 0.2
+    base_mem_mb: 80000
+    scaling_factor: 2
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-
-  # gene_annotation.smk and genome_annotation.smk
-  annotation:
-    base_mem_mb: 60000
-    scaling_factor: 4.0
+  
+  #############################
+  #### gene_annotation.smk ####
+  #############################
+  gene_annot_eggnog:
+    base_mem_mb: 30000
+    scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-
-  # All local rules ('touch' or combine rules - run on main node if using SLURM/etc.)
+  gene_annot_mmseqs2_easy_search:
+    base_mem_mb: 80000
+    scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  
+  ###############################
+  #### genome_annotation.smk ####
+  ###############################
+  genome_annot_gtdbtk:
+    base_mem_mb: 120000
+    scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  genome_annot_gtdbtk_tree:
+    base_mem_mb: 10000
+    scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  genome_annot_metaeuk:
+    base_mem_mb: 80000
+    scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  genome_annot_mmseqs2_easy_taxonomy:
+    base_mem_mb: 160000
+    scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  
+  ###########################################################################################
+  #### All local rules ('touch' or combine rules - run on main node if using SLURM/etc.) ####
+  ###########################################################################################
   localrule:
     base_mem_mb: 5000
     scaling_factor: 0.0

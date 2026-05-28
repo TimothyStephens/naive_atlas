@@ -44,17 +44,16 @@ contaminant_references:
 genome_annotations:
 - gtdb_tree
 - gtdb_taxonomy
-- dram
-- dram_unbinned
-- metaeuk
-- metaeuk_unbinned
+#- metaeuk
+#- metaeuk_unbinned
 #- mmseqs2_easy_taxonomy
-- mmseqs2_easy_taxonomy_unbinned
+#- mmseqs2_easy_taxonomy_unbinned
 
 gene_annotations:
 - eggNOG
 - eggNOG_unbinned
-- dram
-- dram_unbinned
-- mmseqs2
-- mmseqs2_unbinned
+#- mmseqs2_easy_search
+#- mmseqs2_easy_search_unbinned
+
+
+
