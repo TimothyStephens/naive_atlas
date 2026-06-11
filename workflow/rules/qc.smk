@@ -416,7 +416,7 @@ def apply_quality_filter_command(inputs, outputs, stats, outdir, pairs, run_step
 rule apply_quality_filter_PE:
     input:
         reads=rules.deduplicate_reads_PE.output.reads,
-        adapters=ancient(config["preprocess_adapters"]),
+        adapters=ADAPTERS,
     output:
         reads=temp([
             "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_R1.fastq.gz",
@@ -432,8 +432,8 @@ rule apply_quality_filter_PE:
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Quality_filter") else "f",
             ref=(
-                "ref=%s" % config["preprocess_adapters"]
-                if (config["preprocess_adapters"] is not None)
+                "ref=%s" % ADAPTERS
+                if (ADAPTERS is not None)
                 else ""
             ),
             mink="mink=%d" % config["preprocess_adapter_min_k"],
@@ -478,7 +478,7 @@ rule apply_quality_filter_PE:
 rule apply_quality_filter_SE:
     input:
         reads=rules.deduplicate_reads_SE.output.reads,
-        adapters=ancient(config["preprocess_adapters"]),
+        adapters=ADAPTERS,
     output:
         reads=temp([
             "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_SE.fastq.gz",
@@ -493,8 +493,8 @@ rule apply_quality_filter_SE:
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Quality_filter") else "f",
             ref=(
-                "ref=%s" % config["preprocess_adapters"]
-                if (config["preprocess_adapters"] is not None)
+                "ref=%s" % ADAPTERS
+                if (ADAPTERS is not None)
                 else ""
             ),
             mink="mink=%d" % config["preprocess_adapter_min_k"],
@@ -535,7 +535,7 @@ rule apply_quality_filter_SE:
 rule apply_quality_filter_LR:
     input:
         reads=rules.deduplicate_reads_LR.output.reads,
-        adapters=ancient(config["preprocess_adapters"]),
+        adapters=ADAPTERS,
     output:
         reads=temp([
             "samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_reads_LR.fastq.gz",
@@ -550,8 +550,8 @@ rule apply_quality_filter_LR:
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "Quality_filter") else "f",
             ref=(
-                "ref=%s" % config["preprocess_adapters"]
-                if (config["preprocess_adapters"] is not None)
+                "ref=%s" % ADAPTERS
+                if (ADAPTERS is not None)
                 else ""
             ),
             mink="mink=%d" % config["preprocess_adapter_min_k"],
@@ -594,7 +594,7 @@ rule apply_quality_filter_LR:
 #### Contaminant References
 ####
 # if there are no references, decontamination will be skipped
-if len(config.get("contaminant_references", {}).keys()) > 0:
+if len(CONTAMINANT_REFERENCES.keys()) > 0:
     PROCESSED_STEPS.append("4_decontaminated")
 
     rule build_decontamination_db:
@@ -859,7 +859,7 @@ rule qcreads_PE:
     input:
         reads=(
             rules.run_decontamination_PE.output.reads
-            if len(config.get("contaminant_references", {}).keys()) > 0
+            if len(CONTAMINANT_REFERENCES.keys()) > 0
             else rules.apply_quality_filter_PE.output.reads
         ),
     output:
@@ -885,7 +885,7 @@ rule qcreads_SE:
     input:
         reads=(   
             rules.run_decontamination_SE.output.reads
-            if len(config.get("contaminant_references", {}).keys()) > 0
+            if len(CONTAMINANT_REFERENCES.keys()) > 0
             else rules.apply_quality_filter_SE.output.reads
         ),
     output:
@@ -910,7 +910,7 @@ rule qcreads_LR:
     input:
         reads=(
             rules.run_decontamination_LR.output.reads
-            if len(config.get("contaminant_references", {}).keys()) > 0
+            if len(CONTAMINANT_REFERENCES.keys()) > 0
             else rules.apply_quality_filter_LR.output.reads
         ),
     output:

@@ -23,19 +23,12 @@ database_dir:
 tmpdir: 
   /user/project/dir/tmp
 
-# used to trim adapters from reads and read ends
-preprocess_adapters: 
-  /user/project/dir/databases/adapters.fa
-
 #contamination references can be added such that -- key: /path/to/fasta
 contaminant_references:
-  PhiX: 
-    /user/project/dir/databases/phiX174_virus.fa
   Host_A:
     /user/project/host_refs/Host_A.fa
   Host_B:
     /user/project/host_refs/Host_B.fa
-
 
 
 ########################

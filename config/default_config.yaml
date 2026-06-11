@@ -237,8 +237,7 @@ duplicates_only_optical: false
 duplicates_allow_substitutions: 2
 
 # used to trim adapters from reads and read ends
-preprocess_adapters: 
-  /user/project/dir/databases/adapters.fa
+#preprocess_adapters: /user/adapters.fa
 preprocess_qtrim: "rl"
 preprocess_kmer_trim: "r"
 preprocess_minimum_base_quality: 10
@@ -263,12 +262,7 @@ normalization_minimum_kmer_depth: 3
 error_correction_overlapping_pairs: true
 #contamination references can be added such that -- key: /path/to/fasta
 contaminant_references:
-  PhiX: 
-    /user/project/dir/databases/phiX174_virus.fa
-#  Host_A:
-#    /user/project/host_refs/Host_A.fa
-#  Host_B:
-#    /user/project/host_refs/Host_B.fa
+contaminant_references_include_phiX: true
 contaminant_max_indel: 20
 contaminant_min_ratio: 0.65
 contaminant_kmer_length: 13

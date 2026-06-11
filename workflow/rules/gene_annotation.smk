@@ -11,7 +11,7 @@ import os
 
 rule gene_eggNOG_homology_search:
     input:
-        eggnog_db_files=get_eggnog_db_file(),
+        eggnog_db_files=rules.download_eggNOG_files.output.files,
         faa="genomes/genes/{dataset}/{genome}.faa",
     output:
         seed=temp(
@@ -21,7 +21,7 @@ rule gene_eggNOG_homology_search:
             "Intermediate/genecatalog/annotations/{dataset}/genes/eggNOG/{genome}.emapper.hits"
         ),
     params:
-        data_dir=EGGNOG_DIR,
+        data_dir=rules.download_eggNOG_files.output.dir,
         prefix=lambda wc, output: output[0].replace(".emapper.seed_orthologs", ""),
     threads: lambda wc: get_resource(wc, None, 1, "gene_annot_eggnog", "threads")
     resources:
@@ -43,13 +43,13 @@ rule gene_eggNOG_homology_search:
 
 rule gene_eggNOG_annotation:
     input:
-        eggnog_db_files=get_eggnog_db_file(),
+        eggnog_db_files=rules.download_eggNOG_files.output.files,
         seed=rules.gene_eggNOG_homology_search.output.seed,
     output:
         temp("Intermediate/genecatalog/annotations/{dataset}/genes/eggNOG/{genome}.emapper.annotations"),
     params:
         data_dir=(
-            config["virtual_disk"] if config["eggNOG_use_virtual_disk"] else EGGNOG_DIR
+            config["virtual_disk"] if config["eggNOG_use_virtual_disk"] else rules.download_eggNOG_files.output.dir
         ),
         prefix=lambda wc, output: output[0].replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",

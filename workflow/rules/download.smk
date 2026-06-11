@@ -2,54 +2,12 @@ import hashlib
 import os
 
 
-# this values are incuded in the snakefile
+# This values are incuded in the snakefile
 DBDIR = os.path.realpath(config["database_dir"])
 
-ZENODO_ARCHIVE = "1134890"
-EGGNOG_VERSION = "5"
-EGGNOG_DIR = os.path.join(DBDIR, "EggNOG_V" + EGGNOG_VERSION)
-
-GTDB_VERSION = "R232"
 GTDB_DATA_URL = "https://data.ace.uq.edu.au/public/gtdb/data/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz"
-#GTDB_DATA_URL = "https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz"
-GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_" + GTDB_VERSION)
+GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_R232")
 
-
-def md5(fname):
-    # https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
-    hash_md5 = hashlib.md5()
-    if not os.path.exists(fname):
-        return None
-    with open(fname, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-
-
-# note: saving OG_fasta.tar.gz in order to not create secondary "success" file
-FILES = {
-    "adapters.fa": "ae839dc79cfb855a1b750a0d593fe01e",
-    "phiX174_virus.fa": "82516880142e8c89b466bc6118696c47",
-    "refseq.db": "42b8976656f2cfd661b8a299d6e24c19",
-    "refseq.dmnd": "c01facc7e397270ccb796ea799a09108",
-    "refseq.tree": "469fcbeb15dd0d4bf8f1677682bde157",
-    "silva_rfam_all_rRNAs.fa": "f102e35d9f48eabeb0efe9058559bc66",
-    "eggnog.db": "7923d3bb7eca8e0e8f122be4b5ca6997",
-    "eggnog_proteins.dmnd": "64fefa838833a6f3e220a06fb9d403cd",
-}
-
-
-def get_eggnog_db_file():
-    return ancient(
-        expand(
-            "{path}/{files}",
-            path=EGGNOG_DIR,
-            files=["eggnog.db", "eggnog_proteins.dmnd"],
-        )
-    )
-
-
-ruleorder: download_eggNOG_files > download_atlas_files
 
 
 localrules:
@@ -57,14 +15,13 @@ localrules:
 
 rule all_downloads:
     input:
-        expand("{dir}/{filename}", dir=DBDIR, filename=["adapters.fa", "phiX174_virus.fa"]),
         # Binning
         f"{DBDIR}/CheckM2",
         f"{DBDIR}/MDMcleaner",
         f"{DBDIR}/busco_lineages",
         f"{DBDIR}/geNomad",
         # Annotation
-        get_eggnog_db_file(),
+        f"{DBDIR}/EggNOG",
         os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
         os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
         # Gene Prediction
@@ -79,28 +36,6 @@ rule all_downloads:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
 
-
-rule download_atlas_files:
-    output:
-        f"{DBDIR}/{{filename}}",
-    wildcard_constraints:
-        filename="[A-Za-z0-9_.]+",
-    log:
-        "logs/download/download_atlas_file_{filename}.log",
-    threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
-    benchmark:
-        "benchmarks/download/download_atlas_file_{filename}.tsv"
-    run:
-        shell(
-            "wget -O {output} 'https://zenodo.org/record/{ZENODO_ARCHIVE}/files/{wildcards.filename}' "
-        )
-        if not FILES[wildcards.filename] == md5(output[0]):
-            raise OSError(2, "Invalid checksum", output[0])
 
 
 
@@ -215,10 +150,10 @@ rule genomad_download_db:
 
 rule download_eggNOG_files:
     output:
-        f"{EGGNOG_DIR}/eggnog.db",
-        f"{EGGNOG_DIR}/eggnog_proteins.dmnd",
+        files=[f"{DBDIR}/EggNOG/eggnog.db", f"{DBDIR}/EggNOG/eggnog_proteins.dmnd"],
+        dir=f"{DBDIR}/EggNOG",
     params:
-        eggnog_dir=f"{EGGNOG_DIR}",
+        eggnog_dir=f"{DBDIR}/EggNOG",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),

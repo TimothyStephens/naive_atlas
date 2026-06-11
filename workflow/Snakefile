@@ -25,6 +25,21 @@ from naive_atlas.make_config import update_config as atlas_update_config
 config = atlas_update_config(config)
 from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEADER
 
+# Hardcoded paths
+# Use data/adapters.fa unless overwritten by the user 
+ADAPTERS = config.get("preprocess_adapters", os.path.join(workflow_folder, "data/adapters.fa"))
+
+# Use PhiX (unless overwritten by the user) and append user added references
+CONTAMINANT_REFERENCES = {}
+if config.get("contaminant_references_include_phiX"):
+    CONTAMINANT_REFERENCES["PhiX"] = os.path.join(workflow_folder, "data/phiX174_virus.fa")
+CONTAMINANT_REFERENCES = CONTAMINANT_REFERENCES | config.get("contaminant_references", {})
+
+print(f"ADAPTERS: {ADAPTERS}")
+print(f"CONTAMINANT_REFERENCES: {CONTAMINANT_REFERENCES}")
+
+
+
 
 # minimum required snakemake version
 min_version("8.5")
