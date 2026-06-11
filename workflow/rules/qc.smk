@@ -1264,7 +1264,7 @@ rule build_qc_report:
         read_length_stats="stats/read_length_stats.tsv",
         read_insert_size_stats="stats/insert_stats.tsv",
     output:
-        report="reports/QC_report.html",
+        report="reports/qc_report.html",
     log:
         "logs/qc/sequence_quality_control/read_stats/report.log",
     params:
@@ -1291,7 +1291,7 @@ localrules:
 
 rule finalize_sample_qc:
     input:
-        report="reports/QC_report.html",
+        report="reports/qc_report.html",
     output:
         flag=touch("samples/{sample}/sequence_quality_control/finished_QC"),
     log:

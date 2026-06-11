@@ -188,10 +188,9 @@ rule gene_mmseqs2_annotation:
     shell:
         """
         (
-        mmseqs easy-search \
+        /usr/local/bin/entrypoint easy-search \
             --threads {threads} \
             --split-memory-limit {resources.mem_gb}G \
-            --compressed 1 \
             --format-mode 4 \
             --format-output query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader \
             {params.mmseqs2_opts} \
@@ -199,7 +198,7 @@ rule gene_mmseqs2_annotation:
             {input.database} \
             {params.results} \
             {output.tmp} \
-          && pigz -11 -p {threads} {params.results}
+          && gzip -9 {params.results}
         ) &> {log}
         """
 

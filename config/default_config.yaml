@@ -27,7 +27,7 @@ max_mem_mb: 1500000 # 1,500 GB
 # Partition mapping (for SLURM or other schedulers): partition_name -> threshold (mem_mb)
 account: "general"
 partition_ranges:
-  main: 160000
+  main-redhat: 160000
   mem: 1500000
 
 # Default resources for simple or low resource jobs (not requiring dynamic scaling)
@@ -188,7 +188,7 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   genome_annot_metaeuk:
-    base_mem_mb: 80000
+    base_mem_mb: 160000
     scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
@@ -410,7 +410,7 @@ mmseqs2_memory: 120 #GB of memory for mmseqs2 annotation of genes and genomes - 
 # Gene annotation
 mmseqs2_opts: ""
 # Genome easy-taxonomy
-mmseqs2_easy_taxonomy: "--compressed 1"
+mmseqs2_easy_taxonomy: ""
 
 ## MetaEuk
 metaeuk_createdb: ""

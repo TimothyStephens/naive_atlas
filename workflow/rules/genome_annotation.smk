@@ -233,6 +233,15 @@ rule genome_metaeuk_annotation:
         fasta="genomes/{dataset}/{genome}.fa",
         database=rules.mmseqs2_download.output.database,
     output:
+        codon="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.codon.fas.gz",
+        fas="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.fas.gz",
+        gff="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.gff.gz",
+        headerMap="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.headersMap.tsv.gz",
+        headerMap_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined.headersMap.tsv.gz",
+        contig_classification="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv.gz",
+        mag_classification="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv.gz",
+        tmp=temp(directory("genomes/annotations/{dataset}/metaeuk/{genome}.fa.tmp")),
+    params:
         codon="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.codon.fas",
         fas="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.fas",
         gff="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.gff",
@@ -240,8 +249,6 @@ rule genome_metaeuk_annotation:
         headerMap_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined.headersMap.tsv",
         contig_classification="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv",
         mag_classification="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv",
-        tmp=temp(directory("genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk.tmp")),
-    params:
         tax_per_contig="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_tax_per_contig.tsv",
         tax_per_pred="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_tax_per_pred.tsv",
         tax_per_contig_combined="genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_combined_tax_per_contig.tsv",
@@ -270,25 +277,25 @@ rule genome_metaeuk_annotation:
         """
         (
         mkdir -p {output.tmp}
-        metaeuk createdb \
+        /usr/local/bin/entrypoint createdb \
           {input.fasta} {output.tmp}/contigDB \
           {params.metaeuk_createdb}
-        metaeuk predictexons \
+        /usr/local/bin/entrypoint predictexons \
           {output.tmp}/contigDB {input.database} {output.tmp}/callsResultDB {output.tmp}/tmp \
           --threads {threads} {params.metaeuk_predictexons}
-        metaeuk reduceredundancy \
+        /usr/local/bin/entrypoint reduceredundancy \
           {output.tmp}/callsResultDB {output.tmp}/predsResultDB {output.tmp}/predGroupsDB \
           --threads {threads} {params.metaeuk_reduceredundancy}
-        metaeuk unitesetstofasta \
+        /usr/local/bin/entrypoint unitesetstofasta \
           {output.tmp}/contigDB {input.database} {output.tmp}/predsResultDB {params.out} \
           --threads {threads} {params.metaeuk_unitesetstofasta}
-        if [ $(grep -c '>' "{output.fas}") -gt 0 ]; then
-            metaeuk taxtocontig \
-              {output.tmp}/contigDB {output.fas} {output.headerMap} {input.database} {params.out} {output.tmp}/tmp \
+        if [ $(grep -c '>' "{params.fas}") -gt 0 ]; then
+            /usr/local/bin/entrypoint taxtocontig \
+              {output.tmp}/contigDB {params.fas} {params.headerMap} {input.database} {params.out} {output.tmp}/tmp \
               --threads {threads} {params.metaeuk_taxtocontig}
-            awk '{{OFS=FS="\\t"}}{{$1=0; print}}' {output.headerMap} > {output.headerMap_combined}
-            metaeuk taxtocontig \
-              {output.tmp}/contigDB {output.fas} {output.headerMap_combined} {input.database} {params.out_combined} {output.tmp}/tmp \
+            awk '{{OFS=FS="\\t"}}{{$1=0; print}}' {params.headerMap} > {params.headerMap_combined}
+            /usr/local/bin/entrypoint taxtocontig \
+              {output.tmp}/contigDB {params.fas} {params.headerMap_combined} {input.database} {params.out_combined} {output.tmp}/tmp \
               --threads {threads} {params.metaeuk_taxtocontig}
             # Format results
             awk 'BEGIN{{
@@ -297,7 +304,7 @@ rule genome_metaeuk_annotation:
                 }} {{
                     print
                 }}' \
-              {params.tax_per_contig} > {output.contig_classification}
+              {params.tax_per_contig} > {params.contig_classification}
             awk -v S="{params.mag_id}" 'BEGIN{{
                     OFS=FS="\\t"; 
                     print "MAG_ID\\tmetaeuk_tax_id\\tmetaeuk_tax_rank\\tmetaeuk_name\\tmetaeuk_total_frags\\tmetaeuk_assigned_frags\\tmetaeuk_frags_agreement\\tmetaeuk_agreement_ratio\\tmetaeuk_lineage"
@@ -305,10 +312,10 @@ rule genome_metaeuk_annotation:
                     $1=S; 
                     print
                 }}' \
-              {params.tax_per_contig_combined} > {output.mag_classification}
+              {params.tax_per_contig_combined} > {params.mag_classification}
         else
             echo "WARNING: No predicted genes. Can't assess taxonomy!"
-            touch "{output.headerMap_combined}"
+            touch "{params.headerMap_combined}"
             touch "{params.tax_per_contig}"
             touch "{params.tax_per_contig_combined}"
             # Format results
@@ -319,10 +326,11 @@ rule genome_metaeuk_annotation:
                 }} {{
                     print $1"\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA"
                 }}' \
-              > {output.contig_classification}
-            echo -e "MAG_ID\\tmetaeuk_tax_id\\tmetaeuk_tax_rank\\tmetaeuk_name\\tmetaeuk_total_frags\\tmetaeuk_assigned_frags\\tmetaeuk_frags_agreement\\tmetaeuk_agreement_ratio\\tmetaeuk_lineage" > {output.mag_classification}
-            echo -e "{params.mag_id}\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA" >> {output.mag_classification}
+              > {params.contig_classification}
+            echo -e "MAG_ID\\tmetaeuk_tax_id\\tmetaeuk_tax_rank\\tmetaeuk_name\\tmetaeuk_total_frags\\tmetaeuk_assigned_frags\\tmetaeuk_frags_agreement\\tmetaeuk_agreement_ratio\\tmetaeuk_lineage" > {params.mag_classification}
+            echo -e "{params.mag_id}\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA" >> {params.mag_classification}
         fi
+        gzip -9 {params.out}*
         ) &> {log}
         """
 
@@ -343,13 +351,13 @@ def get_all_genome_metaeuk_contigs(wildcards):
 
 def get_all_genome_metaeuk_contig_results(wildcards):
     all_genomes = get_all_genome_metaeuk(wildcards)
-    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv', 
+    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_contig_classification.tsv.gz', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
 def get_all_genome_metaeuk_mag_results(wildcards):
     all_genomes = get_all_genome_metaeuk(wildcards)
-    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv', 
+    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.fa.metaeuk_mag_classification.tsv.gz', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
@@ -359,8 +367,8 @@ rule combine_genome_metaeuk:
         contig_results_files=get_all_genome_metaeuk_contig_results,
         mag_results_files=get_all_genome_metaeuk_mag_results,
     output:
-        contig_output_table="genomes/annotations/{dataset}/metaeuk_contig_predictions.tsv",
-        mag_output_table="genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv",
+        contig_output_table="genomes/annotations/{dataset}/metaeuk_contig_predictions.tsv.gz",
+        mag_output_table="genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz",
     params:
         genomes=get_all_genome_metaeuk,
     conda:
@@ -409,10 +417,10 @@ rule genome_mmseqs2_easy_taxonomy:
         fasta="genomes/{dataset}/{genome}.fa",
         database=rules.mmseqs2_download.output.database,
     output:
-        result_lca="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_lca.tsv",
-        result_report="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_report",
-        result_tophit_aln="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_tophit_aln",
-        result_tophit_report="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_tophit_report",
+        result_lca="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_lca.tsv.gz",
+        result_report="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_report.gz",
+        result_tophit_aln="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_tophit_aln.gz",
+        result_tophit_report="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result_tophit_report.gz",
         tmp=temp(directory("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy.tmp")),
     params:
         out="genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/{genome}.easy_taxonomy_result",
@@ -435,12 +443,13 @@ rule genome_mmseqs2_easy_taxonomy:
         """
         (
         mkdir -p {output.tmp}
-        mmseqs easy-taxonomy \
+        /usr/local/bin/entrypoint easy-taxonomy \
           {input.fasta} {input.database} \
           {params.out} {output.tmp} \
           {params.mmseqs2_easy_taxonomy} \
           --threads {threads} \
-          --split-memory-limit {resources.mem_gb}G
+          --split-memory-limit {resources.mem_gb}G \
+        && gzip -9 {params.out}*	
         ) &> {log}
         """
 

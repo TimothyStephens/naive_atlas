@@ -127,7 +127,7 @@ rule qc:
             if PAIRED_END
             else "stats/read_length_stats.tsv"
         ),
-        report="reports/QC_report.html",
+        report="reports/qc_report.html",
     output:
         touch("finished_QC"),
 
