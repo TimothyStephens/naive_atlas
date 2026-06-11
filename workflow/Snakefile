@@ -26,8 +26,13 @@ config = atlas_update_config(config)
 from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEADER
 
 # Hardcoded paths
-# Use data/adapters.fa unless overwritten by the user 
+spaces_found = 0
+# Use data/adapters.fa unless overwritten by the user
 ADAPTERS = config.get("preprocess_adapters", os.path.join(workflow_folder, "data/adapters.fa"))
+ADAPTERS = os.path.abspath(ADAPTERS)
+if " " in ADAPTERS:
+    logger.error(f"The adapter path contains spaces: '{ADAPTERS}'. Paths with spaces are not supported.")
+    spaces_found += 1
 
 # Use PhiX (unless overwritten by the user) and append user added references
 CONTAMINANT_REFERENCES = {}
@@ -35,10 +40,21 @@ if config.get("contaminant_references_include_phiX"):
     CONTAMINANT_REFERENCES["PhiX"] = os.path.join(workflow_folder, "data/phiX174_virus.fa")
 CONTAMINANT_REFERENCES = CONTAMINANT_REFERENCES | config.get("contaminant_references", {})
 
-print(f"ADAPTERS: {ADAPTERS}")
-print(f"CONTAMINANT_REFERENCES: {CONTAMINANT_REFERENCES}")
+for name, path in CONTAMINANT_REFERENCES.items():
+    # Handle if path is wrapped in a list/tuple (e.g. metatranscriptome rRNA)
+    actual_path = path[0] if isinstance(path, (list, tuple)) else path
+    if actual_path:
+        abs_path = os.path.abspath(actual_path)
+        if " " in abs_path:
+            logger.error(f"Contaminant reference '{name}' path contains spaces: '{abs_path}'. Paths with spaces are not supported.")
+            spaces_found += 1
+        CONTAMINANT_REFERENCES[name] = abs_path
 
+if spaces_found > 0:
+    sys.exit(1)
 
+logger.info(f"Adapter file being used: {ADAPTERS}")
+logger.info(f"contaminant reference files being used: {CONTAMINANT_REFERENCES}")
 
 
 # minimum required snakemake version

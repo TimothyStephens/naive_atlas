@@ -29,6 +29,12 @@ def validate_sample_table(sampleTable):
         )
         exit(1)
 
+    if sampleTable.index.astype(str).str.contains(" ").any():
+        logger.error(
+            f"Sample names shouldn't contain spaces. This can lead to incompatibilities.\n {list(sampleTable.index)}"
+        )
+        exit(1)
+
     if sampleTable.index.str.match("^\d").any():
         logger.error(
             f"Sample names shouldn't start with a digit. This can lead to incompatibilities.\n {list(sampleTable.index)}"
@@ -46,11 +52,24 @@ def validate_sample_table(sampleTable):
             f"Sample names shouldn't have more than one hypo '-'. This can lead to incompatibilities.\n {list(sampleTable.index)}"
         )
         exit(1)
+    
+    path_columns = ["Reads_raw_R1", "Reads_raw_R2", "Reads_raw_Long"]
+    for col in path_columns:
+        if col in sampleTable.columns:
+            for idx, path in sampleTable[col].dropna().items():
+                if " " in str(path):
+                    logger.error(f"Path '{path}' in column '{col}' for sample '{idx}' contains spaces. Paths with spaces are not supported and will break the workflow. Please rename your files or directories to remove spaces.")
+                    exit(1)
 
     ### Validate Bin_group
-
     if sampleTable.Bin_group.isnull().any():
         logger.warning(f"Found empty values in the sample table column 'Bin_group'")
+
+    if sampleTable.Bin_group.astype(str).str.contains(" ").any():
+        logger.error(
+            f"Bin_group names shouldn't contain spaces. This can lead to incompatibilities. \n {list(sampleTable.Bin_group)}"
+        )
+        exit(1)
 
     if sampleTable.Bin_group.str.contains("_").any():
         logger.error(
@@ -150,5 +169,3 @@ def validate_bingroup_size(sampleTable):
         logger.warning(
             "You have only one sample per bingroup. Will use this information but your bins might be less accurate."
         )
-
-

@@ -329,6 +329,13 @@ def run_workflow(
     print_logo()
     logger.info("STARTING WORKFLOW!")
 
+    # Check for spaces in working_dir
+    if " " in str(working_dir):
+        logger.critical(
+            f"The specified working directory '{working_dir}' contains spaces. This can break the workflow. Please choose a location without spaces."
+        )
+        sys.exit(1)
+
     cluster_params = ""
     if cluster_type:
         if profile is None:
