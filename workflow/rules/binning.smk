@@ -164,8 +164,6 @@ rule binning_prokaryotic_maxbin_107:
         "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.txt"
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.log",
-    #conda:
-    #    "../envs/maxbin2.yaml"
     container:
         "docker://timothystephens/maxbin2:2.2.7-TGSv5",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
@@ -238,8 +236,6 @@ rule binning_prokaryotic_maxbin_40:
         "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.txt"
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.log",
-    #conda:
-    #    "../envs/maxbin2.yaml"
     container:
         "docker://timothystephens/maxbin2:2.2.7-TGSv5",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
@@ -424,8 +420,6 @@ rule binning_prokaryotic_mdmcleaner:
         "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.log",
-    #conda:
-    #    "../envs/mdmcleaner.yaml"
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
@@ -715,8 +709,6 @@ rule binning_eukaryotic_busco:
         "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.txt"
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.log",
-    #conda:
-    #    "../envs/busco.yaml"
     container:
         "docker://timothystephens/busco:6.0.0-TGSv1",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
@@ -970,8 +962,6 @@ rule binning_viral_genomad:
         "benchmarks/samples/{sample}/binning/veba/3_viral/2_genomad.txt"
     log:
         "logs/samples/{sample}/binning/veba/3_viral/2_genomad.log",
-    #conda:
-    #    "../envs/genomad.yaml"
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")

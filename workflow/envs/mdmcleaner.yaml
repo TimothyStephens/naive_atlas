@@ -1,6 +1,0 @@
-channels:
-    - conda-forge
-    - bioconda
-    - defaults
-dependencies:
-    - mdmcleaner=0.8.7

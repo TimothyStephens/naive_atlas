@@ -81,8 +81,6 @@ rule mdmcleaner_download_db:
         "benchmarks/download/mdmcleaner_database.tsv"
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
-    #conda:
-    #    "../envs/mdmcleaner.yaml"
     shell:
         """
         mdmcleaner makedb --outdir {output.dbdir} &> {log}
@@ -127,8 +125,6 @@ rule genomad_download_db:
         "logs/download/genomad_lineages.log",
     benchmark:
         "benchmarks/download/genomad_lineages.tsv"
-    #conda:
-    #    "../envs/genomad.yaml"
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
     shell:
@@ -164,8 +160,6 @@ rule download_eggNOG_files:
         "logs/download/download_eggNOG_files.log",
     benchmark:
         "benchmarks/download/download_eggNOG_files.tsv"
-    #conda:
-    #    "../envs/eggNOG.yaml"
     container:
         "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     shell:

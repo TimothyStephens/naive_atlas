@@ -1,7 +1,0 @@
-channels:
-- conda-forge
-- bioconda
-- defaults
-dependencies:
-- busco=6.0.0
-- biopython=1.79
