@@ -356,6 +356,7 @@ veba_prokaryotic:
   minimum_genome_length: 150000 # Minimum prokaryote genome length.
   checkm2_completeness: 50 # CheckM2 completeness threshold.
   checkm2_contamination: 10 # CheckM2 contamination threshold.
+  mdmcleaner_skip: false # Skip MDMcleaner step (very long runtime on rich prokaryotic microbiomes)
   mdmcleaner_options: '' # MDMcleaner commandline options. e.g., '--fast_run'
 
 veba_eukaryotic:

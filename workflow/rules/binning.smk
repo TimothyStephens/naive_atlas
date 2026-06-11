@@ -418,6 +418,8 @@ rule binning_prokaryotic_mdmcleaner:
         mdmcleaner_config="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.mdmcleaner.config",
         output_path="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner",
         output_filtered="samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}/{genome}_filtered_kept_contigs.fasta.gz",
+        extra=config["veba_prokaryotic"]["mdmcleaner_options"],
+        skip=("t" if config["veba_prokaryotic"]["mdmcleaner_skip"] else "f"),
     benchmark:
         "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
     log:
@@ -435,6 +437,13 @@ rule binning_prokaryotic_mdmcleaner:
     shell:
         """
         (
+        if [ "{params.skip}" == "t" ];
+        then
+            echo '[WARNING] Skipping MDMcleaner because the user set skip=True. Copying Whokaryote file as MDMcleaner output.'
+            cat {input.fasta} > {output.fasta}
+            exit 0
+        fi
+        
         if [ ! -s {input.fasta} ];
         then
             echo '[WARNING] Output from Whokaryote is empty, suggesting that this bin is not prokaryotic. Skipping MDMcleaner.'
@@ -448,7 +457,7 @@ rule binning_prokaryotic_mdmcleaner:
             -c {params.mdmcleaner_config} \
             -i {params.raw_fasta} \
             -o {params.output_path} \
-            --threads {threads}
+            --threads {threads} {params.extra}
         gunzip -c {params.output_filtered} > {output.fasta}
         ) &> {log}
         """

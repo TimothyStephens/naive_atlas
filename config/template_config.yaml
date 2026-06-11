@@ -32,6 +32,14 @@ contaminant_references:
 
 
 ########################
+# Binning
+########################
+veba_prokaryotic:
+  mdmcleaner_skip: false # Skip MDMcleaner step (very long runtime on rich prokaryotic microbiomes)
+  mdmcleaner_options: '' # MDMcleaner commandline options. e.g., '--fast_run' to reduce runtime
+
+
+########################
 # Annotations
 ########################
 genome_annotations:
