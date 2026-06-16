@@ -366,9 +366,8 @@ checkpoint binning_prokaryotic_dastool:
                 mkdir -p "{output.bins}"
             else
                 echo "[ERROR]  - DAS_Tool failed for some reason but didnt return an error. Please check log file."
+		exit 1
             fi
-        else
-            echo "[ERROR]  - DAS_Tool failed to produce bins for some reason but didnt return an error. Please check log file."
         fi
         ) 1>{log} 2>&1
         """
