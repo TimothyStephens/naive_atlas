@@ -18,13 +18,14 @@ rule gene_eggNOG_mapper:
         hits=temp(
             "genomes/annotations/{dataset}/genes/{genome}.emapper.hits"
         ),
-        temp("genomes/annotations/{dataset}/genes/{genome}.emapper.annotations"),
+        annot=temp(
+            "genomes/annotations/{dataset}/genes/{genome}.emapper.annotations"
+        ),
     params:
-        data_dir=rules.download_eggNOG_files.output.dir,
         data_dir=(
             config["virtual_disk"] if config["eggNOG_use_virtual_disk"] else rules.download_eggNOG_files.output.dir
         ),
-        prefix=lambda wc, output: output[0].replace(".emapper.annotations", ""),
+        prefix=lambda wc, output: output.annot.replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
     threads: lambda wc: get_resource(wc, None, 1, "gene_annot_eggnog", "threads")
     resources:
@@ -86,7 +87,7 @@ def get_all_gene_eggnog(wildcards):
         path = f"genomes/genes/{wildcards.dataset}/{genome}.faa"
         
         if os.path.exists(path) and os.path.getsize(path) > 0:
-            valid_paths.append(expand(rules.gene_eggNOG_annotation.output, dataset=wildcards.dataset, genome=genome)[0])
+            valid_paths.append(expand(rules.gene_eggNOG_mapper.output.annot, dataset=wildcards.dataset, genome=genome)[0])
         else:
             logger.info(f"[DEBUG] Skipping eggNOG for {path}: File empty or missing.")
     
@@ -120,7 +121,29 @@ rule combine_gene_egg_nog_annotations:
 
             del Tables
 
-            combined.columns = EGGNOG_HEADER
+            combined.columns = [
+                "Query",
+                "Seed",
+                "Seed_evalue",
+                "Seed_Score",
+                "eggNOG",
+                "max_annot_lvl",
+                "COG_cat",
+                "Description",
+                "Name",
+                "GO_terms",
+                "EC",
+                "KO",
+                "KEGG_Pathway",
+                "KEGG_Module",
+                "KEGG_Reaction",
+                "KEGG_rclass",
+                "BRITE",
+                "KEGG_TC",
+                "CAZy",
+                "BiGG_Reaction",
+                "PFAMs",
+            ]
             combined["Seed_evalue"] = combined["Seed_evalue"].astype("bytes")
             combined["Seed_Score"] = combined["Seed_Score"].astype("bytes")
             combined = combined.astype(str)

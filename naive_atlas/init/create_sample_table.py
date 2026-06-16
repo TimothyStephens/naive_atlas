@@ -1,13 +1,12 @@
 import os
 import sys
 import logging
-
-logger = logging.getLogger(__file__)
-
-
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+
+logger = logging.getLogger(__file__)
+
 
 
 def splitext_ignore_gz(path):
@@ -19,10 +18,12 @@ def splitext_ignore_gz(path):
     return basename, ext
 
 
+
 def is_fastq_file(file, unzipped_extensions=[".fastq", ".fq"]):
     base_name, extension = splitext_ignore_gz(file)
 
     return extension in unzipped_extensions
+
 
 
 def add_sample_to_table(sample_dict, sample_id, header, fastq):
@@ -39,10 +40,10 @@ def add_sample_to_table(sample_dict, sample_id, header, fastq):
         sample_dict[sample_id][header] = fastq
 
 
+
 ## global names
 split_character = "infer"
 is_paired = None
-
 
 def infer_split_character(base_name):
     "Infer if fastq filename uses '_R1' '_1' to seperate filenames"
@@ -69,7 +70,6 @@ def infer_split_character(base_name):
                 f"I inferred that {split_character}1 and {split_character}2 distinguish paired end reads."
             )
 
-    #    return split_character
 
 
 def parse_file(full_path, sample_dict, sample_name=None):
@@ -84,12 +84,10 @@ def parse_file(full_path, sample_dict, sample_name=None):
         if sample_name is None:
             sample_name = base_name.split(split_character)[0]
 
-        if (split_character + "2") in base_name:
-            add_sample_to_table(sample_dict, sample_name, "R2", full_path)
-        elif (split_character + "1") in base_name:
-            add_sample_to_table(sample_dict, sample_name, "R1", full_path)
-        elif "_se" in base_name:
-            logger.info("Found se reads. I ignore them.")
+        if (split_character + "1") in base_name:
+            add_sample_to_table(sample_dict, sample_name, "Reads_raw_R1", full_path)
+        elif (split_character + "2") in base_name:
+            add_sample_to_table(sample_dict, sample_name, "Reads_raw_R2", full_path)
         else:
             logger.error(
                 f"Did't find '{split_character}1' or  "
@@ -102,7 +100,8 @@ def parse_file(full_path, sample_dict, sample_name=None):
         if sample_name is None:
             sample_name = base_name
 
-        add_sample_to_table(sample_dict, sample_name, "R1", full_path)
+        add_sample_to_table(sample_dict, sample_name, "Reads_raw_R1", full_path)
+
 
 
 def parse_folder(base_folder, subfolder, sample_dict):
@@ -128,6 +127,7 @@ def parse_folder(base_folder, subfolder, sample_dict):
                 sample_dict,
                 sample_name=subfolder,
             )
+
 
 
 def get_samples_from_fastq(path, fraction_split_character=split_character):
@@ -166,10 +166,8 @@ def get_samples_from_fastq(path, fraction_split_character=split_character):
 
     # Create dataframe
     sample_df = pd.DataFrame(sample_dict).T.sort_index()
-
-    if sample_df.isnull().any().any():
-        logger.error(f"Missing files:\n\n {sample_df}")
-        raise Exception()
+    sample_df['Reads_raw_Long'] = pd.NA
+    sample_df = sample_df.reindex(columns=['Reads_raw_R1', 'Reads_raw_R2', 'Reads_raw_Long'])
 
     if sample_df.shape[0] == 0:
         logger.error(
@@ -177,7 +175,7 @@ def get_samples_from_fastq(path, fraction_split_character=split_character):
             "    I'm looking for files with .fq or .fastq extension. "
         )
         raise Exception()
-
+    
     logger.info(f"Found {sample_df.shape[0]} samples")
 
     return sample_df
@@ -236,15 +234,12 @@ def simplify_sample_names(sample_df):
         sample_df.index = "S" + sample_df.index
 
 
+
 ### Testing
-
-
 import os
 import shutil
 
 # create test folder structure
-
-
 def create_test_fastq_files(
     output_folder,
     paired=True,
@@ -276,6 +271,7 @@ def create_test_fastq_files(
             open(fname, "w").close()
 
 
+
 def test_table_creation(
     should_fail=False,
     samples=["sample1", "sample2", "sample3"],
@@ -304,6 +300,7 @@ def test_table_creation(
         assert all(
             sample_df.index == expected_samples
         ), f"Samples not as expected {sample_df.index.values} != {expected_samples}"
+
 
 
 def run_tests():

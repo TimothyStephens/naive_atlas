@@ -6,28 +6,69 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-from snakemake.utils import logger, min_version
-
-workflow_folder = os.path.dirname(os.path.realpath(workflow.snakefile))
-
-sys.path.append(os.path.join(workflow_folder, "scripts"))
-import utils
-
-
-# add default config
-# comand line adds user config
-configfile: os.path.join(workflow_folder, "..", "config", "default_config.yaml")
-
-
-# add defualt values from python (TODO: replace this)
-from naive_atlas.make_config import update_config as atlas_update_config
-
-config = atlas_update_config(config)
-from naive_atlas.default_values import *  # LOAD HARDCODED values and EGGNOG_HEADER
-
-
-# minimum required snakemake version
+# Minimum required snakemake version
+from snakemake.utils import min_version, logger
 min_version("8.5")
+
+# Get package paths
+workflow_folder = workflow.basedir
+package_dir = os.path.abspath(os.path.join(workflow.basedir, "../"))
+if package_dir not in sys.path:
+    sys.path.append(package_dir)
+
+# Set logger level
+import logging
+from naive_atlas.color_logger import ColorFormatter, logging_format, datefmt
+
+# Create clean console handler
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(ColorFormatter(logging_format, datefmt=datefmt))
+
+# Target every logging namespace Snakemake uses
+# This destroys default text layout loops to halt duplicates
+target_loggers = [
+    logging.getLogger(),                   # The system root logger
+    logging.getLogger("snakemake"),        # Base snakemake framework logger
+    logging.getLogger("snakemake.logging") # Core engine logging module
+]
+
+# If the imported wrapper object contains a nested logger, include it
+if hasattr(logger, "logger") and logger.logger is not None:
+    target_loggers.append(logger.logger)
+
+for target in target_loggers:
+    # Remove all default handlers so they can't print raw text
+    for handler in list(target.handlers):
+        target.removeHandler(handler)
+    
+    # Inject your color console handler exclusively
+    target.addHandler(console_handler)
+    target.propagate = False # Prevent messages bubbling up to double-print
+
+# This forces it to ignore DEBUG chatter even when global debug is active
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+# Set appropriate logging thresholds based on your debug flag
+is_debug = str(config.get("debug", "False")).lower() in ("true", "1", "yes")
+
+if is_debug:
+    for target in target_loggers:
+        target.setLevel(logging.DEBUG)
+    console_handler.setLevel(logging.DEBUG)
+    logger.stdout = True
+else:
+    for target in target_loggers:
+        target.setLevel(logging.INFO)
+    console_handler.setLevel(logging.INFO)
+    logger.stdout = False
+
+
+
+
+
+# Add default config. Comand line adds user config
+configfile: os.path.join(package_dir, "config", "default_config.yaml")
 
 container: "docker:mambaorg/micromamba:2.5.0-cuda11.8.0-ubuntu22.04"
 containerized: "docker://timothystephens/naive_atlas-envs:latest"
@@ -35,9 +76,8 @@ containerized: "docker://timothystephens/naive_atlas-envs:latest"
 wildcard_constraints:
     binner="[A-Za-z]+",
 
-
 include: "rules/sample_table.smk"
-include: "rules/resources.smk"
+include: "rules/resources.smk" # contains hard coded variables
 include: "rules/download.smk"  # contains hard coded variables
 include: "rules/qc.smk"
 include: "rules/assemble.smk"
@@ -88,21 +128,6 @@ rule all:
 rule test:
     input:
         #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=SAMPLES, step="1_raw")
-        ## 1_raw, 2_deduplicated, 3_quality_filtered, 4_decontaminated, 5_final
-        #expand("{sample}/sequence_quality_control/{sample}_R1.fastq.gz", sample=["N10hybrid"]),
-        #expand("{sample}/sequence_quality_control/{sample}_SE.fastq.gz", sample=["N10single"]),
-        #expand("{sample}/sequence_quality_control/{sample}_LR.fastq.gz", sample=["N10hybrid"]),
-        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=["N10hybrid"], step=["1_raw", "2_deduplicated", "3_quality_filtered", "4_decontaminated", "5_final"]),
-        #expand("{sample}/sequence_quality_control/read_stats/read_counts.tsv", sample=["N10hybrid"]),
-        #expand("{sample}/sequence_quality_control/read_stats/QC_read_length_hist_{fraction}.txt", sample=["N10hybrid"], fraction=["PE", "SE", "LR"]),
-        #expand("{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
-        # 1_normalize_reads 2_error_correction
-        #expand("{sample}/assembly/reads/2_error_correction_R1.fastq.gz", sample=["N10", "N10interleaved", "N10hybrid"]),
-        #expand("{sample}/assembly/reads/2_error_correction_SE.fastq.gz", sample=["N10single"]),
-        #expand("{sample}/assembly/reads/2_error_correction_LR.fastq.gz", sample=["N10hybrid", "N10longread"]),
-        #expand("{sample}/assembly/{sample}_raw_assembly.fasta", sample=["N10", "N10interleaved", "N10hybrid", "N10single", "N10longread"]),
-        #expand("{sample}/assembly/assembly/{sample}_raw_assembly.fasta", sample=["N10longread"]),
-        #expand("{sample}/finished_assembly", sample=["N10hybrid"]),
         "genomes/unbinned",
     output:
         touch("finished_test"),
@@ -121,11 +146,7 @@ rule qc:
     input:
         expand("samples/{sample}/sequence_quality_control/finished_QC", sample=SAMPLES),
         read_counts="stats/read_counts.tsv",
-        read_length_stats=(
-            ["stats/insert_stats.tsv", "stats/read_length_stats.tsv"]
-            if PAIRED_END
-            else "stats/read_length_stats.tsv"
-        ),
+        read_length_stats=["stats/insert_stats.tsv", "stats/read_length_stats.tsv"],
         report="reports/qc_report.html",
     output:
         touch("finished_QC"),

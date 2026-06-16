@@ -1,4 +1,3 @@
-from .default_values import *
 from snakemake.utils import update_config as snakemake_update_config
 from snakemake.common.configfile import load_configfile
 import tempfile
@@ -11,8 +10,9 @@ logger = logging.getLogger(__file__)
 
 
 
-def make_config(
+def create_config(
     database_dir,
+    temp_dir,
     config="config.yaml",
 ):
     """
@@ -24,17 +24,15 @@ def make_config(
         database_dir (str): location of downloaded databases
     """
 
-    from ruamel.yaml import YAML  # used for yaml reading with comments
-
-    yaml = YAML()
-
     template_conf_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "workflow/../config/template_config.yaml",
+        "../../config/template_config.yaml",
     )
 
-    with open(template_conf_file) as template_config:
-        conf = yaml.load(template_config)
+    with open(template_conf_file, "r") as template_config:
+        conf_text = template_config.read()
+    conf_text = conf_text.replace("/user/project/dir/databases", database_dir)
+    conf_text = conf_text.replace("/user/project/dir/tmp", temp_dir)
 
     if os.path.exists(config):
         logger.warning(
@@ -42,10 +40,10 @@ def make_config(
         )
     else:
         with open(config, "w") as f:
-            yaml.dump(conf, f)
+            f.write(conf_text)
         logger.info(
             "Configuration file written to %s\n"
-            "        You may want to edit it using any text editor." % config
+            "\n        You may want to edit it using any text editor.\n" % config
         )
 
 

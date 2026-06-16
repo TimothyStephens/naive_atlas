@@ -1,9 +1,5 @@
 import pandas as pd
 
-import logging
-
-logger = logging.getLogger(__file__)
-
 
 def load_sample_table(sample_table="samples.tsv"):
     sampleTable = pd.read_csv(sample_table, index_col=0, sep="\t")
@@ -18,9 +14,6 @@ def validate_sample_table(sampleTable):
         if not (h in sampleTable.columns):
             logger.error(f"expect '{h}' to be found in samples.tsv")
             exit(1)
-        #elif sampleTable[h].isnull().any():
-        #    logger.error(f"Found empty values in the sample table column '{h}'")
-        #    exit(1)
 
     if not sampleTable.index.is_unique:
         duplicated_samples = ", ".join(sampleTable.index.duplicated())
@@ -60,7 +53,11 @@ def validate_sample_table(sampleTable):
                 if " " in str(path):
                     logger.error(f"Path '{path}' in column '{col}' for sample '{idx}' contains spaces. Paths with spaces are not supported and will break the workflow. Please rename your files or directories to remove spaces.")
                     exit(1)
-
+    
+    ### Add Long read column if missing
+    if 'Reads_raw_Long' not in sampleTable.columns:
+        sampleTable['Reads_raw_Long'] = pd.NA
+    
     ### Validate Bin_group
     if sampleTable.Bin_group.isnull().any():
         logger.warning(f"Found empty values in the sample table column 'Bin_group'")
@@ -98,10 +95,6 @@ def validate_sample_table(sampleTable):
         )
         exit(1)
     
-    ### Add Long read column if missing
-    if 'Reads_raw_Long' not in sampleTable.columns:
-        sampleTable['Reads_raw_Long'] = pd.NA
-    
     ### Add missing (optional columns) or Enforce Bool (if provided)
     sampleTable = check_column(sampleTable, megahit=False, spades=False, flye=False, metamdbg=False, col='Interleaved')
     sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='DeDuplicate')
@@ -109,6 +102,7 @@ def validate_sample_table(sampleTable):
     sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Remove_contaminants')
     sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Normalize_reads_before_assembly')
     sampleTable = check_column(sampleTable, megahit=True,  spades=True,  flye=True,  metamdbg=True,  col='Error_correction_before_assembly')
+
 
 
 def check_column(df, col, megahit=False, spades=False, flye=False, metamdbg=False):
@@ -142,6 +136,7 @@ class BinGroupSizeError(Exception):
         super(BinGroupSizeError, self).__init__(message)
 
 
+
 def validate_bingroup_size(sampleTable):
     bin_group_sizes = sampleTable.Bin_group.value_counts()
 
@@ -169,3 +164,4 @@ def validate_bingroup_size(sampleTable):
         logger.warning(
             "You have only one sample per bingroup. Will use this information but your bins might be less accurate."
         )
+

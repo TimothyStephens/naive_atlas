@@ -1,16 +1,14 @@
 import os
 import sys
+import logging
 from .color_logger import logger
 from pathlib import Path
-
 import multiprocessing
 import subprocess
 import click
-
-from .init.atlas_init import run_init  # , run_init_sra
-
-from .__init__ import __version__
+from .init.naive_atlas_init import run_init
 from .logo import print_logo
+from .__init__ import __version__
 
 ##
 
@@ -81,9 +79,8 @@ def cli(obj):
     """
 
 
-# TODO
-# cli.add_command(run_init)
-# cli.add_command(run_init_sra)
+# Add init command
+cli.add_command(run_init)
 
 
 def get_snakefile(file="workflow/Snakefile"):
@@ -93,9 +90,7 @@ def get_snakefile(file="workflow/Snakefile"):
     return sf
 
 
-# QC command
-
-
+# Add run command
 @cli.command(
     "run",
     cls=LogoCommand,
@@ -276,6 +271,12 @@ def get_snakefile(file="workflow/Snakefile"):
     show_default=True,
     help="Number of times to retry failed jobs.",
 )
+@click.option(
+    "--logger-debug/--logger-no-debug",
+    default=False,
+    show_default=True,
+    help="Set logger level to debug.",
+)
 @click.argument("snakemake_args", nargs=-1, type=click.UNPROCESSED)
 def run_workflow(
     workflow,
@@ -303,6 +304,7 @@ def run_workflow(
     singularity_args,
     latency_wait,
     retries,
+    logger_debug,
     snakemake_args,
 ):
     """Runs the naive ATLAS pipline
@@ -323,6 +325,10 @@ def run_workflow(
     download (download reference databases upfront instead of as each rule needs them (need ~920GB for all databases, ~1.5TB during download))
 
     """
+
+    if logger_debug:
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG)
     
     print_logo()
     logger.info("STARTING WORKFLOW!")
@@ -406,6 +412,7 @@ def run_workflow(
         " {cluster_params} "
         " {args} "
         " {dryrun} "
+        " {logger_debug} "
     ).format(
         # Snakemake setup
         snakefile=get_snakefile(),
@@ -442,6 +449,7 @@ def run_workflow(
         cluster_params=f"{cluster_params}",
         args=" ".join(snakemake_args),
         dryrun="--dryrun" if dryrun else "",
+        logger_debug=f"--config debug=true" if logger_debug else "",
     )
     logger.info("Executing: %s" % cmd)
     try:
