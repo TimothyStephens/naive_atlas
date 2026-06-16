@@ -1,79 +1,36 @@
-# global defaults
-MEM = 80
-JAVA_MEM_FRACTION = 0.85
-PREALLOCATE_RAM = "t"
 
+#### Hardcoded paths
+spaces_found = 0
 
-MERGING_FLAGS = "ecct iterations=1"
-MERGING_EXTEND2 = 50
-MERGING_K = 62
+# Use data/adapters.fa unless overwritten by the user
+ADAPTERS = config.get("preprocess_adapters", os.path.join(workflow_folder, "data/adapters.fa"))
+ADAPTERS = os.path.realpath(ADAPTERS)
+if " " in ADAPTERS:
+    logger.error(f"The adapter path contains spaces: '{ADAPTERS}'. Paths with spaces are not supported.")
+    spaces_found += 1
 
-CONTAMINANT_MAX_INDEL = 20
-CONTAMINANT_MIN_RATIO = 0.65
-CONTAMINANT_MINIMUM_HITS = 1
-CONTAMINANT_AMBIGUOUS = "best"
-CONTAMINANT_KMER_LENGTH = 13
+# Use PhiX (unless overwritten by the user) and append user added references
+CONTAMINANT_REFERENCES = {}
+if config.get("contaminant_references_include_phiX"):
+    CONTAMINANT_REFERENCES["PhiX"] = os.path.join(workflow_folder, "data/phiX174_virus.fa")
+CONTAMINANT_REFERENCES = CONTAMINANT_REFERENCES | config.get("contaminant_references", {})
 
-DUPLICATES_ONLY_OPTICAL = False
-DUPLICATES_ALLOW_SUBSTITUTIONS = 2
+for name, path in CONTAMINANT_REFERENCES.items():
+    # Handle if path is wrapped in a list/tuple (e.g. metatranscriptome rRNA)
+    actual_path = path[0] if isinstance(path, (list, tuple)) else path
+    if actual_path:
+        real_path = os.path.realpath(actual_path)
+        if " " in real_path:
+            logger.error(f"Contaminant reference '{name}' path contains spaces: '{real_path}'. Paths with spaces are not supported.")
+            spaces_found += 1
+        CONTAMINANT_REFERENCES[name] = real_path
 
-NORMALIZATION_KMER_LENGTH = 21
+if spaces_found > 0:
+    sys.exit(1)
 
-# almost no filtering unless grossly over-represented
-NORMALIZATION_TARGET_DEPTH = 1000  # 500
-# allow very low represented kmers to remain
-NORMALIZATION_MINIMUM_KMERS = 3  # 15
+logger.debug(f"Adapter file being used: {ADAPTERS}")
+logger.debug(f"contaminant reference files being used: {CONTAMINANT_REFERENCES}")
 
-ASSEMBLY_MEMORY = 250
-ASSEMBLY_THREADS = 8
-MEGAHIT_MIN_COUNT = 2
-MEGAHIT_K_MIN = 21
-MEGAHIT_K_MAX = 121
-MEGAHIT_K_STEP = 20
-MEGAHIT_MERGE_LEVEL = "20,0.98"
-MEGAHIT_PRUNE_LEVEL = 2
-MEGAHIT_LOW_LOCAL_RATIO = 0.2
-SPADES_K = "auto"
-
-# this is bumped up slightly to filter non-merged R1 and R2 sequences
-MINIMUM_CONTIG_LENGTH = 300  # 2200
-
-# leave all contigs
-MINIMUM_AVERAGE_COVERAGE = 1  # 5
-MINIMUM_PERCENT_COVERED_BASES = 20  # 40
-MINIMUM_MAPPED_READS = 0
-CONTIG_TRIM_BP = 0  # 100
-
-# bases
-MINIMUM_REGION_OVERLAP = 1
-FEATURE_COUNTS_ALLOW_OVERLAP = True
-MAXIMUM_COUNTED_MAP_SITES = 10
-# default bbmap
-CONTIG_MIN_ID = 0.76
-CONTIG_MAP_PAIRED_ONLY = True
-CONTIG_MAX_DISTANCE_BETWEEN_PAIRS = 1000
-# only best
-CONTIG_COUNT_MULTI_MAPPED_READS = False
-# set minimum map quality
-MINIMUM_MAP_QUALITY = 0
-
-PROKKA_KINGDOM = "Bacteria"
-
-DIAMOND_TOP_SEQS = 2
-DIAMOND_E_VALUE = 0.000001
-DIAMOND_MIN_IDENTITY = 50
-DIAMOND_QUERY_COVERAGE = 60
-DIAMOND_GAP_OPEN = 11
-DIAMOND_GAP_EXTEND = 1
-DIAMOND_BLOCK_SIZE = 2
-DIAMOND_INDEX_CHUNKS = 4
-
-SUMMARY_METHOD = "lca"
-AGGREGATION_METHOD = "lca-majority"
-MAJORITY_THRESHOLD = 0.51
-MIN_BITSCORE = 0
-MIN_LENGTH = 20
-MAX_HITS = 100
 
 
 EGGNOG_HEADER = [

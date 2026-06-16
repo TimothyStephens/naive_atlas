@@ -9,7 +9,6 @@
 def get_genomes_for_gene_prediction(lineage):
     import pandas as pd
     
-    genome_dir = 'genomes/genomes'
     prokaryote_taxonomy_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
     
     from pathlib import Path
@@ -19,9 +18,9 @@ def get_genomes_for_gene_prediction(lineage):
         return([])
     
     if lineage == 'bacteria':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_prokaryotic_*.fa"))
+        fasta_files = glob("genomes/genomes/MAG_prokaryotic_*.fa")
         if len(fasta_files) == 0:
-            print(f"No Prokaryotic genomes found with fa extension in {genome_dir} ")
+            print(f"No Prokaryotic genomes found with fa extension in genomes/genomes")
             return([])
         
         file_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
@@ -36,9 +35,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'archaea':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_prokaryotic_*.fa"))
+        fasta_files = glob("genomes/genomes/MAG_prokaryotic_*.fa")
         if len(fasta_files) == 0:
-            print(f"No Prokaryotic genomes found with fa extension in {genome_dir} ")
+            print(f"No Prokaryotic genomes found with fa extension in genomes/genomes")
             return([])
 
         file_name = "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv"
@@ -53,9 +52,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'eukaryote':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_eukaryotic_*.fa"))
+        fasta_files = glob("genomes/genomes/MAG_eukaryotic_*.fa")
         if len(fasta_files) == 0:
-            print(f"No Eukaryotic genomes found with fa extension in {genome_dir} ")
+            print(f"No Eukaryotic genomes found with fa extension in genomes/genomes")
             return([])
         
         genomes = []
@@ -66,9 +65,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'virus':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_viral_*.fa"))
+        fasta_files = glob("genomes/genomes/MAG_viral_*.fa")
         if len(fasta_files) == 0:
-            print(f"No Viral genomes found with fa extension in {genome_dir} ")
+            print(f"No Viral genomes found with fa extension in genomes/genomes")
             return([])
         
         genomes = []
@@ -79,9 +78,9 @@ def get_genomes_for_gene_prediction(lineage):
         return(genomes)
     
     if lineage == 'plasmid':
-        fasta_files = glob(os.path.join(genome_dir, "MAG_plasmid_*.fa"))
+        fasta_files = glob("genomes/genomes/MAG_plasmid_*.fa")
         if len(fasta_files) == 0:
-            print(f"No Plastid genomes found with fa extension in {genome_dir} ")
+            print(f"No Plastid genomes found with fa extension in genomes/genomes")
             return([])
         
         genomes = []
@@ -103,9 +102,9 @@ rule gene_prediction_bacteria:
         wd="Predict_Genes/genomes/bacteria",
         genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/genomes/bacteria/{genome}.txt"
+        "benchmarks/Predict_Genes/genomes/bacteria/{genome}.tsv",
     log:
-        "logs/gene_prediction/genomes/bacteria/{genome}.txt",
+        "logs/Predict_Genes/genomes/bacteria/{genome}.log",
     conda:
         "../envs/gene_prediction_bacteria.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
@@ -119,15 +118,15 @@ rule gene_prediction_bacteria:
         (
         rm -fr {params.wd}/{params.genome}*
         
-        bakta \
-            --db {input.dbdir} \
-            --prefix {params.genome} \
-            --locus {params.genome} \
-            --locus-tag {params.genome} \
-            --output {params.wd} --force \
-            --meta \
-            --keep-contig-headers \
-            --threads {threads} \
+        bakta \\
+            --db {input.dbdir} \\
+            --prefix {params.genome} \\
+            --locus {params.genome} \\
+            --locus-tag {params.genome} \\
+            --output {params.wd} --force \\
+            --meta \\
+            --keep-contig-headers \\
+            --threads {threads} \\
             {input.fasta}
         ) &> {log}
         """
@@ -143,9 +142,9 @@ rule gene_prediction_archaea:
         wd="Predict_Genes/genomes/archaea",
         genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/genomes/archaea/{genome}.txt"
+        "benchmarks/Predict_Genes/genomes/archaea/{genome}.tsv",
     log:
-        "logs/gene_prediction/genomes/archaea/{genome}.txt",
+        "logs/Predict_Genes/genomes/archaea/{genome}.log",
     conda:
         "../envs/gene_prediction_archaea.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
@@ -158,13 +157,13 @@ rule gene_prediction_archaea:
         """
         (
         export PERL5LIB="$CONDA_PREFIX/lib/perl5/site_perl"
-        prokka \
-            --outdir {params.wd} --force \
-            --prefix {params.genome} \
-            --locustag {params.genome} \
-            --cpus {threads} \
-            --addgenes --addmrna --metagenome \
-            --kingdom Archaea \
+        prokka \\
+            --outdir {params.wd} --force \\
+            --prefix {params.genome} \\
+            --locustag {params.genome} \\
+            --cpus {threads} \\
+            --addgenes --addmrna --metagenome \\
+            --kingdom Archaea \\
             {input.fasta}
         ) &> {log}
         """
@@ -180,9 +179,9 @@ rule gene_prediction_virus:
         wd="Predict_Genes/genomes/virus",
         genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/genomes/virus/{genome}.txt"
+        "benchmarks/Predict_Genes/genomes/virus/{genome}.tsv",
     log:
-        "logs/gene_prediction/genomes/virus/{genome}.txt",
+        "logs/Predict_Genes/genomes/virus/{genome}.log",
     conda:
         "../envs/gene_prediction_virus.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
@@ -195,13 +194,13 @@ rule gene_prediction_virus:
         """
         (
         export PERL5LIB="$CONDA_PREFIX/lib/perl5/site_perl"
-        prokka \
-            --outdir {params.wd} --force \
-            --prefix {params.genome} \
-            --locustag {params.genome} \
-            --cpus {threads} \
-            --addgenes --addmrna --metagenome \
-            --kingdom Viruses \
+        prokka \\
+            --outdir {params.wd} --force \\
+            --prefix {params.genome} \\
+            --locustag {params.genome} \\
+            --cpus {threads} \\
+            --addgenes --addmrna --metagenome \\
+            --kingdom Viruses \\
             {input.fasta}
         ) &> {log}
         """
@@ -218,9 +217,9 @@ rule gene_prediction_plasmid:
         wd="Predict_Genes/genomes/plasmid",
         genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/genomes/plasmid/{genome}.txt"
+        "benchmarks/Predict_Genes/genomes/plasmid/{genome}.tsv",
     log:
-        "logs/gene_prediction/genomes/plasmid/{genome}.txt",
+        "logs/Predict_Genes/genomes/plasmid/{genome}.log",
     conda:
         "../envs/gene_prediction_plasmid.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
@@ -232,15 +231,15 @@ rule gene_prediction_plasmid:
     shell:
         """
         (
-        bakta \
-            --db {input.dbdir} \
-            --prefix {params.genome} \
-            --locus {params.genome} \
-            --locus-tag {params.genome} \
-            --output {params.wd} --force \
-            --meta \
-            --keep-contig-headers \
-            --threads {threads} \
+        bakta \\
+            --db {input.dbdir} \\
+            --prefix {params.genome} \\
+            --locus {params.genome} \\
+            --locus-tag {params.genome} \\
+            --output {params.wd} --force \\
+            --meta \\
+            --keep-contig-headers \\
+            --threads {threads} \\
             {input.fasta}
         ) &> {log}
         """
@@ -275,14 +274,15 @@ rule gene_prediction_eukaryote:
         genome="{genome}",
         outdir="Predict_Genes/genomes/eukaryotes/{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/genomes/eukaryotes/{genome}.txt"
+        "benchmarks/Predict_Genes/genomes/eukaryotes/{genome}.tsv",
     log:
-        "logs/gene_prediction/genomes/eukaryotes/{genome}.txt",
+        "logs/Predict_Genes/genomes/eukaryotes/{genome}.log",
     conda:
         "../envs/gene_prediction_eukaryotic.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
+        mem_gb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_gb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "account"),
@@ -290,48 +290,48 @@ rule gene_prediction_eukaryote:
         """
         (
         mkdir -p {params.outdir}
-        {params.workflow_folder}/scripts/veba/eukaryotic_gene_modeling_wrapper.py \
-            --fasta {input.fasta} \
-            --name {params.genome} \
-            --metaeuk_database {input.dbdir}/MicroEuk50 \
-            --metaeuk_split_memory_limit 36G \
-            -o {params.outdir} \
-            -p {threads} \
-            --metaeuk_sensitivity 4.0 \
-            --metaeuk_evalue 0.01 \
-            --pyrodigal_minimum_gene_length 90 \
-            --pyrodigal_minimum_edge_gene_length 60 \
-            --pyrodigal_maximum_gene_overlap_length 60 \
-            --pyrodigal_mitochondrial_genetic_code 4 \
-            --pyrodigal_plastid_genetic_code 11 \
-            --barrnap_length_cutoff 0.8 \
-            --barrnap_reject 0.25 \
-            --barrnap_evalue 1e-06 \
-            --trnascan_mitochondrial_searchmode='-O' \
-            --trnascan_plastid_searchmode='-O' \
-        && cp {params.outdir}/output/{params.genome}.faa {output.faa} \
-        && cp {params.outdir}/output/{params.genome}.ffn {output.fna} \
-        && cp {params.outdir}/output/{params.genome}.gff {output.gff} \
-        && cp {params.outdir}/output/{params.genome}.rRNA {output.rrna} \
-        && cp {params.outdir}/output/{params.genome}.tRNA {output.trna} \
-        && cp {params.outdir}/output/mitochondrion/{params.genome}.faa {output.mito_faa} \
-        && cp {params.outdir}/output/mitochondrion/{params.genome}.ffn {output.mito_fna} \
-        && cp {params.outdir}/output/mitochondrion/{params.genome}.gff {output.mito_gff} \
-        && cp {params.outdir}/output/mitochondrion/{params.genome}.rRNA {output.mito_rrna} \
-        && cp {params.outdir}/output/mitochondrion/{params.genome}.tRNA {output.mito_trna} \
-        && cp {params.outdir}/output/plastid/{params.genome}.faa {output.plas_faa} \
-        && cp {params.outdir}/output/plastid/{params.genome}.ffn {output.plas_fna} \
-        && cp {params.outdir}/output/plastid/{params.genome}.gff {output.plas_gff} \
-        && cp {params.outdir}/output/plastid/{params.genome}.rRNA {output.plas_rrna} \
-        && cp {params.outdir}/output/plastid/{params.genome}.tRNA {output.plas_trna} \
-        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tNuclear"}}' \
-            {params.outdir}/output/{params.genome}.fa \
-            >  {output.seq_type} \
-        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tMitochondrion"}}' \
-            {params.outdir}/output/mitochondrion/{params.genome}.fa \
-            >> {output.seq_type} \
-        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tPlastid"}}' \
-            {params.outdir}/output/plastid/{params.genome}.fa \
+        {params.workflow_folder}/scripts/veba/eukaryotic_gene_modeling_wrapper.py \\
+            --fasta {input.fasta} \\
+            --name {params.genome} \\
+            --metaeuk_database {input.dbdir}/MicroEuk50 \\
+            --metaeuk_split_memory_limit {resources.mem_gb}G \\
+            -o {params.outdir} \\
+            -p {threads} \\
+            --metaeuk_sensitivity 4.0 \\
+            --metaeuk_evalue 0.01 \\
+            --pyrodigal_minimum_gene_length 90 \\
+            --pyrodigal_minimum_edge_gene_length 60 \\
+            --pyrodigal_maximum_gene_overlap_length 60 \\
+            --pyrodigal_mitochondrial_genetic_code 4 \\
+            --pyrodigal_plastid_genetic_code 11 \\
+            --barrnap_length_cutoff 0.8 \\
+            --barrnap_reject 0.25 \\
+            --barrnap_evalue 1e-06 \\
+            --trnascan_mitochondrial_searchmode='-O' \\
+            --trnascan_plastid_searchmode='-O' \\
+        && cp {params.outdir}/output/{params.genome}.faa {output.faa} \\
+        && cp {params.outdir}/output/{params.genome}.ffn {output.fna} \\
+        && cp {params.outdir}/output/{params.genome}.gff {output.gff} \\
+        && cp {params.outdir}/output/{params.genome}.rRNA {output.rrna} \\
+        && cp {params.outdir}/output/{params.genome}.tRNA {output.trna} \\
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.faa {output.mito_faa} \\
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.ffn {output.mito_fna} \\
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.gff {output.mito_gff} \\
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.rRNA {output.mito_rrna} \\
+        && cp {params.outdir}/output/mitochondrion/{params.genome}.tRNA {output.mito_trna} \\
+        && cp {params.outdir}/output/plastid/{params.genome}.faa {output.plas_faa} \\
+        && cp {params.outdir}/output/plastid/{params.genome}.ffn {output.plas_fna} \\
+        && cp {params.outdir}/output/plastid/{params.genome}.gff {output.plas_gff} \\
+        && cp {params.outdir}/output/plastid/{params.genome}.rRNA {output.plas_rrna} \\
+        && cp {params.outdir}/output/plastid/{params.genome}.tRNA {output.plas_trna} \\
+        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tNuclear"}}' \\
+            {params.outdir}/output/{params.genome}.fa \\
+            >  {output.seq_type} \\
+        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tMitochondrion"}}' \\
+            {params.outdir}/output/mitochondrion/{params.genome}.fa \\
+            >> {output.seq_type} \\
+        && awk '$1~"^>" {{gsub(">", "", $1); print $1"\\tPlastid"}}' \\
+            {params.outdir}/output/plastid/{params.genome}.fa \\
             >> {output.seq_type}
         ) &> {log}
         """
@@ -405,7 +405,7 @@ checkpoint move_genome_predicted_genes:
         viral_stats="genomes/genes/genomes/MAG_viral.gene_stats.tsv",
         plasmid_stats="genomes/genes/genomes/MAG_plasmid.gene_stats.tsv",
     log:
-        "logs/gene_prediction/genomes/move_predicted_genes.txt",
+        "logs/Predict_Genes/genomes/move_predicted_genes.log",
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
@@ -419,29 +419,29 @@ checkpoint move_genome_predicted_genes:
         (
         rm -fr {params.outdir}; mkdir -p {params.outdir}
         
-        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \
-            -i {input.archaea} \
-            -o {params.outdir} \
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \\
+            -i {input.archaea} \\
+            -o {params.outdir} \\
             -s {params.prokaryotic_stats}
         
-        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \
-            -i {input.bacteria} \
-            -o {params.outdir} \
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \\
+            -i {input.bacteria} \\
+            -o {params.outdir} \\
             -s {params.prokaryotic_stats}
         
-        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \
-            -i {input.viral} \
-            -o {params.outdir} \
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PROKKA.py \\
+            -i {input.viral} \\
+            -o {params.outdir} \\
             -s {params.viral_stats}
         
-        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \
-            -i {input.plasmid} \
-            -o {params.outdir} \
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_BAKTA.py \\
+            -i {input.plasmid} \\
+            -o {params.outdir} \\
             -s {params.plasmid_stats}
         
-        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_EUK.py \
-            -i {input.eukaryote} \
-            -o {params.outdir} \
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_EUK.py \\
+            -i {input.eukaryote} \\
+            -o {params.outdir} \\
             -s {params.eukaryotic_stats}
         
         ) &> {log}
@@ -467,9 +467,9 @@ rule gene_prediction_unbinned:
         wd="Predict_Genes/unbinned",
         genome="{genome}",
     benchmark:
-        "logs/benchmarks/gene_prediction/unbinned/{genome}.txt"
+        "benchmarks/Predict_Genes/unbinned/{genome}.tsv",
     log:
-        "logs/gene_prediction/unbinned/{genome}.txt",
+        "logs/Predict_Genes/unbinned/{genome}.log",
     conda:
         "../envs/prodigal.yaml"
     threads: 1
@@ -483,12 +483,12 @@ rule gene_prediction_unbinned:
         (
         rm -fr {params.wd}/{params.genome}*
         
-        prodigal \
-            -a {params.wd}/{params.genome}.faa \
-            -d {params.wd}/{params.genome}.fna \
-            -f gff \
-            -o {params.wd}/{params.genome}.gff3 \
-            -p meta \
+        prodigal \\
+            -a {params.wd}/{params.genome}.faa \\
+            -d {params.wd}/{params.genome}.fna \\
+            -f gff \\
+            -o {params.wd}/{params.genome}.gff3 \\
+            -p meta \\
             < {input.fasta}
         ) &> {log}
         """
@@ -521,7 +521,7 @@ checkpoint move_unbinned_predicted_genes:
         outdir=directory("genomes/genes/unbinned"),
         unbinned_stats="genomes/genes/unbinned/Unbinned.gene_stats.tsv",
     log:
-        "logs/gene_prediction/unbinned/move_predicted_genes.txt",
+        "logs/Predict_Genes/unbinned/move_predicted_genes.log",
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
@@ -535,9 +535,9 @@ checkpoint move_unbinned_predicted_genes:
         (
         rm -fr {params.outdir}; mkdir -p {params.outdir}
         
-        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PRODIGAL.py \
-            -i {input.unbinned} \
-            -o {params.outdir} \
+        {params.workflow_folder}/scripts/veba/prepare_predicted_genes_from_PRODIGAL.py \\
+            -i {input.unbinned} \\
+            -o {params.outdir} \\
             -s {params.unbinned_stats}
         
         ) &> {log}

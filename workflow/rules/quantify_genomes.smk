@@ -6,37 +6,13 @@
 ####                             ####
 #####################################
 
-def get_genome_dir():
-    if ("genome_dir" in config) and (config["genome_dir"] is not None):
-        genome_dir = config["genome_dir"]
-        assert os.path.exists(genome_dir), f"{genome_dir} Doesn't exists"
-        
-        logger.info(f"Set genomes from {genome_dir}.")
-        
-        # check if genomes are present
-        genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
-        
-        if len(genomes) == 0:
-            logger.error(f"No genomes found with fa extension in {genome_dir} ")
-            exit(1)
-    
-    else:
-        genome_dir = "genomes/genomes"
-    
-    return genome_dir
-
-
-genome_dir = get_genome_dir()
-
-
 def get_all_genomes(wildcards):
-    global genome_dir
     # check if genomes are present
-    genomes = glob_wildcards(os.path.join(genome_dir, "{genome}.fa")).genome
+    genomes = glob_wildcards("genomes/genomes/{genome}.fa").genome
     
-    if len(genomes) == 0:
+    if len(genomes) == 0 and os.path.isdir("genomes/genomes"):
         logger.error(
-            f"No genomes found with fasta extension in {genome_dir} "
+            f"No genomes found with fasta extension in genomes/genomes "
             "You don't have any Metagenome assembled genomes with sufficient quality. "
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."
@@ -48,11 +24,11 @@ def get_all_genomes(wildcards):
 
 def get_all_unbinned(wildcards):
     # check if genomes are present
-    genomes = glob_wildcards(os.path.join("genomes/unbinned", "{genome}.fa")).genome
+    genomes = glob_wildcards("genomes/unbinned/{genome}.fa").genome
 
-    if len(genomes) == 0:
+    if len(genomes) == 0 and os.path.isdir("genomes/unbinned"):
         logger.error(
-            f"No genomes found with fasta extension in genomes/genomes/unbinned "
+            f"No genomes found with fasta extension in genomes/unbinned "
             "You don't have any Metagenome assembled genomes with sufficient quality. "
             "You may want to change the assembly, binning or filtering parameters. "
             "Or focus on the genecatalog workflow only."
@@ -67,11 +43,13 @@ localrules:
 
 rule get_contig2genomes:
     input:
-        genome_dir,
+        "genomes/genomes",
     output:
         c2g="genomes/clustering/contig2genome.tsv",
         g2c="genomes/clustering/genome2contig.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    log:
+        "logs/genomes/clustering/get_contig2genomes.log",
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
@@ -108,9 +86,11 @@ localrules:
 
 rule concat_genomes:
     input:
-        genome_dir,
+        "genomes/genomes",
     output:
         "genomes/alignments/all_contigs.fa",
+    log:
+        "logs/genomes/alignments/concat_genomes.log",
     params:
         ext="fa",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
@@ -120,7 +100,9 @@ rule concat_genomes:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
-        "cat {input}/*{params.ext} > {output}"
+        """
+        (cat {input}/*{params.ext} > {output}) 1>{log} 2>&1
+        """
 
 
 # Skip indexing becuase it hard sets k-mer size and other params which we need to be flexible for 
@@ -129,11 +111,13 @@ rule concat_genomes:
 rule index_genomes:
     input:
         target=rules.concat_genomes.output,
-        timestamp=genome_dir,
+        timestamp="genomes/genomes",
     output:
         "ref/genomes.mmi",
     log:
         "logs/genomes/alignmentsindex.log",
+    benchmark:
+        "benchmarks/genomes/alignmentsindex.tsv",
     params:
         index_size="12G",
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
@@ -159,6 +143,8 @@ rule align_reads_to_genomes:
         ),
     log:
         "logs/genomes/alignments/{sample}_map.log",
+    benchmark:
+        "benchmarks/genomes/alignments/{sample}_map.tsv",
     conda:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
@@ -169,7 +155,7 @@ rule align_reads_to_genomes:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -196,7 +182,9 @@ rule move_old_bam:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
-        "mv {input} {output} > {log}"
+        """
+        (mv {input} {output}) 1>{log} 2>&1
+        """
 
 
 rule mapping_stats_genomes:
@@ -255,24 +243,25 @@ rule mapping_coverm_coverage:
     conda:
         "../envs/coverm.yaml"
     shell:
-        "("
-        "coverm genome"
-        "  {params.extra}"
-        "  --output-format sparse --methods {params.stats}"
-        "  --genome-definition {input.g2c}"
-        "  -t {threads}"
-        "  -b {input.bams}"
-        " 2>{log.coverm}"
-        " | sed -e 's/\.coordSorted//g'"
-        " | gzip -c"
-        " > {output.cov}; "
-        "cat {log.coverm}"
-        " | grep 'In sample'"
-        " | sed -e \"s/.* '\([^']*\).*found \([^ ]*\) reads mapped out of \([^ ]*\) total (\(.*\))/\\1\\t\\2\\t\\3\\t\\4/\""
-        " | sort"
-        " | awk 'BEGIN{{print \"sample_id\\tmapped_reads\\ttotal_reads\\tpercent_mapped\"}}{{print}}'"
-        " > {output.read_stats}"
-        ")"
-        " 1>{log.general} 2>&1"
+        """
+        (
+        coverm genome \\
+            {params.extra} \\
+            --output-format sparse --methods {params.stats} \\
+            --genome-definition {input.g2c} \\
+            -t {threads} \\
+            -b {input.bams} \\
+          2>{log.coverm} \\
+          | sed -e 's/\.coordSorted//g' \\
+          | gzip -c \\
+          1> {output.cov}; \\
+        cat {log.coverm} \\
+          | grep 'In sample' \\
+          | sed -e "s/.* '\([^']*\).*found \([^ ]*\) reads mapped out of \([^ ]*\) total (\(.*\))/\\1\\t\\2\\t\\3\\t\\4/" \\
+          | sort \\
+          | awk 'BEGIN{{print "sample_id\\tmapped_reads\\ttotal_reads\\tpercent_mapped"}}{{print}}' \\
+          1> {output.read_stats}
+        ) 1>{log.general} 2>&1
+        """
 
 

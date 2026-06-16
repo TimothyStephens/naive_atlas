@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import click
 from pathlib import Path
-from ..make_config import make_config, validate_config
+from ..make_config import make_config
 from .create_sample_table import get_samples_from_fastq, simplify_sample_names
 from ..sample_table import (
     validate_sample_table,
@@ -91,46 +91,10 @@ def prepare_sample_table_for_atlas(
     help="location to run atlas",
     default=".",
 )
-@click.option(
-    "--assembler",
-    default="spades",
-    type=click.Choice(["megahit", "spades"]),
-    show_default=True,
-    help="assembler",
-)
-@click.option(
-    "--data-type",
-    default="metagenome",
-    type=click.Choice(["metagenome", "metatranscriptome"]),
-    show_default=True,
-    help="sample data type",
-)
-@click.option(
-    "--interleaved-fastq",
-    is_flag=True,
-    default=False,
-    help="fastq files are paired-end in one files (interleaved)",
-)
-@click.option(
-    "--threads",
-    default=8,
-    type=int,
-    help="number of threads to use per multi-threaded job",
-)
-@click.option(
-    "--skip-qc",
-    is_flag=True,
-    help="Skip QC, if reads are already pre-processed",
-)
 def run_init(
     path_to_fastq,
     db_dir,
     working_dir,
-    assembler,
-    data_type,
-    interleaved_fastq,
-    threads,
-    skip_qc=False,
 ):
     """Write the file CONFIG and complete the sample names and paths for all
     FASTQ files in PATH.
@@ -160,12 +124,7 @@ def run_init(
 
     make_config(
         db_dir,
-        threads,
-        assembler,
-        data_type,
-        interleaved_fastq,
         os.path.join(working_dir, "config.yaml"),
-        binner=binner,
     )
 
 
@@ -331,4 +290,4 @@ def run_init_sra(
     else:
         assembler = "spades"
     # create config file
-    make_config(db_dir, config=str(working_dir / "config.yaml"), assembler=assembler)
+    make_config(db_dir, config=str(working_dir / "config.yaml"))

@@ -59,31 +59,31 @@ rule checkm2_download_db:
     log:
         "logs/download/checkm2.log",
     benchmark:
-        "benchmarks/download/checkm2.tsv"
+        "benchmarks/download/checkm2.tsv",
     shell:
         """
-        checkm2 database --download --path {output} --no_write_json_db &> {log}
+        (checkm2 database --download --path {output} --no_write_json_db) 1>{log} 2>&1
         """
 
 
 rule mdmcleaner_download_db:
     output:
         dbdir=directory(f"{DBDIR}/MDMcleaner"),
-    log:
-        "logs/download/mdmcleaner_database.log",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
+    log:
+        "logs/download/mdmcleaner_database.log",
     benchmark:
-        "benchmarks/download/mdmcleaner_database.tsv"
+        "benchmarks/download/mdmcleaner_database.tsv",
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
     shell:
         """
-        mdmcleaner makedb --outdir {output.dbdir} &> {log}
+        (mdmcleaner makedb --outdir {output.dbdir}) 1>{log} 2>&1
         """
 
 
@@ -99,14 +99,16 @@ rule busco_download_db:
     log:
         "logs/download/busco_lineages.log",
     benchmark:
-        "benchmarks/download/busco_lineages.tsv"
-    conda:
-        "../envs/busco.yaml"
+        "benchmarks/download/busco_lineages.tsv",
+    container:
+        "docker://timothystephens/busco:6.0.0-TGSv1",
     shell:
         """
+        (	
         export PATH="$CONDA_PREFIX/bin:$PATH"
         export PYTHONPATH="$CONDA_PREFIX/lib/python3.7/site-packages"
-        busco -q --download_path {output} --download all &> {log}
+        busco -q --download_path {output} --download all
+        ) 1>{log} 2>&1
         """
 
 
@@ -124,7 +126,7 @@ rule genomad_download_db:
     log:
         "logs/download/genomad_lineages.log",
     benchmark:
-        "benchmarks/download/genomad_lineages.tsv"
+        "benchmarks/download/genomad_lineages.tsv",
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
     shell:
@@ -133,7 +135,7 @@ rule genomad_download_db:
         export PATH="/opt/conda/bin:$PATH"
         mkdir -p {output.dbdir}
         genomad download-database {output.dbdir}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -159,12 +161,12 @@ rule download_eggNOG_files:
     log:
         "logs/download/download_eggNOG_files.log",
     benchmark:
-        "benchmarks/download/download_eggNOG_files.tsv"
+        "benchmarks/download/download_eggNOG_files.tsv",
     container:
         "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     shell:
         """
-        download_eggnog_data.py -yf --data_dir {params.eggnog_dir} &> {log}
+        (download_eggnog_data.py -yf --data_dir {params.eggnog_dir}) 1>{log} 2>&1
         """
 
 
@@ -182,12 +184,12 @@ rule gtdb_download_db:
     log:
         "logs/download/gtdbtk.log",
     benchmark:
-        "benchmarks/download/gtdbtk.tsv"
+        "benchmarks/download/gtdbtk.tsv",
     conda:
         "../envs/gtdbtk.yaml"
     shell:
         """
-        wget --no-check-certificate {params.gtdb_data_url} -O {output} &> {log}
+        (wget --no-check-certificate {params.gtdb_data_url} -O {output}) 1>{log} 2>&1
         """
 
 
@@ -207,10 +209,10 @@ rule gtdb_extract:
     log:
         "logs/download/gtdbtk_untar.log",
     benchmark:
-        "benchmarks/download/gtdbtk_untar.tsv"
+        "benchmarks/download/gtdbtk_untar.tsv",
     shell:
         """
-        tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1 &> {log}
+        (tar -xzvf {input} -C "{GTDBTK_DATA_PATH}" --strip 1) 1>{log} 2>&1
         """
 
 
@@ -229,17 +231,20 @@ rule mmseqs2_download:
     log:
         "logs/download/download_MMseqs2_database.log",
     benchmark:
-        "benchmarks/download/download_MetaEuk_database.tsv"
+        "benchmarks/download/download_MetaEuk_database.tsv",
     container:
         # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
         "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
     shell:
-        "export TMPDIR='{output.dbdir}/tmp'; "
-        "(mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp "
-        " --compressed 1 "
-        " --threads {threads} "
-        " && rm -fr {output.dbdir}/tmp "
-        " ) &> {log}"
+        """
+        (
+        export TMPDIR='{output.dbdir}/tmp'; 
+        mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp \\
+            --compressed 1 \\
+            --threads {threads} \\
+        && rm -fr {output.dbdir}/tmp
+        ) 1>{log} 2>&1
+        """
 
 
 
@@ -257,7 +262,7 @@ rule microeukaryotic_mmseqs2_db:
     log:
         "logs/download/microeukaryotic_mmseqs2.log",
     benchmark:
-        "benchmarks/download/microeukaryotic_mmseqs2.tsv"
+        "benchmarks/download/microeukaryotic_mmseqs2.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "mem_mb"),
@@ -268,7 +273,7 @@ rule microeukaryotic_mmseqs2_db:
         "../envs/MicroEuk.yaml"
     shell:
         """
-        {params.workflow_folder}/../scripts/veba/download_MicroEuk_databases.sh {output.dbdir} &> {log}
+        ({params.workflow_folder}/../scripts/veba/download_MicroEuk_databases.sh {output.dbdir}) 1>{log} 2>&1
         """
 
 
@@ -286,7 +291,7 @@ rule bakta_download_db:
     log:
         "logs/download/bakta.log",
     benchmark:
-        "benchmarks/download/bakta.tsv"
+        "benchmarks/download/bakta.tsv",
     conda:
         "../envs/gene_prediction_bacteria.yaml"
     shell:
@@ -296,7 +301,7 @@ rule bakta_download_db:
         export LC_ALL=C.UTF-8
         export LANG=C.UTF-8
         bakta_db download --type full
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 

@@ -109,7 +109,7 @@ rule initialize_qc_PE:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/1_raw_PE.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_PE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_PE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
@@ -120,16 +120,19 @@ rule initialize_qc_PE:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "account"),
     shell:
-        "reformat.sh "
-        " {params.inputs} "
-        " interleaved={params.interleaved} "
-        " {params.outputs} "
-        " {params.extra} "
-        " overwrite=true "
-        " verifypaired={params.verifypaired} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}M "
-        " 1>{log} 2>&1 "
+        """
+        (
+        reformat.sh \\
+            {params.inputs} \\
+            interleaved={params.interleaved} \\
+            {params.outputs} \\
+            {params.extra} \\
+            overwrite=true \\
+            verifypaired={params.verifypaired} \\
+            threads={threads} \\
+            -Xmx{resources.java_mem}M
+        ) 1>{log} 2>&1
+        """
 
 
 rule initialize_qc_SE:
@@ -149,7 +152,7 @@ rule initialize_qc_SE:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/1_raw_SE.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_SE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_SE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
@@ -160,16 +163,19 @@ rule initialize_qc_SE:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "account"),
     shell:
-        "reformat.sh "
-        " {params.inputs} "
-        " interleaved={params.interleaved} "
-        " {params.outputs} "
-        " {params.extra} "
-        " overwrite=true "
-        " verifypaired={params.verifypaired} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}M "
-        " 1>{log} 2>&1 "
+        """
+        (
+        reformat.sh \\
+            {params.inputs} \\
+            interleaved={params.interleaved} \\
+            {params.outputs} \\
+            {params.extra} \\
+            overwrite=true \\
+            verifypaired={params.verifypaired} \\
+            threads={threads} \\
+            -Xmx{resources.java_mem}M
+        ) 1>{log} 2>&1
+        """
 
 
 rule initialize_qc_LR:
@@ -189,7 +195,7 @@ rule initialize_qc_LR:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/1_raw_LR.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_LR.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/1_raw_LR.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
@@ -200,16 +206,19 @@ rule initialize_qc_LR:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "initialize_qc", "account"),
     shell:
-        "reformat.sh "
-        " {params.inputs} "
-        " interleaved={params.interleaved} "
-        " {params.outputs} "
-        " {params.extra} "
-        " overwrite=true "
-        " verifypaired={params.verifypaired} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}M "
-        " 1>{log} 2>&1 "
+        """
+        (
+        reformat.sh \\
+            {params.inputs} \\
+            interleaved={params.interleaved} \\
+            {params.outputs} \\
+            {params.extra} \\
+            overwrite=true \\
+            verifypaired={params.verifypaired} \\
+            threads={threads} \\
+            -Xmx{resources.java_mem}M
+        ) 1>{log} 2>&1
+        """
 
 
 
@@ -262,14 +271,14 @@ rule deduplicate_reads_PE:
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "DeDuplicate") else "f",
             dupesubs=config["duplicates_allow_substitutions"],
-            only_optical=("t" if config.get("duplicates_only_optical") else "f"),
+            only_optical=("t" if config["duplicates_only_optical"] else "f"),
             threads=threads,
             resources=resources
         )
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_PE.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_PE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_PE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
@@ -281,7 +290,7 @@ rule deduplicate_reads_PE:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "deduplicate_reads", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -300,14 +309,14 @@ rule deduplicate_reads_SE:
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "DeDuplicate") else "f",
             dupesubs=config["duplicates_allow_substitutions"],
-            only_optical=("t" if config.get("duplicates_only_optical") else "f"),
+            only_optical=("t" if config["duplicates_only_optical"] else "f"),
             threads=threads,
             resources=resources
         )
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_SE.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_SE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_SE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
@@ -319,7 +328,7 @@ rule deduplicate_reads_SE:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "deduplicate_reads", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -338,14 +347,14 @@ rule deduplicate_reads_LR:
             pairs=";".join(",".join(x) for x in list(zip(input.reads, output.reads))),
             run_step="t" if check_bool(wc, "DeDuplicate") else "f",
             dupesubs=config["duplicates_allow_substitutions"],
-            only_optical=("t" if config.get("duplicates_only_optical") else "f"),
+            only_optical=("t" if config["duplicates_only_optical"] else "f"),
             threads=threads,
             resources=resources
         )
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_LR.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_LR.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/2_deduplicated_LR.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "deduplicate_reads", "threads")
@@ -357,7 +366,7 @@ rule deduplicate_reads_LR:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "deduplicate_reads", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -459,7 +468,7 @@ rule apply_quality_filter_PE:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_PE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
@@ -471,7 +480,7 @@ rule apply_quality_filter_PE:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "apply_quality_filter", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -516,7 +525,7 @@ rule apply_quality_filter_SE:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_SE.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_SE.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_SE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
@@ -528,7 +537,7 @@ rule apply_quality_filter_SE:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "apply_quality_filter", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -573,7 +582,7 @@ rule apply_quality_filter_LR:
     log:
         "logs/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_LR.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_LR.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/cleaning/3_quality_filtered_LR.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "apply_quality_filter", "threads")
@@ -585,7 +594,7 @@ rule apply_quality_filter_LR:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "apply_quality_filter", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -599,7 +608,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
 
     rule build_decontamination_db:
         input:
-            ancient(config["contaminant_references"].values()),
+            ancient(CONTAMINANT_REFERENCES.values()),
         output:
             "ref/genome/1/summary.txt",
         params:
@@ -607,13 +616,13 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
             refs_in=" ".join(
                 [
                     "ref_%s=%s" % (n, fa)
-                    for n, fa in config["contaminant_references"].items()
+                    for n, fa in CONTAMINANT_REFERENCES.items()
                 ]
             ),
         log:
             "logs/qc/sequence_quality_control/cleaning/4_decontamination_build_db.log",
         benchmark:
-            "benchmarks/qc/sequence_quality_control/cleaning/4_decontamination_build_db.txt"
+            "benchmarks/qc/sequence_quality_control/cleaning/4_decontamination_build_db.tsv",
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "build_decontamination_db", "threads")
@@ -624,13 +633,16 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
             slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "build_decontamination_db", "partition"),
             slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "build_decontamination_db", "account"),
         shell:
-            "bbsplit.sh"
-            " -Xmx{resources.java_mem}M "
-            " {params.refs_in} "
-            " threads={threads}"
-            " k={params.k}"
-            " local=t "
-            " &> {log}"
+            """
+            (
+            bbsplit.sh \\
+                -Xmx{resources.java_mem}M \\
+                {params.refs_in} \\
+                threads={threads} \\
+                k={params.k} \\
+                local=t
+            ) 1>{log} 2>&1
+            """
     
     
     def run_decontamination_command(inputs, outputs, stats, contaminant_folder, outdir, pairs, run_step, pacbio,
@@ -731,7 +743,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
         log:
             "logs/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_PE.log",
         benchmark:
-            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_PE.txt"
+            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_PE.tsv",
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
@@ -743,7 +755,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
             slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_decontamination", "account"),
         shell:
             """
-            ({params.command}) > {log} 2>&1
+            ({params.command}) 1>{log} 2>&1
             """
 
 
@@ -779,7 +791,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
         log:
             "logs/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_SE.log",
         benchmark:
-            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_SE.txt"
+            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_SE.tsv",
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
@@ -791,7 +803,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
             slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_decontamination", "account"),
         shell:
             """
-            ({params.command}) > {log} 2>&1
+            ({params.command}) 1>{log} 2>&1
             """
 
 
@@ -828,7 +840,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
         log:
             "logs/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_LR.log",
         benchmark:
-            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_LR.txt"
+            "benchmarks/samples/{sample}/sequence_quality_control/cleaning/4_decontaminated_LR.tsv",
         conda:
             "../envs/required_packages.yaml"
         threads: lambda wc: get_resource(wc, None, 1, "run_decontamination", "threads")
@@ -840,7 +852,7 @@ if len(CONTAMINANT_REFERENCES.keys()) > 0:
             slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_decontamination", "account"),
         shell:
             """
-            ({params.command}) > {log} 2>&1
+            ({params.command}) 1>{log} 2>&1
             """
 
 
@@ -868,7 +880,7 @@ rule qcreads_PE:
             "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_R2.fastq.gz"
         ]),
     log:
-        "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_PE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/5_qcreads_PE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -893,7 +905,7 @@ rule qcreads_SE:
             "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_SE.fastq.gz",
         ]),
     log:
-        "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_SE.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/5_qcreads_SE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -918,7 +930,7 @@ rule qcreads_LR:
             "samples/{sample}/sequence_quality_control/cleaning/5_final_reads_LR.fastq.gz",
         ]),
     log:
-        "logs/samples/{sample}/sequence_quality_control/cleaning/qcreads_LR.log",
+        "logs/samples/{sample}/sequence_quality_control/cleaning/5_qcreads_LR.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -953,7 +965,7 @@ rule copy_reads_PE:
             "samples/{sample}/sequence_quality_control/{sample}_R2.fastq.gz"
         ],
     log:
-        "logs/samples/{sample}/sequence_quality_control/copy_reads_PE.log",
+        "logs/samples/{sample}/sequence_quality_control/5_copy_reads_PE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -979,7 +991,7 @@ rule copy_reads_SE:
             "samples/{sample}/sequence_quality_control/{sample}_SE.fastq.gz",
         ],
     log:
-        "logs/samples/{sample}/sequence_quality_control/copy_reads_SE.log",
+        "logs/samples/{sample}/sequence_quality_control/5_copy_reads_SE.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -1005,7 +1017,7 @@ rule copy_reads_LR:
             "samples/{sample}/sequence_quality_control/{sample}_LR.fastq.gz",
         ],
     log:
-        "logs/samples/{sample}/sequence_quality_control/copy_reads_LR.log",
+        "logs/samples/{sample}/sequence_quality_control/5_copy_reads_LR.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -1056,7 +1068,7 @@ rule get_read_counts:
     log:
         "logs/samples/{sample}/sequence_quality_control/read_stats/{step}.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/read_stats/{step}.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/read_stats/{step}.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "get_read_counts", "threads")
@@ -1144,11 +1156,11 @@ rule get_read_length_hist:
         kmer=config["merging_k"],
         extend2=config["merging_extend2"],
         flags="loose ecct",
-        minprob=config.get("bbmerge_minprob", "0.8"),
+        minprob=config["bbmerge_minprob"],
     log:
         "logs/samples/{sample}/sequence_quality_control/read_stats/calculate_read_length.log",
     benchmark:
-        "benchmarks/samples/{sample}/sequence_quality_control/read_stats/calculate_read_length.txt"
+        "benchmarks/samples/{sample}/sequence_quality_control/read_stats/calculate_read_length.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "get_read_length_hist", "threads")

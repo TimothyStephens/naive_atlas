@@ -346,7 +346,9 @@ rule run_skani:
     output:
         "Binning/raw_bins/{lineage}.distance_matrix.txt",
     log:
-        "logs/Binning/dereplication/{lineage}.skani_calculation.log",
+        "logs/Binning/raw_bins/{lineage}.skani_calculation.log",
+    benchmark:
+        "benchmarks/Binning/raw_bins/{lineage}.skani_calculation.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "run_skani", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "mem_mb"),
@@ -367,13 +369,13 @@ rule run_skani:
           sensitivity="--slow"
         fi
         
-        skani triangle \
-          {params.extra} \
-          -l {input.paths} \
-          -o {output} \
-          -t {threads} \
-          --sparse --ci \
-          --min-af {params.min_af} \
+        skani triangle \\
+          {params.extra} \\
+          -l {input.paths} \\
+          -o {output} \\
+          -t {threads} \\
+          --sparse --ci \\
+          --min-af {params.min_af} \\
           $sensitivity
         ) 1>{log} 2>&1
         """
@@ -391,7 +393,9 @@ rule skani_2_parquet:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "account"),
     log:
-        "logs/Binning/dereplication/{lineage}.skani_2_parquet.log",
+        "logs/Binning/raw_bins/{lineage}.skani_2_parquet.log",
+    benchmark:
+        "benchmarks/Binning/raw_bins/{lineage}.skani_2_parquet.tsv",
     conda:
         "../envs/python.yaml"
     run:
@@ -445,7 +449,9 @@ rule cluster_species:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "account"),
     log:
-        "logs/Binning/dereplication/{lineage}.species_clustering.log",
+        "logs/Binning/raw_bins/{lineage}.species_clustering.log",
+    benchmark:
+        "benchmarks/Binning/raw_bins/{lineage}.species_clustering.tsv",
     output:
         bin_info="Binning/{lineage}.bin_info.tsv",
         bins2species="Binning/{lineage}.bins2species.tsv",
@@ -514,7 +520,7 @@ rule rename_genomes:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/genomes/clustering/{lineage}.rename_genomes.log",
+        "logs/Binning/raw_bins/{lineage}.rename_genomes.log",
     script:
         "../scripts/rename_genomes.py"
 
@@ -536,7 +542,7 @@ rule rename_unbinned:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/genomes/clustering/{sample}.rename_unbinned.log",
+        "logs/Binning/raw_bins/{sample}.rename_unbinned.log",
     script:
         "../scripts/rename_unbinned.py"
 
@@ -570,7 +576,7 @@ rule move_genomes:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/genomes/move_mags.log",
+        "logs/Binning/raw_bins/move_mags.log",
     script:
         "../scripts/move_genomes.sh"
 
@@ -591,7 +597,7 @@ rule move_unbinned:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/genomes/move_unbinned.log",
+        "logs/Binning/raw_bins/move_unbinned.log",
     script:
         "../scripts/move_unbinned.sh"
 

@@ -7,8 +7,6 @@ import multiprocessing
 import subprocess
 import click
 
-from snakemake.common.configfile import load_configfile
-from .make_config import validate_config
 from .init.atlas_init import run_init  # , run_init_sra
 
 from .__init__ import __version__
@@ -17,7 +15,7 @@ from .logo import print_logo
 ##
 
 # Get working dir and scripts dir
-cwd = Path.cwd()
+cwd = Path.cwd().resolve()
 script_dir = Path(__file__).resolve().parent
 
 class LogoCommand(click.Command):
@@ -267,14 +265,14 @@ def get_snakefile(file="workflow/Snakefile"):
 @click.option(
     "--latency-wait",
     type=int,
-    default=60,
+    default=120,
     show_default=True,
     help="Wait given seconds if an output file of a job is not present after the job finished. This helps if your filesystem suffers from latency.",
 )
 @click.option(
     "--retries",
     type=int,
-    default=1,
+    default=2,
     show_default=True,
     help="Number of times to retry failed jobs.",
 )
@@ -365,8 +363,6 @@ def run_workflow(
             "Generate one with 'atlas init'"
         )
         exit(1)
-
-    validate_config(config_file, workflow)
 
     # Helper to generate presence-only flags
     def get_flag(val, name):

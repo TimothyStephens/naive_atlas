@@ -13,7 +13,7 @@ rule get_metabat_depth_file_one_sample:
     output:
         "samples/{sample}/binning/coverage/{sample_reads}.metabat_depth.txt",
     benchmark:
-        "benchmarks/samples/{sample}/binning/coverage/{sample_reads}.txt"
+        "benchmarks/samples/{sample}/binning/coverage/{sample_reads}.tsv",
     log:
         "logs/samples/{sample}/binning/coverage/{sample_reads}.log",
     conda:
@@ -28,10 +28,14 @@ rule get_metabat_depth_file_one_sample:
         minid=config["cobinning_readmapping_id"] * 100,
     priority: 100
     shell:
-        "jgi_summarize_bam_contig_depths "
-        " --percentIdentity {params.minid} "
-        " --outputDepth {output} "
-        " {input} &> {log} "
+        """
+        (
+        jgi_summarize_bam_contig_depths \\
+            --percentIdentity {params.minid} \\
+            --outputDepth {output} \\
+            {input}
+        ) 1>{log} 2>&1
+        """
 
 
 rule get_metabat_depth_file_combine:
@@ -47,7 +51,7 @@ rule get_metabat_depth_file_combine:
     conda:
         "../envs/python.yaml"
     benchmark:
-        "benchmarks/samples/{sample}/binning/coverage/metabat_depth.txt"
+        "benchmarks/samples/{sample}/binning/coverage/metabat_depth.tsv",
     log:
         "logs/samples/{sample}/binning/coverage/metabat_depth.log",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
@@ -58,10 +62,11 @@ rule get_metabat_depth_file_combine:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "account"),
     shell:
         """
-        {params.workflow_folder}/scripts/veba/metabat2_coverage_combined_file.py \
-            -i {input.depths} \
-            -o {output.depth} \
-          > {log} 2>&1
+        (
+        {params.workflow_folder}/scripts/veba/metabat2_coverage_combined_file.py \\
+            -i {input.depths} \\
+            -o {output.depth}
+        ) 1>{log} 2>&1
         """
 
 
@@ -75,7 +80,7 @@ rule get_maxbin_depth_file:
     conda:
         "../envs/python.yaml"
     benchmark:
-        "benchmarks/samples/{sample}/binning/coverage/maxbin_depth.txt"
+        "benchmarks/samples/{sample}/binning/coverage/maxbin_depth.tsv",
     log:
         "logs/samples/{sample}/binning/coverage/maxbin_depth.log",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
@@ -86,10 +91,11 @@ rule get_maxbin_depth_file:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "account"),
     shell:
         """
-        {params.workflow_folder}/scripts/veba/maxbin_abundance_from_metabat2_coverage_file.py \
-            -i {input.depth} \
-            -o {output.depth} \
-          > {log} 2>&1
+        (
+        {params.workflow_folder}/scripts/veba/maxbin_abundance_from_metabat2_coverage_file.py \\
+            -i {input.depth} \\
+            -o {output.depth}
+        ) 1>{log} 2>&1
         """
 
 
@@ -115,7 +121,7 @@ rule binning_prokaryotic_metabat:
         output_path="samples/{sample}/binning/veba/1_prokaryotic/1_metabat2",
         output_prefix="{sample}__METABAT2",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/1_metabat2.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/1_metabat2.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/1_metabat2.log",
     conda:
@@ -129,22 +135,22 @@ rule binning_prokaryotic_metabat:
     shell:
         """
         (
-        metabat2 \
-            -i {input.contigs} \
-            -o {params.output_path}/bins/bin \
-            -a {input.depth_file} \
-            -m {params.minimum_contig_length} \
-            --minClsSize {params.minimum_genome_length} \
-            -t {threads} \
-            --seed 1 \
-            --verbose \
+        metabat2 \\
+            -i {input.contigs} \\
+            -o {params.output_path}/bins/bin \\
+            -a {input.depth_file} \\
+            -m {params.minimum_contig_length} \\
+            --minClsSize {params.minimum_genome_length} \\
+            -t {threads} \\
+            --seed 1 \\
+            --verbose \\
         
-        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \
-            -x fa \
-            -i {params.output_path}/bins \
-            --bin_prefix {params.output_prefix} \
+        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \\
+            -x fa \\
+            -i {params.output_path}/bins \\
+            --bin_prefix {params.output_prefix} \\
             > {output.s2b}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -161,7 +167,7 @@ rule binning_prokaryotic_maxbin_107:
         output_path="samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107",
         output_prefix="{sample}__MAXBIN2-107",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/2_maxbin2_107.log",
     container:
@@ -179,12 +185,12 @@ rule binning_prokaryotic_maxbin_107:
         export LC_ALL=C.UTF-8
         export LANG=C.UTF-8
         
-        run_MaxBin.pl \
-            -contig {input.contigs} \
-            -out {params.output_path}/bin \
-            -abund_list {input.depth_file} \
-            -min_contig_length {params.minimum_contig_length} \
-            -markerset 107 \
+        run_MaxBin.pl \\
+            -contig {input.contigs} \\
+            -out {params.output_path}/bin \\
+            -abund_list {input.depth_file} \\
+            -min_contig_length {params.minimum_contig_length} \\
+            -markerset 107 \\
             -thread {threads} #-verbose
         
         mkdir -p {params.output_path}/bins
@@ -211,12 +217,12 @@ rule binning_prokaryotic_maxbin_107:
             fi
         done
         
-        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \
-            -x fa \
-            -i {params.output_path}/bins \
-            --bin_prefix {params.output_prefix} \
+        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \\
+            -x fa \\
+            -i {params.output_path}/bins \\
+            --bin_prefix {params.output_prefix} \\
             > {output.s2b}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -233,7 +239,7 @@ rule binning_prokaryotic_maxbin_40:
         output_path="samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40",
         output_prefix="{sample}__MAXBIN2-40",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/3_maxbin2_40.log",
     container:
@@ -251,12 +257,12 @@ rule binning_prokaryotic_maxbin_40:
         export LC_ALL=C.UTF-8
         export LANG=C.UTF-8
         
-        run_MaxBin.pl \
-            -contig {input.contigs} \
-            -out {params.output_path}/bin \
-            -abund_list {input.depth_file} \
-            -min_contig_length {params.minimum_contig_length} \
-            -markerset 40 \
+        run_MaxBin.pl \\
+            -contig {input.contigs} \\
+            -out {params.output_path}/bin \\
+            -abund_list {input.depth_file} \\
+            -min_contig_length {params.minimum_contig_length} \\
+            -markerset 40 \\
             -thread {threads} #-verbose 
         
         mkdir -p {params.output_path}/bins
@@ -283,12 +289,12 @@ rule binning_prokaryotic_maxbin_40:
             fi
         done
         
-        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \
-            -x fa \
-            -i {params.output_path}/bins \
-            --bin_prefix {params.output_prefix} \
+        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \\
+            -x fa \\
+            -i {params.output_path}/bins \\
+            --bin_prefix {params.output_prefix} \\
             > {output.s2b}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -305,7 +311,7 @@ checkpoint binning_prokaryotic_dastool:
         output_path="samples/{sample}/binning/veba/1_prokaryotic/4_dastool",
         labels="{sample}__METABAT,{sample}__MAXBIN2-107,{sample}__MAXBIN2-40",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/4_dastool.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/4_dastool.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/4_dastool.log",
     conda:
@@ -322,9 +328,9 @@ checkpoint binning_prokaryotic_dastool:
         export PATH="$CONDA_PREFIX/bin:$PATH"
         export R_LIBS="$CONDA_PREFIX/lib/R/library"
         
-        S2B=$({params.workflow_folder}/scripts/veba/check_scaffolds_to_bins.py \
-            -i {input.metabat_s2b},{input.maxbin107_s2b},{input.maxbin40_s2b} \
-            -n {params.labels} \
+        S2B=$({params.workflow_folder}/scripts/veba/check_scaffolds_to_bins.py \\
+            -i {input.metabat_s2b},{input.maxbin107_s2b},{input.maxbin40_s2b} \\
+            -n {params.labels} \\
         )
         IFS=" " read -r -a S2B_ARRAY <<< "$S2B"
         
@@ -342,14 +348,14 @@ checkpoint binning_prokaryotic_dastool:
             exit 0
         fi
         
-        DAS_Tool \
-            --bins ${{S2B_ARRAY[0]}} \
-            --contigs {input.contigs} \
-            --outputbasename {params.output_path}/_ \
-            --labels ${{S2B_ARRAY[1]}} \
-            --search_engine diamond \
-            --score_threshold 0.1 \
-            --write_bins \
+        DAS_Tool \\
+            --bins ${{S2B_ARRAY[0]}} \\
+            --contigs {input.contigs} \\
+            --outputbasename {params.output_path}/_ \\
+            --labels ${{S2B_ARRAY[1]}} \\
+            --search_engine diamond \\
+            --score_threshold 0.1 \\
+            --write_bins \\
             --threads {threads} #--debug
         
         if [ ! -d "{output.bins}" ]; then
@@ -364,8 +370,7 @@ checkpoint binning_prokaryotic_dastool:
         else
             echo "[ERROR]  - DAS_Tool failed to produce bins for some reason but didnt return an error. Please check log file."
         fi
-        
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -378,7 +383,7 @@ rule binning_prokaryotic_whokaryote:
         output_path="samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}",
         minsize=config["veba_prokaryotic"]["minimum_contig_length"],
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/5_whokaryote/{genome}.log",
     conda:
@@ -392,14 +397,14 @@ rule binning_prokaryotic_whokaryote:
     shell:
         """
         (
-        whokaryote.py \
-            --contigs {input.fasta} \
-            --outdir {params.output_path} \
-            --minsize {params.minsize} \
-            --f \
-            --threads {threads} \
+        whokaryote.py \\
+            --contigs {input.fasta} \\
+            --outdir {params.output_path} \\
+            --minsize {params.minsize} \\
+            --f \\
+            --threads {threads} \\
         && touch {output.fasta}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """ # Need to touch output file on sucess since it is not created if we have no prok contigs identified (i.e., is a euk bin)
 
 
@@ -417,7 +422,7 @@ rule binning_prokaryotic_mdmcleaner:
         extra=config["veba_prokaryotic"]["mdmcleaner_options"],
         skip=("t" if config["veba_prokaryotic"]["mdmcleaner_skip"] else "f"),
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.log",
     container:
@@ -447,13 +452,13 @@ rule binning_prokaryotic_mdmcleaner:
         
         cp {input.fasta} {params.raw_fasta}
         echo -e "db_type\\tgtdb\\ndb_basedir\\t{input.dbdir}" > {params.mdmcleaner_config}
-        mdmcleaner clean \
-            -c {params.mdmcleaner_config} \
-            -i {params.raw_fasta} \
-            -o {params.output_path} \
+        mdmcleaner clean \\
+            -c {params.mdmcleaner_config} \\
+            -i {params.raw_fasta} \\
+            -o {params.output_path} \\
             --threads {threads} {params.extra}
         gunzip -c {params.output_filtered} > {output.fasta}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -499,7 +504,7 @@ rule binning_prokaryotic_checkm2:
         completeness=config["veba_prokaryotic"]["checkm2_completeness"],
         contamination=config["veba_prokaryotic"]["checkm2_contamination"],
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/7_checkm2.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/7_checkm2.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/7_checkm2.log",
     conda:
@@ -536,23 +541,23 @@ rule binning_prokaryotic_checkm2:
                 exit 0
             fi
             
-            checkm2 predict \
-                -i {params.tmpdir}/bins \
-                -o {params.output_path} \
-                -t {threads} \
-                --force \
-                -x fa \
-                --tmpdir {params.tmpdir} \
+            checkm2 predict \\
+                -i {params.tmpdir}/bins \\
+                -o {params.output_path} \\
+                -t {threads} \\
+                --force \\
+                -x fa \\
+                --tmpdir {params.tmpdir} \\
                 --database_path {input.dbdir}/CheckM2_database/uniref100.KO.1.dmnd
                 
-            {params.workflow_folder}/scripts/veba/filter_checkm2_results.py \
-                -i {params.output_path}/quality_report.tsv \
-                -b {params.tmpdir}/bins \
-                -o {params.output_path}/filtered \
-                -f {input.contigs} \
-                --unbinned \
-                --completeness {params.completeness} \
-                --contamination {params.contamination} \
+            {params.workflow_folder}/scripts/veba/filter_checkm2_results.py \\
+                -i {params.output_path}/quality_report.tsv \\
+                -b {params.tmpdir}/bins \\
+                -o {params.output_path}/filtered \\
+                -f {input.contigs} \\
+                --unbinned \\
+                --completeness {params.completeness} \\
+                --contamination {params.contamination} \\
                 -x fa
         else
             echo "[WARNING] No bins found. Skipping CheckM2."
@@ -561,8 +566,7 @@ rule binning_prokaryotic_checkm2:
             mkdir -p {output.bins}
         
         fi
-        
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -572,7 +576,7 @@ rule binning_prokaryotic_genome_stats:
     output:
         stats="samples/{sample}/binning/veba/1_prokaryotic/7_checkm2/filtered/genome_statistics.tsv",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/8_stats.txt"
+        "benchmarks/samples/{sample}/binning/veba/1_prokaryotic/8_stats.tsv",
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/8_stats.log",
     conda:
@@ -588,17 +592,17 @@ rule binning_prokaryotic_genome_stats:
         (
         if ls {input.bins}/*.fa 1> /dev/null 2>&1;
         then
-            seqkit stats \
-                -a -b -T -j {threads} \
-                {input.bins}/*.fa \
-            | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \
+            seqkit stats \\
+                -a -b -T -j {threads} \\
+                {input.bins}/*.fa \\
+            | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \\
             > {output.stats}
         
         else
             echo "[WARNING] No bins found."
             touch {output.stats}
         fi
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -626,7 +630,7 @@ checkpoint binning_eukaryotic_metabat:
         output_path="samples/{sample}/binning/veba/2_eukaryotic/1_metabat2",
         output_prefix="{sample}__METABAT2",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/1_metabat2.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/1_metabat2.tsv",
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/1_metabat2.log",
     conda:
@@ -640,22 +644,22 @@ checkpoint binning_eukaryotic_metabat:
     shell:
         """
         (
-        metabat2 \
-            -i {input.contigs} \
-            -o {params.output_path}/bins/{params.output_prefix}bin \
-            -a {input.depth_file} \
-            -m {params.minimum_contig_length} \
-            --minClsSize {params.minimum_genome_length} \
-            -t {threads} \
-            --seed 1 \
-            --verbose \
+        metabat2 \\
+            -i {input.contigs} \\
+            -o {params.output_path}/bins/{params.output_prefix}bin \\
+            -a {input.depth_file} \\
+            -m {params.minimum_contig_length} \\
+            --minClsSize {params.minimum_genome_length} \\
+            -t {threads} \\
+            --seed 1 \\
+            --verbose \\
         
-        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \
-            -x fa \
-            -i {params.output_path}/bins \
-            --bin_prefix {params.output_prefix} \
+        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \\
+            -x fa \\
+            -i {params.output_path}/bins \\
+            --bin_prefix {params.output_prefix} \\
             > {output.s2b}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -668,7 +672,7 @@ rule binning_eukaryotic_whokaryote:
         output_path="samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}",
         minsize=config["veba_eukaryotic"]["minimum_contig_length"],
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}.tsv",
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/2_whokaryote/{genome}.log",
     conda:
@@ -682,14 +686,14 @@ rule binning_eukaryotic_whokaryote:
     shell:
         """
         (
-        whokaryote.py \
-            --contigs {input.fasta} \
-            --outdir {params.output_path} \
-            --minsize {params.minsize} \
-            --f \
-            --threads {threads} \
+        whokaryote.py \\
+            --contigs {input.fasta} \\
+            --outdir {params.output_path} \\
+            --minsize {params.minsize} \\
+            --f \\
+            --threads {threads} \\
         && touch {output.fasta}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """ # Need to touch output file on sucess since it is not created if we have no euk contigs identified (i.e., is a prok bin)
 
 
@@ -706,7 +710,7 @@ rule binning_eukaryotic_busco:
         completeness=config["veba_eukaryotic"]["busco_completeness"],
         contamination=config["veba_eukaryotic"]["busco_contamination"],
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.tsv",
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.log",
     container:
@@ -731,14 +735,14 @@ rule binning_eukaryotic_busco:
         cp {input.fasta} {params.tmp_fasta}
         
         set +eu
-        busco \
-            --force \
-            -i {params.tmp_fasta} \
-            -o {output.results} \
-            -m genome \
-            --auto-lineage-euk \
-            -c {threads} \
-            --evalue 0.001 \
+        busco \\
+            --force \\
+            -i {params.tmp_fasta} \\
+            -o {output.results} \\
+            -m genome \\
+            --auto-lineage-euk \\
+            -c {threads} \\
+            --evalue 0.001 \\
             --download_path {input.dbdir}
         EXITSTATUS=$?
         
@@ -757,7 +761,7 @@ rule binning_eukaryotic_busco:
         
         rm -fr "{output.results}/auto_lineage"
         rm -fr "{output.results}/run_eukaryota_odb10"
-        ) &> {log}
+        ) 1>{log} 2>&1
         """ # Use custom BUSCO script which handles a BUSCO Exception caused by empty results files nicely (expected sometimes)
 
 
@@ -804,7 +808,7 @@ rule binning_eukaryotic_filter:
         completeness=config["veba_eukaryotic"]["busco_completeness"],
         contamination=config["veba_eukaryotic"]["busco_contamination"],
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/4_filter.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/4_filter.tsv",
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/4_filter.log",
     conda:
@@ -827,19 +831,19 @@ rule binning_eukaryotic_filter:
             exit 0
         fi
         
-        {params.workflow_folder}/scripts/veba/merge_busco_json.py \
-            -i {params.bins_dir} \
+        {params.workflow_folder}/scripts/veba/merge_busco_json.py \\
+            -i {params.bins_dir} \\
             -o {output.tsv}
         
-        {params.workflow_folder}/scripts/veba/filter_busco_results.py \
-            -i {output.tsv} \
-            -g {params.bins_dir} \
-            -o {output.outdir} \
-            -f {input.contigs} \
-            --completeness {params.completeness} \
-            --contamination {params.contamination} \
+        {params.workflow_folder}/scripts/veba/filter_busco_results.py \\
+            -i {output.tsv} \\
+            -g {params.bins_dir} \\
+            -o {output.outdir} \\
+            -f {input.contigs} \\
+            --completeness {params.completeness} \\
+            --contamination {params.contamination} \\
             --unbinned
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -849,7 +853,7 @@ rule binning_eukaryotic_genome_stats:
     output:
         stats="samples/{sample}/binning/veba/2_eukaryotic/4_filtered/genome_statistics.tsv",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/5_stats.txt"
+        "benchmarks/samples/{sample}/binning/veba/2_eukaryotic/5_stats.tsv",
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/5_stats.log",
     conda:
@@ -865,16 +869,16 @@ rule binning_eukaryotic_genome_stats:
         (
         if ls {input.bins}/*.fa 1> /dev/null 2>&1;
         then
-            seqkit stats \
-                -a -b -T -j {threads} \
-                {input.bins}/*.fa \
-              | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \
+            seqkit stats \\
+                -a -b -T -j {threads} \\
+                {input.bins}/*.fa \\
+              | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \\
               > {output.stats}
         else
             echo "[WARNING] No bins found."
             touch {output.stats}
         fi
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -901,7 +905,7 @@ rule binning_viral_metabat:
         output_path="samples/{sample}/binning/veba/3_viral/1_metabat2",
         output_prefix="{sample}__METABAT2",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/3_viral/1_metabat2.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/1_metabat2.tsv",
     log:
         "logs/samples/{sample}/binning/veba/3_viral/1_metabat2.log",
     conda:
@@ -915,20 +919,20 @@ rule binning_viral_metabat:
     shell:
         """
         (
-        metabat2 \
-            -i {input.contigs} \
-            -o {params.output_path}/bins/bin \
-            -a {input.depth_file} \
-            -m {params.minimum_contig_length} \
-            --minClsSize {params.minimum_genome_length} \
-            -t {threads} \
-            --seed 1 \
-            --verbose \
+        metabat2 \\
+            -i {input.contigs} \\
+            -o {params.output_path}/bins/bin \\
+            -a {input.depth_file} \\
+            -m {params.minimum_contig_length} \\
+            --minClsSize {params.minimum_genome_length} \\
+            -t {threads} \\
+            --seed 1 \\
+            --verbose
         
-        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \
-            -x fa \
-            -i {params.output_path}/bins \
-            --bin_prefix {params.output_prefix} \
+        {params.workflow_folder}/scripts/veba/scaffolds_to_bins.py \\
+            -x fa \\
+            -i {params.output_path}/bins \\
+            --bin_prefix {params.output_prefix} \\
             > {output.s2b}
         
         for MAG in `find {params.output_path}/bins -name "*.fa"`;
@@ -936,10 +940,10 @@ rule binning_viral_metabat:
             P=$(basename ${{MAG%*.fa}})
             echo ">{params.output_prefix}$P"
             grep -v ">" "$MAG"
-        done \
-            | seqkit seq -w 0 \
+        done \\
+            | seqkit seq -w 0 \\
             > {output.merged_bins}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -959,7 +963,7 @@ rule binning_viral_genomad:
         empty_virus_taxonomy=f"{workflow_folder}/data/virus_taxonomy.tsv",
         empty_plasmid_summary=f"{workflow_folder}/data/plasmid_summary.tsv",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/3_viral/2_genomad.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/2_genomad.tsv",
     log:
         "logs/samples/{sample}/binning/veba/3_viral/2_genomad.log",
     container:
@@ -976,24 +980,24 @@ rule binning_viral_genomad:
         if [ -s {input.fasta} ];
         then
           export PATH="/opt/conda/bin:$PATH"
-          genomad end-to-end \
-              --cleanup \
-              --threads {threads} \
-              --verbose \
-              --enable-score-calibration \
-              --disable-find-proviruses \
-              --sensitivity 4.0 \
-              --splits 0 \
-              --composition auto \
-              --min-score 0.7 \
-              --max-fdr 1.0 \
-              --min-plasmid-marker-enrichment -100 \
-              --min-virus-marker-enrichment -100 \
-              --min-plasmid-hallmarks 0 \
-              --min-virus-hallmarks 0 \
-              --max-uscg 100 \
-              {input.fasta} \
-              {params.results} \
+          genomad end-to-end \\
+              --cleanup \\
+              --threads {threads} \\
+              --verbose \\
+              --enable-score-calibration \\
+              --disable-find-proviruses \\
+              --sensitivity 4.0 \\
+              --splits 0 \\
+              --composition auto \\
+              --min-score 0.7 \\
+              --max-fdr 1.0 \\
+              --min-plasmid-marker-enrichment -100 \\
+              --min-virus-marker-enrichment -100 \\
+              --min-plasmid-hallmarks 0 \\
+              --min-virus-hallmarks 0 \\
+              --max-uscg 100 \\
+              {input.fasta} \\
+              {params.results} \\
               {input.dbdir}/genomad_db
         else
           echo '[WARNING] Output from MetaBAT2 is empty, suggesting that no bins were present in the remaining scaffolds. Skipping geNomad and creating empty output files for downstream analysis.'
@@ -1003,7 +1007,7 @@ rule binning_viral_genomad:
           cat "{params.empty_virus_taxonomy}"  > "{output.virus_taxonomy}"
           cat "{params.empty_plasmid_summary}" > "{output.plasmid_summary}"
         fi
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -1027,7 +1031,7 @@ rule binning_viral_filter:
         outdir="samples/{sample}/binning/veba/3_viral/2_genomad",
         sample="{sample}",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/3_viral/3_filter.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/3_filter.tsv",
     log:
         "logs/samples/{sample}/binning/veba/3_viral/3_filter.log",
     conda:
@@ -1042,32 +1046,32 @@ rule binning_viral_filter:
         """
         (
         echo "# Filtering Virus Results"
-        {params.workflow_folder}/scripts/veba/filter_genomad_results.py \
-            --fasta {input.contigs} \
-            --scaffolds_to_bins {input.s2b} \
-            --genomad_results {input.virus_summary} \
-            --genomad_virus_taxonomy {input.virus_taxonomy} \
-            --prefix {params.sample}__VIRUS__ \
+        {params.workflow_folder}/scripts/veba/filter_genomad_results.py \\
+            --fasta {input.contigs} \\
+            --scaffolds_to_bins {input.s2b} \\
+            --genomad_results {input.virus_summary} \\
+            --genomad_virus_taxonomy {input.virus_taxonomy} \\
+            --prefix {params.sample}__VIRUS__ \\
             --output_directory {params.viral_output}
         
         echo "# Filtering Plasmid Results"
-        {params.workflow_folder}/scripts/veba/filter_genomad_results.py \
-            --fasta {input.contigs} \
-            --scaffolds_to_bins {input.s2b} \
-            --genomad_results {input.plasmid_summary} \
-            --prefix {params.sample}__PLASMID__ \
+        {params.workflow_folder}/scripts/veba/filter_genomad_results.py \\
+            --fasta {input.contigs} \\
+            --scaffolds_to_bins {input.s2b} \\
+            --genomad_results {input.plasmid_summary} \\
+            --prefix {params.sample}__PLASMID__ \\
             --output_directory {params.plasmid_output}
         
         echo "# Getting unbinned sequences"
-        cat {params.viral_output}/unbinned.list {params.plasmid_output}/unbinned.list \
-            | sort | uniq -d \
-            > {params.outdir}/unbinned.list \
-          && \
-        cat {input.contigs} \
-            | seqkit grep \
-                --pattern-file {params.outdir}/unbinned.list \
+        cat {params.viral_output}/unbinned.list {params.plasmid_output}/unbinned.list \\
+            | sort | uniq -d \\
+            > {params.outdir}/unbinned.list \\
+          && \\
+        cat {input.contigs} \\
+            | seqkit grep \\
+                --pattern-file {params.outdir}/unbinned.list \\
             > {output.unbinned}
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 
@@ -1079,7 +1083,7 @@ rule binning_viral_genome_stats:
         plasmid_stats="samples/{sample}/binning/veba/3_viral/2_genomad/filtered_plasmid_bins/genome_statistics.tsv",
         viral_stats="samples/{sample}/binning/veba/3_viral/2_genomad/filtered_viral_bins/genome_statistics.tsv",
     benchmark:
-        "benchmarks/samples/{sample}/binning/veba/3_viral/4_stats.txt"
+        "benchmarks/samples/{sample}/binning/veba/3_viral/4_stats.tsv",
     log:
         "logs/samples/{sample}/binning/veba/3_viral/4_stats.log",
     conda:
@@ -1095,10 +1099,10 @@ rule binning_viral_genome_stats:
         (
         if ls {input.plasmid_bins}/*.fa 1> /dev/null 2>&1;
         then
-            seqkit stats \
-                -a -b -T -j {threads} \
-                {input.plasmid_bins}/*.fa \
-              | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \
+            seqkit stats \\
+                -a -b -T -j {threads} \\
+                {input.plasmid_bins}/*.fa \\
+              | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \\
               > {output.plasmid_stats}
         else
             echo "[WARNING] No Plasmid bins found."
@@ -1107,16 +1111,16 @@ rule binning_viral_genome_stats:
         
         if ls {input.viral_bins}/*.fa 1> /dev/null 2>&1;
         then
-            seqkit stats \
-                -a -b -T -j {threads} \
-                {input.viral_bins}/*.fa \
-              | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \
+            seqkit stats \\
+                -a -b -T -j {threads} \\
+                {input.viral_bins}/*.fa \\
+              | python -c 'import sys, pandas as pd; df = pd.read_csv(sys.stdin, sep="\t", index_col=0); df.index = df.index.map(lambda x: x[:-3]); df.to_csv(sys.stdout, sep="\\t")' \\
               > {output.viral_stats}
         else
             echo "[WARNING] No Viral bins found."
             touch {output.viral_stats}
         fi
-        ) &> {log}
+        ) 1>{log} 2>&1
         """
 
 

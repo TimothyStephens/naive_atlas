@@ -50,12 +50,12 @@ resources:
     time_min: *dynamic_default_time_min
   deduplicate_reads:
     base_mem_mb: 8000
-    scaling_factor: 2.5
+    scaling_factor: 3.5
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   apply_quality_filter:
-    base_mem_mb: 4000
-    scaling_factor: 1.0
+    base_mem_mb: 8000
+    scaling_factor: 2.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   build_decontamination_db:
@@ -75,7 +75,7 @@ resources:
     time_min: *dynamic_default_time_min
   get_read_length_hist:
     base_mem_mb: 8000
-    scaling_factor: 10.0
+    scaling_factor: 12.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   
@@ -84,16 +84,16 @@ resources:
   ######################
   normalize_reads:
     base_mem_mb: 8000
-    scaling_factor: 2.0
+    scaling_factor: 6.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   error_correction:
-    base_mem_mb: 12000
-    scaling_factor: 3.0
+    base_mem_mb: 8000
+    scaling_factor: 6.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   run_assembly:
-    base_mem_mb: 20000
+    base_mem_mb: 8000
     scaling_factor: 5.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
@@ -103,13 +103,13 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   pileup:
-    base_mem_mb: 4000
-    scaling_factor: 0.5
+    base_mem_mb: 2000
+    scaling_factor: 0.1
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   filter_by_coverage:
-    base_mem_mb: 4000
-    scaling_factor: 0.5
+    base_mem_mb: 2000
+    scaling_factor: 0.1
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   rename_contigs:
@@ -219,7 +219,7 @@ database_dir:
   /user/project/dir/databases
 
 tmpdir: 
-  /user/project/dir/tmp
+  /tmp
 
 
 
@@ -267,7 +267,9 @@ contaminant_max_indel: 20
 contaminant_min_ratio: 0.65
 contaminant_kmer_length: 13
 contaminant_minimum_hits: 1
-contaminant_ambiguous: best
+contaminant_ambiguous: best 
+# Read length hist
+bbmerge_minprob: 0.8
 
 
 
@@ -332,6 +334,7 @@ metamdbg_extra: ''
 
 # Filtering
 #------------
+count_multi_mapped_reads: false
 # filter out assembled noise
 minimum_contig_length: 1000
 # trim contig tips
@@ -434,6 +437,8 @@ virtual_disk: /dev/shm   # But you need 37G extra ram
 ########################
 # Misc
 #######################
+instrain_profile_extra: ""
+instrain_compare_extra: ""
 
 ## use just in time compilation for bbmap
 usejni: false

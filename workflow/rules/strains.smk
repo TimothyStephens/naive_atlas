@@ -9,30 +9,30 @@ rule instrain_profile:
         directory("Intermediate/strains/{sample}"),
     threads: lambda wc: get_resource(wc, None, 1, "instrain_profile", "threads")
     params:
-        extra=config.get("instrain_profile_extra", ""),
+        extra=config["instrain_profile_extra"],
     log:
         "logs/genomes/strains/profile/{sample}.log",
     conda:
         "../envs/instrain.yaml"
     benchmark:
-        "logs/benchmarks/genomes/strains/profile/{sample}.tsv"
+        "benchmarks/genomes/strains/profile/{sample}.tsv",
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_profile", "account"),
     shell:
-        #" cat {input.genes} > {resources.tmpdir}/all_genome_genes.fna 2> {log} "
-        #" ; "
-        "inStrain profile "
-        " {input.bam} {input.genomes} "
-        " -o {output} "
-        " -p {threads} "
-
-        " -s {input.scaffold_to_genome} "
-        " --database_mode "
-        " {params.extra} &>> {log}"
-        #" -g {resources.tmpdir}/all_genome_genes.fna "
+        """
+        (
+        inStrain profile \\
+            {input.bam} {input.genomes} \\
+            -o {output} \\
+            -p {threads} \\
+            -s {input.scaffold_to_genome} \\
+            --database_mode \\
+            {params.extra}
+        ) 1>{log} 2>&1
+        """
 
 
 rule instrain_compare:
@@ -43,35 +43,29 @@ rule instrain_compare:
         directory("genomes/strains/comparison"),
     threads: lambda wc: get_resource(wc, None, 1, "instrain_compare", "threads")
     params:
-        extra=config.get("instrain_compare_extra", ""),
+        extra=config["instrain_compare_extra"],
     log:
         "logs/genomes/strains/compare.log",
     conda:
         "../envs/instrain.yaml"
     benchmark:
-        "logs/benchmarks/genomes/strains/compare.tsv"
+        "benchmarks/genomes/strains/compare.tsv",
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "instrain_compare", "account"),
     shell:
-        "inStrain compare "
-        " --input {input.profiles} "
-        " -o {output} "
-        " -p {threads} "
-        " -s {input.scaffold_to_genome} "
-        " --database_mode "
-        " {params.extra} &> {log}"
+        """
+        (
+        inStrain compare \\
+            --input {input.profiles} \\
+            -o {output} \\
+            -p {threads} \\
+            -s {input.scaffold_to_genome} \\
+            --database_mode \\
+            {params.extra}
+        ) 1>{log} 2>&1
+        """
 
 
-# usage: inStrain compare -i [INPUT [INPUT ...]] [-o OUTPUT] [-p PROCESSES] [-d]
-#                         [-h] [--version] [-s [STB [STB ...]]] [-c MIN_COV]
-#                         [-f MIN_FREQ] [-fdr FDR] [--database_mode]
-#                         [--breadth BREADTH] [-sc SCAFFOLDS] [--genome GENOME]
-#                         [--store_coverage_overlap]
-#                         [--store_mismatch_locations]
-#                         [--include_self_comparisons] [--skip_plot_generation]
-#                         [--group_length GROUP_LENGTH] [--force_compress]
-#                         [-ani ANI_THRESHOLD] [-cov COVERAGE_TRESHOLD]
-#                         [--clusterAlg {ward,single,complete,average,weighted,median,centroid}]

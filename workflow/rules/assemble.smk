@@ -6,16 +6,6 @@ import warnings
 from copy import deepcopy
 
 
-def get_preprocessing_steps(config):
-    preprocessing_steps = ["QC"]
-    if config.get("error_correction_before_assembly", True):
-        preprocessing_steps.append("errorcorr")
-
-    return ".".join(preprocessing_steps)
-
-
-assembly_preprocessing_steps = get_preprocessing_steps(config)
-
 
 ####
 #### Normalize Reads
@@ -66,7 +56,6 @@ rule normalize_reads_PE:
         ]),
         histin ="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_before_normalization.tsv.gz",
         histout="samples/{sample}/assembly/reads/1_normalize_reads_PE.histogram_after_normalization.tsv.gz",
-        tmp=temp(directory("samples/{sample}/assembly/reads/tmp")),
     params:
         command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -76,16 +65,17 @@ rule normalize_reads_PE:
             histin=output.histin,
             histout=output.histout,
             run_step="t" if check_bool(wildcards, "Normalize_reads_before_assembly") else "f",
-            k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
-            target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
+            k=config["normalization_kmer_length"],
+            target=config["normalization_target_depth"],
             mindepth=config["normalization_minimum_kmer_depth"],
             threads=threads,
             resources=resources
-        )
+        ),
+        tmp="samples/{sample}/assembly/reads/tmp",
     log:
-        "logs/samples/{sample}/assembly/pre_process/1_normalize_reads_PE.log",
+        "logs/samples/{sample}/assembly/reads/1_normalize_reads_PE.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_PE.txt"
+        "benchmarks/samples/{sample}/assembly/reads/1_normalize_reads_PE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "normalize_reads", "threads")
@@ -97,7 +87,7 @@ rule normalize_reads_PE:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -112,7 +102,6 @@ rule normalize_reads_SE:
         ]),
         histin ="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_before_normalization.tsv.gz",
         histout="samples/{sample}/assembly/reads/1_normalize_reads_SE.histogram_after_normalization.tsv.gz",
-        tmp=temp(directory("samples/{sample}/assembly/reads/tmp")),
     params:
         command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -122,16 +111,16 @@ rule normalize_reads_SE:
             histin=output.histin,
             histout=output.histout,
             run_step="t" if check_bool(wildcards, "Normalize_reads_before_assembly") else "f",
-            k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
-            target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
+            k=config["normalization_kmer_length"],
+            target=config["normalization_target_depth"],
             mindepth=config["normalization_minimum_kmer_depth"],
             threads=threads,
             resources=resources
         )
     log:
-        "logs/samples/{sample}/assembly/pre_process/1_normalize_reads_SE.log",
+        "logs/samples/{sample}/assembly/reads/1_normalize_reads_SE.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_SE.txt"
+        "benchmarks/samples/{sample}/assembly/reads/1_normalize_reads_SE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "normalize_reads", "threads")
@@ -143,7 +132,7 @@ rule normalize_reads_SE:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -158,7 +147,6 @@ rule normalize_reads_LR:
         ]),
         histin ="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_before_normalization.tsv.gz",
         histout="samples/{sample}/assembly/reads/1_normalize_reads_LR.histogram_after_normalization.tsv.gz",
-        tmp=temp(directory("samples/{sample}/assembly/reads/tmp")),
     params:
         command = lambda wildcards, input, output, threads, resources: normalize_reads_command(
             inputs=io_params_for_tadpole(input.reads),
@@ -168,16 +156,16 @@ rule normalize_reads_LR:
             histin=output.histin,
             histout=output.histout,
             run_step="t" if check_bool(wildcards, "Normalize_reads_before_assembly") else "f",
-            k=config.get("normalization_kmer_length", NORMALIZATION_KMER_LENGTH),
-            target=config.get("normalization_target_depth", NORMALIZATION_TARGET_DEPTH),
+            k=config["normalization_kmer_length"],
+            target=config["normalization_target_depth"],
             mindepth=config["normalization_minimum_kmer_depth"],
             threads=threads,
             resources=resources
         )
     log:
-        "logs/samples/{sample}/assembly/pre_process/1_normalize_reads_LR.log",
+        "logs/samples/{sample}/assembly/reads/1_normalize_reads_LR.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/pre_process/1_normalize_reads_LR.txt"
+        "benchmarks/samples/{sample}/assembly/reads/1_normalize_reads_LR.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "normalize_reads", "threads")
@@ -189,7 +177,7 @@ rule normalize_reads_LR:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "normalize_reads", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -261,9 +249,9 @@ rule error_correction_PE:
             resources=resources
         )
     log:
-        "logs/samples/{sample}/assembly/pre_process/2_error_correction_PE.log",
+        "logs/samples/{sample}/assembly/reads/2_error_correction_PE.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_PE.txt"
+        "benchmarks/samples/{sample}/assembly/reads/2_error_correction_PE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "error_correction", "threads")
@@ -275,7 +263,7 @@ rule error_correction_PE:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -304,9 +292,9 @@ rule error_correction_SE:
             resources=resources
         )
     log:
-        "logs/samples/{sample}/assembly/pre_process/2_error_correction_SE.log",
+        "logs/samples/{sample}/assembly/reads/2_error_correction_SE.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_SE.txt"
+        "benchmarks/samples/{sample}/assembly/reads/2_error_correction_SE.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "error_correction", "threads")
@@ -318,7 +306,7 @@ rule error_correction_SE:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -347,9 +335,9 @@ rule error_correction_LR:
             resources=resources
         )
     log:
-        "logs/samples/{sample}/assembly/pre_process/2_error_correction_LR.log",
+        "logs/samples/{sample}/assembly/reads/2_error_correction_LR.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/pre_process/2_error_correction_LR.txt"
+        "benchmarks/samples/{sample}/assembly/reads/2_error_correction_LR.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "error_correction", "threads")
@@ -361,7 +349,7 @@ rule error_correction_LR:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "error_correction", "account"),
     shell:
         """
-        ({params.command}) > {log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -403,9 +391,9 @@ def assembly_command(wildcards, input, output, threads, resources):
         reads = ""
         # Check for named inputs 'r1'/'r2' or 'se'
         if hasattr(input, "R1"): 
-            reads += f" -1 {input.R1} -2 {input.R2} "
+            reads += f"-1 {input.R1} -2 {input.R2} "
         elif hasattr(input, "SE"):
-            reads += f" --s{s_num} {input.SE} "
+            reads += f"--s{s_num} {input.SE} "
             s_num+=1
         else:
             raise ValueError(f"No trimmed short reads found for assembler '{assembler}' and sample '{wildcards.sample}'.")
@@ -422,8 +410,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                  "spades-nanopore-hq":  f"--s{s_num}"}
             reads += f" {m[assembler]} {input.LR} "
         
-        k = config.get("spades_k", SPADES_K)
-        extra = config.get("spades_extra", '')
+        k = config["spades_k"]
+        extra = config["spades_extra"]
         sequences="scaffolds" if config["spades_use_scaffolds"] else "contigs"
         
         # If we see spades has already run, we can continue to save time.
@@ -467,12 +455,12 @@ def assembly_command(wildcards, input, output, threads, resources):
         else:
             raise ValueError(f"No trimmed short reads found for assembler '{assembler}' and sample '{sample_id}'.")
         
-        min_count=config.get("megahit_min_count", MEGAHIT_MIN_COUNT)
-        k_min=config.get("megahit_k_min", MEGAHIT_K_MIN)
-        k_max=config.get("megahit_k_max", MEGAHIT_K_MAX)
-        k_step=config.get("megahit_k_step", MEGAHIT_K_STEP)
-        merge_level=config.get("megahit_merge_level", MEGAHIT_MERGE_LEVEL)
-        prune_level=config.get("megahit_prune_level", MEGAHIT_PRUNE_LEVEL)
+        min_count=config["megahit_min_count"]
+        k_min=config["megahit_k_min"]
+        k_max=config["megahit_k_max"]
+        k_step=config["megahit_k_step"]
+        merge_level=config["megahit_merge_level"]
+        prune_level=config["megahit_prune_level"]
         low_local_ratio=config["megahit_low_local_ratio"]
         min_contig_len=config["minimum_contig_length"]
         assembly_params = {
@@ -481,7 +469,7 @@ def assembly_command(wildcards, input, output, threads, resources):
             "meta-large": " --presets meta-large",
         }
         preset=assembly_params[config["megahit_preset"]]
-        extra = config.get("megahit_extra", '')
+        extra = config["megahit_extra"]
         
         # If we see megahit has already run, we can continue to save time.
         if not os.path.exists(f"{output_dir}/options.json"):
@@ -520,7 +508,7 @@ def assembly_command(wildcards, input, output, threads, resources):
     
     # FLYE (Long Reads)
     elif assembler.startswith('flye'):
-        extra = config.get("flye_extra", '')
+        extra = config["flye_extra"]
         
         m = {"flye-pacbio-raw":   "--pacbio-raw", 
              "flye-pacbio-corr":  "--pacbio-corr",
@@ -558,7 +546,7 @@ def assembly_command(wildcards, input, output, threads, resources):
     
     # metaMDBG (Long Reads)
     elif assembler.startswith('metamdbg'):
-        extra = config.get("metamdbg_extra", '')
+        extra = config["metamdbg_extra"]
         
         m = {"metamdbg-pacbio-hq":  "--in-hifi",
              "metamdbg-nanopore-hq":"--in-ont"}
@@ -593,9 +581,9 @@ rule run_assembly:
             wildcards, input, output, threads, resources
         ),
     log:
-        "logs/samples/{sample}/assembly.log",
+        "logs/samples/{sample}/assembly/assembly.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly.txt"
+        "benchmarks/samples/{sample}/assembly/assembly.tsv",
     conda:
         "../envs/assembly.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "run_assembly", "threads")
@@ -607,9 +595,7 @@ rule run_assembly:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "run_assembly", "account"),
     shell:
         """
-        (
-        MEM_GB={resources.mem_gb}
-        {params.command}) > {log} 2>&1
+        (MEM_GB={resources.mem_gb}; {params.command}) 1>{log} 2>&1
         """
 
 
@@ -626,7 +612,7 @@ rule rename_contigs:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "account"),
     log:
-        "logs/samples/{sample}/assembly/post_process/rename_and_filter_size.log",
+        "logs/samples/{sample}/assembly/assembly/rename_and_filter_size.log",
     params:
         minlength=config["minimum_contig_length"],
     conda:
@@ -640,7 +626,7 @@ def align_reads_command(wildcards, input, output, threads, resources):
     Map any combination of reads against a reference using minimap2.
     """
     
-    cmd = ""
+    cmd = "rm -fr {output}*; "
     
     ## Map short reads
     cmd_sr = ""
@@ -660,28 +646,27 @@ def align_reads_command(wildcards, input, output, threads, resources):
     if hasattr(input, "LR"):
         assembler = sampleTable.loc[wildcards.sample, 'Assembler']
         if assembler.endswith("-pacbio-raw") | assembler.endswith("-pacbio-corr"):
-            cmd_lr = f"minimap2 -t {threads} -ax map-pb {input.target} {input.LR}"
-        
+            ax = f"map-pb"
         elif assembler.endswith("-nanopore-raw") | assembler.endswith("-nanopore-corr"):
-            cmd_lr = f"minimap2 -t {threads} -ax map-ont {input.target} {input.LR}"
-        
+            ax = f"map-ont"
         elif assembler.endswith("-pacbio-hq"):
-            cmd_lr = f"minimap2 -t {threads} -ax map-hifi {input.target} {input.LR}"
-        
+            ax = f"map-hifi"
         elif assembler.endswith("-nanopore-hq"):
-            # See: https://github.com/lh3/minimap2/issues/1127
-            cmd_lr = f"minimap2 -t {threads} -ax lr:hq {input.target} {input.LR}"
-        
+            ax = f"lr:hq" # See: https://github.com/lh3/minimap2/issues/1127
         else:
-            cmd_lr = f"minimap2 -t {threads} -ax map-ont {input.target} {input.LR}"
+            ax = f"map-ont"
+        cmd_lr = f"minimap2 -t {threads} -ax {ax} {input.target} {input.LR}"
    
     # Check if we have SR+LR (need to map separatly and merge) or SR OR LR
     if cmd_sr and cmd_lr:
-        cmd = f"({cmd_sr} && {cmd_lr} | grep -v '^@') | samtools sort"
+        cmd = f"{cmd} ({cmd_sr} && {cmd_lr} | grep -v '^@') | samtools sort"
     elif cmd_sr and not cmd_lr:
-        cmd = f"{cmd_sr} | samtools sort"
+        cmd = f"{cmd} {cmd_sr} | samtools sort"
     else:
-        cmd = f"{cmd_lr} | samtools sort"
+        cmd = f"{cmd} {cmd_lr} | samtools sort"
+    
+    # Set samtools sort temp file location
+    cmd = f"{cmd} -T {output}.temp"
     
     # If output file provided, else will be printed to stdout
     if not output is None:
@@ -698,12 +683,12 @@ rule align_reads_to_prefilter_contigs:
         bam=temp("samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
     params:
         command = lambda wildcards, input, output, threads, resources: align_reads_command(
-            wildcards, input, output, threads, resources
+            wildcards, input, output, threads, resources,
         ),
     benchmark:
-        "benchmarks/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.txt",
+        "benchmarks/samples/{sample}/assembly/assembly/align_reads_to_prefiltered_contigs.tsv",
     log:
-        "logs/samples/{sample}/assembly/post_process/align_reads_to_prefiltered_contigs.log",
+        "logs/samples/{sample}/assembly/assembly/align_reads_to_prefiltered_contigs.log",
     conda:
         "../envs/minimap.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "mapping", "threads")
@@ -714,7 +699,7 @@ rule align_reads_to_prefilter_contigs:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "mapping", "account"),
     shell:
         """
-        ({params.command}) >{log} 2>&1
+        ({params.command}) 1>{log} 2>&1
         """
 
 
@@ -728,9 +713,9 @@ rule pileup_prefilter:
         pileup_secondary="t",
         minmapq=config["minimum_map_quality"],
     benchmark:
-        "benchmarks/samples/{sample}/assembly/post_process/pilup_prefilter_contigs.txt",
+        "benchmarks/samples/{sample}/assembly/assembly/pilup_prefilter_contigs.tsv",
     log:
-        "logs/samples/{sample}/assembly/post_process/pilup_prefilter_contigs.log",
+        "logs/samples/{sample}/assembly/assembly/pilup_prefilter_contigs.log",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "pileup", "threads")
@@ -741,14 +726,19 @@ rule pileup_prefilter:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
     shell:
-        "pileup.sh ref={input.fasta} in={input.bam} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}M "
-        " covstats={output.covstats} "
-        " concise=t "
-        " minmapq={params.minmapq} "
-        " secondary={params.pileup_secondary} "
-        " 2> {log}"
+        """
+        (
+        pileup.sh \\
+            ref={input.fasta} \\
+            in={input.bam} \\
+            threads={threads} \\
+            -Xmx{resources.java_mem}M \\
+            covstats={output.covstats} \\
+            concise=t \\
+            minmapq={params.minmapq} \\
+            secondary={params.pileup_secondary}
+        ) 1>{log} 2>&1
+        """
 
 rule filter_by_coverage:
     input:
@@ -760,13 +750,13 @@ rule filter_by_coverage:
     params:
         minc=config["minimum_average_coverage"],
         minp=config["minimum_percent_covered_bases"],
-        minr=config.get("minimum_mapped_reads", MINIMUM_MAPPED_READS),
-        minl=config.get("minimum_contig_length", MINIMUM_CONTIG_LENGTH),
-        trim=config.get("contig_trim_bp", CONTIG_TRIM_BP),
+        minr=config["minimum_mapped_reads"],
+        minl=config["minimum_contig_length"],
+        trim=config["contig_trim_bp"],
     benchmark:
-        "benchmarks/samples/{sample}/assembly/post_process/filter_by_coverage.txt",
+        "benchmarks/samples/{sample}/assembly/assembly/filter_by_coverage.tsv",
     log:
-        "logs/samples/{sample}/assembly/post_process/filter_by_coverage.log",
+        "logs/samples/{sample}/assembly/assembly/filter_by_coverage.log",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "filter_by_coverage", "threads")
@@ -777,16 +767,21 @@ rule filter_by_coverage:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "filter_by_coverage", "account"),
     shell:
-        """filterbycoverage.sh in={input.fasta} \
-        cov={input.covstats} \
-        out={output.fasta} \
-        outd={output.removed_names} \
-        minc={params.minc} \
-        minp={params.minp} \
-        minr={params.minr} \
-        minl={params.minl} \
-        trim={params.trim} \
-        -Xmx{resources.java_mem}M 2> {log}"""
+        """
+        (
+        filterbycoverage.sh \\
+            in={input.fasta} \\
+            cov={input.covstats} \\
+            out={output.fasta} \\
+            outd={output.removed_names} \\
+            minc={params.minc} \\
+            minp={params.minp} \\
+            minr={params.minr} \\
+            minl={params.minl} \\
+            trim={params.trim} \\
+            -Xmx{resources.java_mem}M
+        ) 1>{log} 2>&1
+        """
 
 
 
@@ -807,7 +802,9 @@ rule finalize_contigs:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "account"),
     shell:
-        "cp {input} {output} > {log} 2>&1"
+        """
+        (cp {input} {output}) 1>{log} 2>&1
+        """
 
 
 rule calculate_contigs_stats:
@@ -825,11 +822,13 @@ rule calculate_contigs_stats:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "calculate_contigs_stats", "account"),
     log:
-        "logs/samples/{sample}/assembly/post_process/contig_stats_final.log",
+        "logs/samples/{sample}/assembly/contig_stats/contig_stats_final.log",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/post_process/contig_stats_final.txt",
+        "benchmarks/samples/{sample}/assembly/contig_stats/contig_stats_final.tsv",
     shell:
-        "stats.sh in={input} format=3 out={output} -Xmx{resources.java_mem}M &> {log}"
+        """
+        (stats.sh in={input} format=3 out={output} -Xmx{resources.java_mem}M) 1>{log} 2>&1
+        """
 
 
 # generalized rule so that reads from any "sample" can be aligned to contigs from "sample_contigs"
@@ -844,9 +843,9 @@ rule align_reads_to_final_contigs:
             wildcards, input, output, threads, resources
         ),
     benchmark:
-        "benchmarks/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.txt",
+        "benchmarks/samples/{sample_contigs}/sequence_alignment/align_reads_from_{sample}.tsv",
     log:
-        "logs/samples/{sample_contigs}/assembly/calculate_coverage/align_reads_from_{sample}.log",
+        "logs/samples/{sample_contigs}/sequence_alignment/align_reads_from_{sample}.log",
     conda:
         "../envs/minimap.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "mapping", "threads")
@@ -872,14 +871,14 @@ rule pileup_contigs_sample:
     params:
         pileup_secondary=(
             "t"
-            if config.get("count_multi_mapped_reads", CONTIG_COUNT_MULTI_MAPPED_READS)
+            if config["count_multi_mapped_reads"]
             else "f"
         ),
         minmapq=config["minimum_map_quality"],
     benchmark:
-        "benchmarks/samples/{sample}/assembly/calculate_coverage/pileup.txt"
+        "benchmarks/samples/{sample}/assembly/contig_stats/pileup_contigs_sample.tsv",
     log:
-        "logs/samples/{sample}/assembly/calculate_coverage/pileup.log",
+        "logs/samples/{sample}/assembly/contig_stats/pileup_contigs_sample.log",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "pileup", "threads")
@@ -890,18 +889,21 @@ rule pileup_contigs_sample:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "pileup", "account"),
     shell:
-        "pileup.sh "
-        " ref={input.fasta} "
-        " in={input.bam} "
-        " threads={threads} "
-        " -Xmx{resources.java_mem}M "
-        " covstats={output.covstats} "
-        " hist={output.covhist} "
-        " concise=t "
-        " minmapq={params.minmapq} "
-        " secondary={params.pileup_secondary} "
-        " bincov={output.bincov} "
-        " 2> {log} "
+        """
+        (
+        pileup.sh \\
+            ref={input.fasta} \\
+            in={input.bam} \\
+            threads={threads} \\
+            -Xmx{resources.java_mem}M \\
+            covstats={output.covstats} \\
+            hist={output.covhist} \\
+            concise=t \\
+            minmapq={params.minmapq} \\
+            secondary={params.pileup_secondary} \\
+            bincov={output.bincov}
+        ) 1>{log} 2>&1
+        """
 
 
 rule samtools_stats_contigs_sample:
@@ -911,9 +913,9 @@ rule samtools_stats_contigs_sample:
     output:
         stats="samples/{sample}/assembly/contig_stats/postfilter_samtools_stats.txt",
     benchmark:
-        "benchmarks/samples/{sample}/assembly/calculate_coverage/samtools_stats.txt"
+        "benchmarks/samples/{sample}/assembly/contig_stats/samtools_stats_contigs_sample.tsv",
     log:
-        "logs/samples/{sample}/assembly/calculate_coverage/samtools_stats.log",
+        "logs/samples/{sample}/assembly/contig_stats/samtools_stats_contigs_sample.log",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "samtools_stats_contigs_sample", "threads")
@@ -923,10 +925,9 @@ rule samtools_stats_contigs_sample:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "samtools_stats_contigs_sample", "account"),
     shell:
-        "samtools stats "
-        " {input.bam} "
-        " 1> {output.stats} "
-        " 2> {log} "
+        """
+        (samtools stats {input.bam} 1> {output.stats}) 1>{log} 2>&1
+        """
 
 
 rule create_bam_index:
@@ -945,7 +946,9 @@ rule create_bam_index:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "create_bam_index", "account"),
     shell:
-        "samtools index {input} > {log} 2>&1"
+        """
+        (samtools index {input}) 1>{log} 2>&1
+        """
 
 
 rule predict_genes:
@@ -958,9 +961,9 @@ rule predict_genes:
     conda:
         "../envs/prodigal.yaml"
     log:
-        "logs/samples/{sample}/gene_annotation/prodigal.log",
+        "logs/samples/{sample}/annotation/predicted_genes/prodigal.log",
     benchmark:
-        "benchmarks/samples/{sample}/prodigal.txt"
+        "benchmarks/samples/{sample}/annotation/predicted_genes/prodigal.tsv",
     threads: lambda wildcards: get_resource(wildcards, None, 1, "predict_genes", "threads")
     resources:
         mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "mem_mb"),
@@ -969,8 +972,7 @@ rule predict_genes:
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "predict_genes", "account"),
     shell:
         """
-        prodigal -i {input} -o {output.gff} -d {output.fna} \
-            -a {output.faa} -p meta -f gff 2> {log}
+        (prodigal -i {input} -o {output.gff} -d {output.fna} -a {output.faa} -p meta -f gff) 1>{log} 2>&1
         """
 
 
@@ -1075,7 +1077,7 @@ rule build_assembly_report:
     conda:
         "../envs/report.yaml"
     log:
-        "logs/assembly/report.log",
+        "logs/assembly/build_assembly_report.log",
     threads: lambda wildcards: get_resource(wildcards, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "localrule", "mem_mb"),

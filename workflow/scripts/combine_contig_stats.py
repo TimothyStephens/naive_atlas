@@ -51,7 +51,7 @@ def parse_map_stats(sample_data, out_tsv):
         df["Mapped_Reads"]            = int(mapping_stats["reads mapped"])
         df["Percent_Assembled_Reads"] = round((df["Mapped_Reads"]/df["Total_Reads"])*100, 2)
 
-        logging.info(f"Stats for sample {sample}\n{df}")
+        logging.debug(f"Stats for sample {sample}\n{df}")
 
         sample_stats[sample] = df
 
