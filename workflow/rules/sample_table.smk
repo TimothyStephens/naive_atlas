@@ -155,4 +155,11 @@ def get_assembly(wildcards):
 
         return "samples/{sample}/assembly/{sample}.fasta".format(sample=wildcards.sample)
 
-logger.debug(f"\n{sampleTable}")
+# Print sample table
+with pd.option_context(
+    "display.max_rows", None,        # Print every single row
+    "display.max_columns", None,     # Print every single column
+    "display.width", 1000,           # Prevent table wrapping to new lines
+    "display.max_colwidth", None     # Do not cut off long cell content strings
+):
+    logger.debug(f"\n{sampleTable.to_string()}")
