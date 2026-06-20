@@ -44,11 +44,11 @@ rule get_prokaryotic_bins:
             sample=SAMPLES,
         ),
     output:
-        filenames="Binning/raw_bins/prokaryotic.paths.tsv",
-        genome_names="Binning/raw_bins/prokaryotic.genome.paths.tsv",
-        stats="Binning/raw_bins/prokaryotic.statistics.tsv",
+        filenames="binning/raw_bins/prokaryotic.paths.tsv",
+        genome_names="binning/raw_bins/prokaryotic.genome.paths.tsv",
+        stats="binning/raw_bins/prokaryotic.statistics.tsv",
     params:
-        dir="Binning/raw_bins",
+        dir="binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -56,7 +56,7 @@ rule get_prokaryotic_bins:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/get_prokaryotic_bins.log",
+        "logs/binning/raw_bins/get_prokaryotic_bins.log",
     conda:
         "../envs/python.yaml"
     run:
@@ -116,11 +116,11 @@ rule get_eukaryotic_bins:
             sample=SAMPLES,
         ),
     output:
-        filenames="Binning/raw_bins/eukaryotic.paths.tsv",
-        genome_names="Binning/raw_bins/eukaryotic.genome.paths.tsv",
-        stats="Binning/raw_bins/eukaryotic.statistics.tsv",
+        filenames="binning/raw_bins/eukaryotic.paths.tsv",
+        genome_names="binning/raw_bins/eukaryotic.genome.paths.tsv",
+        stats="binning/raw_bins/eukaryotic.statistics.tsv",
     params:
-        dir="Binning/raw_bins",
+        dir="binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -128,7 +128,7 @@ rule get_eukaryotic_bins:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/get_eukaryotic_bins.log",
+        "logs/binning/raw_bins/get_eukaryotic_bins.log",
     conda:
         "../envs/python.yaml"
     run:
@@ -191,11 +191,11 @@ rule get_viral_bins:
             sample=SAMPLES,
         ),
     output:
-        filenames="Binning/raw_bins/viral.paths.tsv",
-        genome_names="Binning/raw_bins/viral.genome.paths.tsv",
-        stats="Binning/raw_bins/viral.statistics.tsv",
+        filenames="binning/raw_bins/viral.paths.tsv",
+        genome_names="binning/raw_bins/viral.genome.paths.tsv",
+        stats="binning/raw_bins/viral.statistics.tsv",
     params:
-        dir="Binning/raw_bins",
+        dir="binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -203,7 +203,7 @@ rule get_viral_bins:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/get_viral_bins.log",
+        "logs/binning/raw_bins/get_viral_bins.log",
     conda:
         "../envs/python.yaml"
     run:
@@ -259,11 +259,11 @@ rule get_plasmid_bins:
             sample=SAMPLES,
         ),
     output:
-        filenames="Binning/raw_bins/plasmid.paths.tsv",
-        genome_names="Binning/raw_bins/plasmid.genome.paths.tsv",
-        stats="Binning/raw_bins/plasmid.statistics.tsv",
+        filenames="binning/raw_bins/plasmid.paths.tsv",
+        genome_names="binning/raw_bins/plasmid.genome.paths.tsv",
+        stats="binning/raw_bins/plasmid.statistics.tsv",
     params:
-        dir="Binning/raw_bins",
+        dir="binning/raw_bins",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -271,7 +271,7 @@ rule get_plasmid_bins:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/get_plasmid_bins.log",
+        "logs/binning/raw_bins/get_plasmid_bins.log",
     conda:
         "../envs/python.yaml"
     run:
@@ -317,9 +317,9 @@ localrules:
 
 checkpoint get_all:
     input:
-        paths=expand("Binning/raw_bins/{lineage}.genome.paths.tsv", lineage=['prokaryotic', 'eukaryotic', 'viral', 'plasmid']),
+        paths=expand("binning/raw_bins/{lineage}.genome.paths.tsv", lineage=['prokaryotic', 'eukaryotic', 'viral', 'plasmid']),
     log:
-        "logs/Binning/raw_bins/get_all.log",
+        "logs/binning/raw_bins/get_all.log",
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -327,7 +327,7 @@ checkpoint get_all:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     output:
-        touch("Binning/raw_bins/all.done"),
+        touch("binning/raw_bins/all.done"),
 
 
 
@@ -341,14 +341,14 @@ checkpoint get_all:
 
 rule run_skani:
     input:
-        all_done="Binning/raw_bins/all.done",
-        paths="Binning/raw_bins/{lineage}.genome.paths.tsv",
+        all_done="binning/raw_bins/all.done",
+        paths="binning/raw_bins/{lineage}.genome.paths.tsv",
     output:
-        "Binning/raw_bins/{lineage}.distance_matrix.txt",
+        "binning/raw_bins/{lineage}.distance_matrix.txt",
     log:
-        "logs/Binning/raw_bins/{lineage}.skani_calculation.log",
+        "logs/binning/raw_bins/{lineage}.skani_calculation.log",
     benchmark:
-        "benchmarks/Binning/raw_bins/{lineage}.skani_calculation.tsv",
+        "benchmarks/binning/raw_bins/{lineage}.skani_calculation.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "run_skani", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_skani", "mem_mb"),
@@ -385,7 +385,7 @@ rule skani_2_parquet:
     input:
         rules.run_skani.output,
     output:
-        "Binning/raw_bins/{lineage}.genome_similarities.parquet",
+        "binning/raw_bins/{lineage}.genome_similarities.parquet",
     threads: lambda wc: get_resource(wc, None, 1, "skani_2_parquet", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "mem_mb"),
@@ -393,9 +393,9 @@ rule skani_2_parquet:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "skani_2_parquet", "account"),
     log:
-        "logs/Binning/raw_bins/{lineage}.skani_2_parquet.log",
+        "logs/binning/raw_bins/{lineage}.skani_2_parquet.log",
     benchmark:
-        "benchmarks/Binning/raw_bins/{lineage}.skani_2_parquet.tsv",
+        "benchmarks/binning/raw_bins/{lineage}.skani_2_parquet.tsv",
     conda:
         "../envs/python.yaml"
     run:
@@ -433,8 +433,8 @@ rule skani_2_parquet:
 
 rule cluster_species:
     input:
-        dist="Binning/raw_bins/{lineage}.genome_similarities.parquet",
-        bin_info="Binning/raw_bins/{lineage}.statistics.tsv",
+        dist="binning/raw_bins/{lineage}.genome_similarities.parquet",
+        bin_info="binning/raw_bins/{lineage}.statistics.tsv",
     params:
         linkage_method="average",
         pre_cluster_threshold=0.925,
@@ -449,20 +449,20 @@ rule cluster_species:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "cluster_species", "account"),
     log:
-        "logs/Binning/raw_bins/{lineage}.species_clustering.log",
+        "logs/binning/raw_bins/{lineage}.species_clustering.log",
     benchmark:
-        "benchmarks/Binning/raw_bins/{lineage}.species_clustering.tsv",
+        "benchmarks/binning/raw_bins/{lineage}.species_clustering.tsv",
     output:
-        bin_info="Binning/{lineage}.bin_info.tsv",
-        bins2species="Binning/{lineage}.bins2species.tsv",
+        bin_info="binning/{lineage}.bin_info.tsv",
+        bins2species="binning/{lineage}.bins2species.tsv",
     script:
         "{params.script}"
 
 
 rule build_bin_report:
     input:
-        bin_info="Binning/{lineage}.bin_info.tsv",
-        bins2species="Binning/{lineage}.bins2species.tsv",
+        bin_info="binning/{lineage}.bin_info.tsv",
+        bins2species="binning/{lineage}.bins2species.tsv",
     output:
         report="reports/bin_report_{lineage}.html",
     params:
@@ -476,7 +476,7 @@ rule build_bin_report:
     conda:
         "../envs/report.yaml"
     log:
-        "logs/Binning/report_{lineage}.log",
+        "logs/binning/report_{lineage}.log",
     script:
         "{params.script}"
 
@@ -487,11 +487,11 @@ rule run_cdhit:
             sample=SAMPLES
         ),
     output:
-        "Binning/raw_unbinned/combined.cdhit_est",
+        "binning/raw_unbinned/combined.cdhit_est",
     log:
-        "logs/Binning/raw_unbinned/run_cdhit.log",
+        "logs/binning/raw_unbinned/run_cdhit.log",
     benchmark:
-        "benchmarks/Binning/raw_unbinned/run_cdhit.tsv",
+        "benchmarks/binning/raw_unbinned/run_cdhit.tsv",
     threads: lambda wc: get_resource(wc, None, 1, "run_cdhit", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "mem_mb"),
@@ -499,8 +499,8 @@ rule run_cdhit:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "account"),
     params:
-        combined="Binning/raw_unbinned/combined.fa",
-        prefix="Binning/raw_unbinned/combined.cdhit_est",
+        combined="binning/raw_unbinned/combined.fa",
+        prefix="binning/raw_unbinned/combined.cdhit_est",
         extra=config["unbinned_dereplication"]["cdhitest_params"],
     container:
         "docker://chrishah/cdhit:v4.8.1"
@@ -531,9 +531,9 @@ localrules:
 
 rule rename_genomes:
     input:
-        paths="Binning/raw_bins/{lineage}.paths.tsv",
-        mapping_file="Binning/{lineage}.bins2species.tsv",
-        genome_info="Binning/{lineage}.bin_info.tsv",
+        paths="binning/raw_bins/{lineage}.paths.tsv",
+        mapping_file="binning/{lineage}.bins2species.tsv",
+        genome_info="binning/{lineage}.bin_info.tsv",
     output:
         dir=directory("tmp/genomes/{lineage}"),
         mapfile_c2g="genomes/clustering/{lineage}.contig2genome.tsv",
@@ -553,7 +553,7 @@ rule rename_genomes:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/{lineage}.rename_genomes.log",
+        "logs/binning/raw_bins/{lineage}.rename_genomes.log",
     script:
         "../scripts/rename_genomes.py"
 
@@ -578,7 +578,7 @@ rule rename_unbinned:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/rename_unbinned.log",
+        "logs/binning/raw_bins/rename_unbinned.log",
     script:
         "../scripts/rename_unbinned.py"
 
@@ -587,7 +587,7 @@ def get_binned_lineages(wildcards):
     checkpoints.get_all.get(**wildcards)
     binned_lineages = []
     for lineage in ['prokaryotic', 'eukaryotic', 'viral', 'plasmid']:
-        file_name = f"Binning/raw_bins/{lineage}.genome.paths.tsv"
+        file_name = f"binning/raw_bins/{lineage}.genome.paths.tsv"
         if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
             binned_lineages.append(lineage)
     return binned_lineages
@@ -641,7 +641,7 @@ def get_genome_to_move(wildcards):
 
 rule move_genomes:
     input:
-        all_done="Binning/raw_bins/all.done",
+        all_done="binning/raw_bins/all.done",
         dirs=get_genome_to_move,
     output:
         dir=directory("genomes/genomes"),
@@ -654,7 +654,7 @@ rule move_genomes:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/move_mags.log",
+        "logs/binning/raw_bins/move_mags.log",
     script:
         "../scripts/move_genomes.sh"
 
@@ -674,7 +674,7 @@ rule move_unbinned:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/move_unbinned.log",
+        "logs/binning/raw_bins/move_unbinned.log",
     script:
         "../scripts/move_unbinned.sh"
 
