@@ -129,7 +129,7 @@ def get_snakefile(file="workflow/Snakefile"):
     "-c",
     "--config-file",
     type=click.Path(exists=True, resolve_path=True),
-    help="config-file generated with 'atlas init'",
+    help="config-file generated with 'naive_atlas init'",
 )
 @click.option(
     "--cluster-type",
@@ -310,7 +310,7 @@ def run_workflow(
     """Runs the naive ATLAS pipline
     
     By default all steps are executed but a sub-workflow can be specified.
-    Needs a config-file and expects to find a sample table in the working-directory. Both can be generated with 'atlas init'
+    Needs a config-file and expects to find a sample table in the working-directory. Both can be generated with 'naive_atlas init'
     
     Most snakemake arguments can be appended to the command for more info see 'snakemake --help'
     
@@ -357,7 +357,7 @@ def run_workflow(
 
     if not os.path.exists(config_file):
         logger.critical(
-            f"config-file not found: {config_file}\n" "generate one with 'atlas init'"
+            f"config-file not found: {config_file}\n" "generate one with 'naive_atlas init'"
         )
         exit(1)
 
@@ -366,7 +366,7 @@ def run_workflow(
     if not os.path.exists(sample_file):
         logger.critical(
             f"sample.tsv not found in the working directory. "
-            "Generate one with 'atlas init'"
+            "Generate one with 'naive_atlas init'"
         )
         exit(1)
 
