@@ -439,7 +439,7 @@ rule genome_mmseqs2_easy_taxonomy:
         tmp=temp(directory("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.tmp")),
     params:
         out="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result",
-        mmseqs2_easy_taxonomy=config["mmseqs2_easy_taxonomy"],
+        opts=config["mmseqs2_easy_taxonomy_opts"],
         mag_id=lambda wc: wc.genome,
     threads: lambda wc: get_resource(wc, None, 1, "genome_annot_mmseqs2_easy_taxonomy", "threads")
     resources:
@@ -461,7 +461,7 @@ rule genome_mmseqs2_easy_taxonomy:
         /usr/local/bin/entrypoint easy-taxonomy \\
           {input.fasta} {input.database} \\
           {params.out} {output.tmp} \\
-          {params.mmseqs2_easy_taxonomy} \\
+          {params.opts} \\
           --threads {threads} \\
           --split-memory-limit {resources.mem_gb}G \\
         && gzip -9 {params.out}*
@@ -492,8 +492,6 @@ rule all_genome_mmseqs2_easy_taxonomy:
         "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz",
     log:
         "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_combine_{database_name}.log",
-    params:
-        format_output=config["mmseqs2_format_output"],
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
@@ -512,9 +510,6 @@ rule all_genome_mmseqs2_easy_taxonomy:
             combined = pd.concat(Tables, axis=0)
 
             del Tables
-
-            combined.columns = params['format_output'].split(',')
-            combined = combined.astype(str)
 
             combined.to_csv(output[0], sep='\t', index=False)
         except Exception as e:

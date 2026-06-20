@@ -176,9 +176,9 @@ rule gene_mmseqs2_annotation:
         results=temp("genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4.gz"),
         tmp=temp(directory("genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.tmp")),
     params:
-        mmseqs2_opts=config["mmseqs2_opts"],
+        opts=config["mmseqs2_easy_search_opts"],
         results="genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4",
-        format_output=config["mmseqs2_format_output"],
+        format_output=config["mmseqs2_easy_search_format_output"],
     threads: lambda wc: get_resource(wc, None, 1, "gene_annot_mmseqs2_easy_search", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "mem_mb"),
@@ -200,7 +200,7 @@ rule gene_mmseqs2_annotation:
             --split-memory-limit {resources.mem_gb}G \\
             --format-mode 4 \\
             --format-output {params.format_output} \\
-            {params.mmseqs2_opts} \\
+            {params.opts} \\
             {input.faa} \\
             {input.database} \\
             {params.results} \\
@@ -256,7 +256,7 @@ rule mmseqs2_combine:
     log:
         "logs/genomes/annotations/{dataset}/genes/mmseqs2_combine_{database_name}.log",
     params:
-        format_output=config["mmseqs2_format_output"],
+        format_output=config["mmseqs2_easy_search_format_output"],
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),

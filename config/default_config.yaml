@@ -414,21 +414,20 @@ coverm_stats: 'relative_abundance mean trimmed_mean covered_bases variance lengt
 
 
 ########################
-# Genome Annotations
+# Genome/Gene Annotations
 #######################
-
-genome_annotations: []
-
 mmseqs2_database: "UniRef100" # UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, GTDB
 mmseqs2_database_name: "UniRef100"
-mmseqs2_memory: 120 #GB of memory for mmseqs2 annotation of genes and genomes - Needs to be bigger if using larger databases (UniRef100, NR, UniProtKB/TrEMBL, GTDB)
+# Dont forget to update 'genome_annot_mmseqs2_easy_taxonomy' and 'gene_annot_mmseqs2_easy_search' with new base mem if using bigger or smaller database
 
-## mmseqs2 easy-taxonomy
-# Gene annotation
-mmseqs2_opts: ""
-mmseqs2_format_output: "query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader"
-# Genome easy-taxonomy
-mmseqs2_easy_taxonomy: ""
+
+########################
+# Genome Annotations
+#######################
+genome_annotations: []
+
+# mmseqs easy-taxonomy
+mmseqs2_easy_taxonomy_opts: ""
 
 ## MetaEuk
 metaeuk_createdb: ""
@@ -444,9 +443,13 @@ metaeuk_taxtocontig: "--majority 0.5 --tax-lineage 1 --lca-mode 2"
 ########################
 # Gene annotations
 #######################
-
 gene_annotations: []
 
+# mmseqs easy-search
+mmseqs2_easy_search_opts: ""
+mmseqs2_easy_search_format_output: "query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader"
+
+# eggnog-mapper virtual disk
 eggNOG_use_virtual_disk: false # coping the eggNOG DB to a virtual disk can speed up the annotation
 virtual_disk: /dev/shm   # But you need 37G extra ram
 
@@ -455,10 +458,14 @@ virtual_disk: /dev/shm   # But you need 37G extra ram
 
 
 ########################
-# Misc
+# Strain
 #######################
 instrain_profile_extra: ""
 instrain_compare_extra: ""
 
+
+########################
+# Misc
+#######################
 ## use just in time compilation for bbmap
 usejni: false
