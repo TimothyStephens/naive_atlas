@@ -3,10 +3,9 @@ rule instrain_profile:
     input:
         bam="genomes/alignments/bams/{sample}.bam",
         genomes=rules.concat_genomes.output,
-        # genes=lambda wc: get_all_genes(wc, extension=".fna"),
-        scaffold_to_genome="genomes/clustering/contig2genome.tsv",
+        scaffold_to_genome="genomes/clustering/mags.contig2genome.tsv",
     output:
-        directory("Intermediate/strains/{sample}"),
+        directory("genomes/strains/{sample}"),
     threads: lambda wc: get_resource(wc, None, 1, "instrain_profile", "threads")
     params:
         extra=config["instrain_profile_extra"],
@@ -29,16 +28,15 @@ rule instrain_profile:
             -o {output} \\
             -p {threads} \\
             -s {input.scaffold_to_genome} \\
-            --database_mode \\
-            {params.extra}
+            --database_mode {params.extra}
         ) 1>{log} 2>&1
         """
 
 
 rule instrain_compare:
     input:
-        profiles=expand("Intermediate/strains/{sample}", sample=SAMPLES),
-        scaffold_to_genome="genomes/clustering/contig2genome.tsv",
+        profiles=expand("genomes/strains/{sample}", sample=SAMPLES),
+        scaffold_to_genome="genomes/clustering/mags.contig2genome.tsv",
     output:
         directory("genomes/strains/comparison"),
     threads: lambda wc: get_resource(wc, None, 1, "instrain_compare", "threads")
@@ -63,8 +61,7 @@ rule instrain_compare:
             -o {output} \\
             -p {threads} \\
             -s {input.scaffold_to_genome} \\
-            --database_mode \\
-            {params.extra}
+            --database_mode {params.extra}
         ) 1>{log} 2>&1
         """
 

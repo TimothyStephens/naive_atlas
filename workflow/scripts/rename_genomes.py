@@ -70,7 +70,8 @@ old2new.to_csv(snakemake.output.mapfile_old2mag, sep="\t", header=True)
 
 #### Write genomes and contig to genome mapping file
 output_dir = snakemake.output.dir
-mapfile_contigs = snakemake.output.mapfile_contigs
+mapfile_c2g = snakemake.output.mapfile_c2g
+mapfile_g2c = snakemake.output.mapfile_g2c
 rename_contigs = snakemake.params.rename_contigs
 
 
@@ -80,7 +81,7 @@ paths = pd.read_csv(snakemake.input.paths, sep="\t", index_col=0)
 
 os.makedirs(output_dir)
 
-with open(mapfile_contigs, "w") as mapfile_contigs_fh:
+with open(mapfile_c2g, "w") as mapfile_c2g_fh, open(mapfile_g2c, "w") as mapfile_g2c_fh:
     for rep in representatives:
         new_name = old2new.loc[rep]
         
@@ -102,7 +103,8 @@ with open(mapfile_contigs, "w") as mapfile_contigs_fh:
                         new_header = line[1:].strip().split()[0]
                     
                     # write to contig to mapping file
-                    mapfile_contigs_fh.write(f"{new_header}\t{new_name}\n")
+                    mapfile_c2g_fh.write(f"{new_header}\t{new_name}\n")
+                    mapfile_g2c_fh.write(f"{new_name}\t{new_header}\n")
                     # write to fasta file
                     ffo.write(f">{new_header}\n")
                 else:

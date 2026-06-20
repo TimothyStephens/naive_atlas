@@ -262,13 +262,17 @@ rule genome_metaeuk_annotation:
         fasta="genomes/{dataset}/{genome}.fa",
         database=rules.mmseqs2_download.output.database,
     output:
-        codon="genomes/annotations/{dataset}/{genome}.metaeuk.codon.fas.gz",
-        fas="genomes/annotations/{dataset}/{genome}.metaeuk.fas.gz",
-        gff="genomes/annotations/{dataset}/{genome}.metaeuk.gff.gz",
-        headerMap="genomes/annotations/{dataset}/{genome}.metaeuk.headersMap.tsv.gz",
-        headerMap_combined="genomes/annotations/{dataset}/{genome}.metaeuk_combined.headersMap.tsv.gz",
-        contig_classification="genomes/annotations/{dataset}/{genome}.metaeuk_contig_classification.tsv.gz",
-        mag_classification="genomes/annotations/{dataset}/{genome}.metaeuk_mag_classification.tsv.gz",
+        codon=temp("genomes/annotations/{dataset}/{genome}.metaeuk.codon.fas.gz"),
+        fas=temp("genomes/annotations/{dataset}/{genome}.metaeuk.fas.gz"),
+        gff=temp("genomes/annotations/{dataset}/{genome}.metaeuk.gff.gz"),
+        headerMap=temp("genomes/annotations/{dataset}/{genome}.metaeuk.headersMap.tsv.gz"),
+        headerMap_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined.headersMap.tsv.gz"),
+        contig_classification=temp("genomes/annotations/{dataset}/{genome}.metaeuk_contig_classification.tsv.gz"),
+        mag_classification=temp("genomes/annotations/{dataset}/{genome}.metaeuk_mag_classification.tsv.gz"),
+        tax_per_contig=temp("genomes/annotations/{dataset}/{genome}.metaeuk_tax_per_contig.tsv"),
+        tax_per_pred=temp("genomes/annotations/{dataset}/{genome}.metaeuk_tax_per_pred.tsv"),
+        tax_per_contig_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined_tax_per_contig.tsv"),
+        tax_per_pred_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined_tax_per_pred.tsv"),
         tmp=temp(directory("genomes/annotations/{dataset}/{genome}.tmp")),
     params:
         codon="genomes/annotations/{dataset}/{genome}.metaeuk.codon.fas",
@@ -380,13 +384,13 @@ def get_all_genome_metaeuk_contigs(wildcards):
 
 def get_all_genome_metaeuk_contig_results(wildcards):
     all_genomes = get_all_genome_metaeuk(wildcards)
-    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.metaeuk_contig_classification.tsv.gz', 
+    return(expand('genomes/annotations/{dataset}/{genome}.metaeuk_contig_classification.tsv.gz', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
 def get_all_genome_metaeuk_mag_results(wildcards):
     all_genomes = get_all_genome_metaeuk(wildcards)
-    return(expand('genomes/annotations/{dataset}/metaeuk/{genome}.metaeuk_mag_classification.tsv.gz', 
+    return(expand('genomes/annotations/{dataset}/{genome}.metaeuk_mag_classification.tsv.gz', 
                         dataset=wildcards.dataset, genome=all_genomes)
     )
 
@@ -415,24 +419,6 @@ rule combine_genome_metaeuk:
 
 
 
-localrules:
-    all_genome_metaeuk,
-
-rule all_genome_metaeuk:
-    input:
-        rules.combine_genome_metaeuk.output.contig_output_table,
-        rules.combine_genome_metaeuk.output.mag_output_table,
-    output:
-        touch("genomes/annotations/{dataset}/metaeuk_finished"),
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-
-
-
 
 
 ###############################
@@ -446,10 +432,10 @@ rule genome_mmseqs2_easy_taxonomy:
         fasta="genomes/{dataset}/{genome}.fa",
         database=rules.mmseqs2_download.output.database,
     output:
-        result_lca="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_lca.tsv.gz",
-        result_report="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_report.gz",
-        result_tophit_aln="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_aln.gz",
-        result_tophit_report="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_report.gz",
+        result_lca=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_lca.tsv.gz"),
+        result_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_report.gz"),
+        result_tophit_aln=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_aln.gz"),
+        result_tophit_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_report.gz"),
         tmp=temp(directory("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.tmp")),
     params:
         out="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result",
@@ -503,12 +489,39 @@ rule all_genome_mmseqs2_easy_taxonomy:
     input:
         get_all_genome_mmseqs2_easy_taxonomy_results,
     output:
-        touch("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_finished"),
+        "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz",
+    log:
+        "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_combine_{database_name}.log",
+    params:
+        format_output=config["mmseqs2_format_output"],
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+    run:
+        try:
+            import pandas as pd
 
+            Tables = [
+                pd.read_csv(file, index_col=0, header=None, sep="\t")
+                for file in input
+            ]
+
+            combined = pd.concat(Tables, axis=0)
+
+            del Tables
+
+            combined.columns = params['format_output'].split(',')
+            combined = combined.astype(str)
+
+            combined.to_csv(output[0], sep='\t', index=False)
+        except Exception as e:
+            import traceback
+
+            with open(log[0], "w") as logfile:
+                traceback.print_exc(file=logfile)
+
+            raise e
 

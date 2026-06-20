@@ -1,8 +1,8 @@
 import os
 import re
 import sys
-from glob import glob
 import warnings
+from glob import glob
 from copy import deepcopy
 
 
@@ -377,7 +377,7 @@ def assembly_command(wildcards, input, output, threads, resources):
     Builds the assembly command depending on the type of data we have.
     """
     assembler = sampleTable.loc[wildcards.sample, 'Assembler']
-    output_dir = f"samples/{wildcards.sample}/assembly/assembly"
+    output_dir = f"{output.outdir}"
 
     #mem_gb = 1
     # To prevent lazy evaluation issues. Will be undefined or str during DAG construction, can only be calculated during rule execution.
@@ -429,7 +429,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --threads {threads} \\
                 --memory ${{MEM_GB}} {extra}
             
-            seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
+            seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output.fasta}
             """
         else:
             cmd = f"""
@@ -440,7 +440,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --threads {threads} \\
                 --memory ${{MEM_GB}} {extra}
             
-            seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output}
+            seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output.fasta}
             """
     
     
@@ -492,7 +492,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --low-local-ratio {low_local_ratio} \\
                 --memory ${{MEM_GB}}000000000 {preset} {extra}
             
-            seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
+            seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output.fasta}
             """
         else:
             cmd = f"""
@@ -502,7 +502,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --memory ${{MEM_GB}}000000000 \\
                 --continue
             
-            seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output}
+            seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output.fasta}
             """
     
     
@@ -529,7 +529,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --meta \\
                 --threads {threads} {extra}
             
-            seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output}
+            seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output.fasta}
             """
         else:
             cmd = f"""
@@ -540,7 +540,7 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --threads {threads} {extra} \\
                 --resume
             
-            seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output}
+            seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output.fasta}
             """
     
     
@@ -560,7 +560,7 @@ def assembly_command(wildcards, input, output, threads, resources):
             --skip-correction \\
             --threads {threads} {extra}
         
-        zcat "{output_dir}/contigs.fasta.gz" | sed -e 's/ .*circular=/_circular_/' | seqkit sort -l -r -w 0 > {output}
+        zcat "{output_dir}/contigs.fasta.gz" | sed -e 's/ .*circular=/_circular_/' | seqkit sort -l -r -w 0 > {output.fasta}
         """
     
     
@@ -575,7 +575,8 @@ rule run_assembly:
     input:
         unpack(lambda wildcards: get_pre_processed_reads(wildcards, as_dict=True)),
     output:
-        "samples/{sample}/assembly/assembly/{sample}_raw_contigs.fasta"
+        fasta="samples/{sample}/assembly/{sample}_raw_contigs.fasta",
+	outdir=temp(directory("samples/{sample}/assembly/assembly")),
     params:
         command = lambda wildcards, input, output, threads, resources: assembly_command(
             wildcards, input, output, threads, resources
@@ -601,10 +602,10 @@ rule run_assembly:
 
 rule rename_contigs:
     input:
-        "samples/{sample}/assembly/assembly/{sample}_raw_contigs.fasta",
+        "samples/{sample}/assembly/{sample}_raw_contigs.fasta",
     output:
-        fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-        mapping_table="samples/{sample}/assembly/assembly/old2new_contig_names.tsv",
+        fasta="samples/{sample}/assembly/{sample}_prefilter_contigs.fasta",
+        mapping_table="samples/{sample}/assembly/{sample}_prefilter_old2new_contig_names.tsv",
     threads: lambda wildcards: get_resource(wildcards, None, 1, "rename_contigs", "threads")
     resources:
         mem_mb          = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "mem_mb"),
@@ -612,7 +613,7 @@ rule rename_contigs:
         slurm_partition = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "partition"),
         slurm_account   = lambda wildcards, input, attempt: get_resource(wildcards, input, attempt, "rename_contigs", "account"),
     log:
-        "logs/samples/{sample}/assembly/assembly/rename_and_filter_size.log",
+        "logs/samples/{sample}/assembly/rename_and_filter_size.log",
     params:
         minlength=config["minimum_contig_length"],
     conda:
@@ -680,15 +681,15 @@ rule align_reads_to_prefilter_contigs:
         unpack(lambda wildcards: get_quality_controlled_reads(wildcards, as_dict=True)),
         target=rules.rename_contigs.output.fasta,
     output:
-        bam=temp("samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam"),
+        bam=temp("samples/{sample}/assembly/{sample}_prefilter_contigs.bam"),
     params:
         command = lambda wildcards, input, output, threads, resources: align_reads_command(
             wildcards, input, output, threads, resources,
         ),
     benchmark:
-        "benchmarks/samples/{sample}/assembly/assembly/align_reads_to_prefiltered_contigs.tsv",
+        "benchmarks/samples/{sample}/assembly/align_reads_to_prefiltered_contigs.tsv",
     log:
-        "logs/samples/{sample}/assembly/assembly/align_reads_to_prefiltered_contigs.log",
+        "logs/samples/{sample}/assembly/align_reads_to_prefiltered_contigs.log",
     conda:
         "../envs/minimap.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "mapping", "threads")
@@ -705,17 +706,17 @@ rule align_reads_to_prefilter_contigs:
 
 rule pileup_prefilter:
     input:
-        fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
-        bam="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.bam",
+        fasta="samples/{sample}/assembly/{sample}_prefilter_contigs.fasta",
+        bam="samples/{sample}/assembly/{sample}_prefilter_contigs.bam",
     output:
         covstats="samples/{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
     params:
         pileup_secondary="t",
         minmapq=config["minimum_map_quality"],
     benchmark:
-        "benchmarks/samples/{sample}/assembly/assembly/pilup_prefilter_contigs.tsv",
+        "benchmarks/samples/{sample}/assembly/pilup_prefilter_contigs.tsv",
     log:
-        "logs/samples/{sample}/assembly/assembly/pilup_prefilter_contigs.log",
+        "logs/samples/{sample}/assembly/pilup_prefilter_contigs.log",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "pileup", "threads")
@@ -742,11 +743,11 @@ rule pileup_prefilter:
 
 rule filter_by_coverage:
     input:
-        fasta="samples/{sample}/assembly/assembly/{sample}_prefilter_contigs.fasta",
+        fasta="samples/{sample}/assembly/{sample}_prefilter_contigs.fasta",
         covstats="samples/{sample}/assembly/contig_stats/prefilter_coverage_stats.txt",
     output:
-        fasta="samples/{sample}/assembly/assembly/{sample}_final_contigs.fasta",
-        removed_names="samples/{sample}/assembly/assembly/{sample}_discarded_contigs.fasta",
+        fasta="samples/{sample}/assembly/{sample}_final_contigs.fasta",
+        removed_names="samples/{sample}/assembly/{sample}_discarded_contigs.fasta",
     params:
         minc=config["minimum_average_coverage"],
         minp=config["minimum_percent_covered_bases"],
@@ -754,9 +755,9 @@ rule filter_by_coverage:
         minl=config["minimum_contig_length"],
         trim=config["contig_trim_bp"],
     benchmark:
-        "benchmarks/samples/{sample}/assembly/assembly/filter_by_coverage.tsv",
+        "benchmarks/samples/{sample}/assembly/filter_by_coverage.tsv",
     log:
-        "logs/samples/{sample}/assembly/assembly/filter_by_coverage.log",
+        "logs/samples/{sample}/assembly/filter_by_coverage.log",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wildcards: get_resource(wildcards, None, 1, "filter_by_coverage", "threads")
@@ -790,7 +791,7 @@ localrules:
 
 rule finalize_contigs:
     input:
-        "samples/{sample}/assembly/assembly/{sample}_final_contigs.fasta",
+        "samples/{sample}/assembly/{sample}_final_contigs.fasta",
     output:
         "samples/{sample}/assembly/{sample}.fasta",
     log:

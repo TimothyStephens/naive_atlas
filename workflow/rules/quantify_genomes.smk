@@ -38,55 +38,14 @@ def get_all_unbinned(wildcards):
     return genomes
 
 
-localrules:
-    get_contig2genomes,
-
-rule get_contig2genomes:
-    input:
-        "genomes/genomes",
-    output:
-        c2g="genomes/clustering/contig2genome.tsv",
-        g2c="genomes/clustering/genome2contig.tsv",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    log:
-        "logs/genomes/clustering/get_contig2genomes.log",
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-    run:
-        from glob import glob
-
-        fasta_files = glob(input[0] + "/*.fa")
-
-        with open(output["c2g"], "w") as out_c2g, open(output["g2c"], "w") as out_g2c:
-            for fasta in fasta_files:
-                bin_name, ext = os.path.splitext(os.path.split(fasta)[-1])
-                # if gz remove also fasta extension
-                if ext == ".gz":
-                    bin_name = os.path.splitext(bin_name)[0]
-
-                    # write names of contigs in mapping file
-                with open(fasta) as f:
-                    for line in f:
-                        if line[0] == ">":
-                            header = line[1:].strip().split()[0]
-                            out_c2g.write(f"{header}\t{bin_name}\n")
-                            out_g2c.write(f"{bin_name}\t{header}\n")
-
-# alternative way to get to contigs2genomes for quantification with external genomes
-ruleorder: get_contig2genomes > rename_genomes
-
-
 ### Quantification
-
 localrules:
     concat_genomes,
 
 rule concat_genomes:
     input:
-        "genomes/genomes",
+        bins=rules.move_genomes.output.dir,
+        unbinned=rules.move_unbinned.output.fa,
     output:
         "genomes/alignments/all_contigs.fa",
     log:
@@ -101,39 +60,16 @@ rule concat_genomes:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     shell:
         """
-        (cat {input}/*{params.ext} > {output}) 1>{log} 2>&1
+        (cat {input.bins}/*{params.ext} {input.unbinned} > {output}) 1>{log} 2>&1
         """
 
 
 # Skip indexing becuase it hard sets k-mer size and other params which we need to be flexible for 
 # different input read types. I.e., optimal k-mer size varies between Nanopore vs. PacBio vs. Illumina
 # reads. Thus having it hard set for all samples will lead to reduced accuray results for some samples.
-rule index_genomes:
-    input:
-        target=rules.concat_genomes.output,
-        timestamp="genomes/genomes",
-    output:
-        "ref/genomes.mmi",
-    log:
-        "logs/genomes/alignmentsindex.log",
-    benchmark:
-        "benchmarks/genomes/alignmentsindex.tsv",
-    params:
-        index_size="12G",
-    threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping", "account"),
-    wrapper:
-        "v3.13.4/bio/minimap2/index"
-
-
 rule align_reads_to_genomes:
     input:
         unpack(lambda wc: get_quality_controlled_reads(wc, as_dict=True)),
-        #target=rules.index_genomes.output,
         target=rules.concat_genomes.output,
     output:
         "genomes/alignments/bams/{sample}.bam",
@@ -142,9 +78,9 @@ rule align_reads_to_genomes:
             wc, input, output, threads, resources
         ),
     log:
-        "logs/genomes/alignments/{sample}_map.log",
+        "logs/genomes/alignments/bams/{sample}_map.log",
     benchmark:
-        "benchmarks/genomes/alignments/{sample}_map.tsv",
+        "benchmarks/genomes/alignments/bams/{sample}_map.tsv",
     conda:
         "../envs/minimap.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "mapping", "threads")
@@ -159,41 +95,13 @@ rule align_reads_to_genomes:
         """
 
 
-
-# path change for bam file
-localrules:
-    move_old_bam,
-
-
-ruleorder: move_old_bam > align_reads_to_genomes
-
-
-rule move_old_bam:
-    input:
-        "genomes/alignments/{sample}.bam",
-    output:
-        "genomes/alignments/bams/{sample}.bam",
-    log:
-        "logs/genomes/alignments/{sample}_move.log",
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-    shell:
-        """
-        (mv {input} {output}) 1>{log} 2>&1
-        """
-
-
 rule mapping_stats_genomes:
     input:
         bam="genomes/alignments/bams/{sample}.bam",
     output:
         "genomes/alignments/stats/{sample}.stats",
     log:
-        "logs/genomes/alignments/{sample}_stats.log",
+        "logs/genomes/alignments/stats/{sample}_stats.log",
     threads: lambda wc: get_resource(wc, None, 1, "mapping_stats_genomes", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_stats_genomes", "mem_mb"),
@@ -204,11 +112,11 @@ rule mapping_stats_genomes:
         "v1.19.0/bio/samtools/stats"
 
 
-rule multiqc_mapping_genome:
+checkpoint multiqc_mapping_genome:
     input:
         expand("genomes/alignments/stats/{sample}.stats", sample=SAMPLES),
     output:
-        "reports/genome_mapping/results.html",
+        "reports/quantify_genomes_mapping_results.html",
     log:
         "logs/genomes/alignment/multiqc.log",
     threads: lambda wc: get_resource(wc, None, 1, "multiqc_mapping_genome", "threads")
@@ -223,17 +131,17 @@ rule multiqc_mapping_genome:
 
 rule mapping_coverm_coverage:
     input:
-        g2c="genomes/clustering/genome2contig.tsv",
+        g2c="genomes/clustering/{grouping}.genome2contig.tsv",
         bams=expand("genomes/alignments/bams/{sample}.bam", sample=SAMPLES),
     output:
-        cov="genomes/coverage/coverage.tsv.gz",
-        read_stats="genomes/coverage/read_stats.tsv",
+        cov="genomes/coverage/{grouping}.coverage.tsv.gz",
+        read_stats="genomes/coverage/{grouping}.read_stats.tsv",
     params:
         extra=config["coverm_params"],
         stats=config["coverm_stats"],
     log:
-        general="logs/coverage/coverage.log",
-        coverm="logs/coverage/coverm.log",
+        general="logs/coverage/{grouping}.coverage.log",
+        coverm="logs/coverage/{grouping}.coverm.log",
     threads: lambda wc: get_resource(wc, None, 1, "mapping_coverm_coverage", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_coverm_coverage", "mem_mb"),
@@ -263,5 +171,16 @@ rule mapping_coverm_coverage:
           1> {output.read_stats}
         ) 1>{log.general} 2>&1
         """
+
+
+# Used in Snakefile
+def get_coverm_files(wildcards):
+    valid_files = []
+    for grouping in ['prokaryotic', 'eukaryotic', 'viral', 'plasmid', 'unbinned', 'all', 'mags']:
+        file_name = f"genomes/clustering/{grouping}.genome2contig.tsv"
+        if os.path.isfile(file_name) and os.stat(file_name).st_size != 0:
+            valid_files.append(f"genomes/coverage/{grouping}.coverage.tsv.gz")
+    return valid_files
+
 
 

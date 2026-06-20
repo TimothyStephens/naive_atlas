@@ -13,9 +13,12 @@ min_version("8.5")
 
 # Get package paths
 workflow_folder = workflow.basedir
-package_dir = os.path.abspath(os.path.join(workflow.basedir, "../"))
-if package_dir not in sys.path:
-    sys.path.append(package_dir)
+scripts_dir = os.path.join(workflow_folder, "scripts")
+package_dir = os.path.abspath(os.path.join(workflow_folder, "../"))
+for p in [package_dir, scripts_dir]:
+    if p not in sys.path:
+        sys.path.append(p)
+import utils # From 'workflow/scripts'
 
 # Set logger level
 if True:
@@ -127,8 +130,7 @@ rule all:
 ## ---- ##
 rule test:
     input:
-        #expand("{sample}/sequence_quality_control/read_stats/{step}.zip", sample=SAMPLES, step="1_raw")
-        "genomes/unbinned",
+        rules.busco_download_db.output.dbdir,
     output:
         touch("finished_test"),
 
@@ -185,17 +187,17 @@ rule binning:
 ## ---- ##
 def get_bin_reports(wildcards):
     return(expand("reports/bin_report_{lineage}.html", 
-                lineage=get_binned_lineages()
+                lineage=get_binned_lineages(wildcards)
             )
     )
 
 rule genomes:
     input:
         "finished_binning",
-        "Binning/raw_bins/all.done",
         "genomes/genomes",
         "genomes/unbinned",
         get_bin_reports,
+        rules.combine_name_mappings.output.c2g_all,
     output:
         temp(touch("finished_genomes")),
 
@@ -204,8 +206,8 @@ rule genomes:
 rule quantify_genomes:
     input:
         "finished_genomes",
-        "genomes/coverage/coverage.tsv.gz",
-        "genomes/coverage/read_stats.tsv",
+        "reports/quantify_genomes_mapping_results.html",
+        get_coverm_files,
     output:
         temp(touch("finished_quantify_genomes")),
 
@@ -215,10 +217,10 @@ def get_genome_annotations():
     annotation_file_names = {
         "gtdb_tree":                      "genomes/annotations/genomes/tree/finished_gtdb_trees",
         "gtdb_taxonomy":                  "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
-        "metaeuk":                        expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="genomes"),
-        "metaeuk_unbinned":               expand("genomes/annotations/{dataset}/metaeuk/finished", dataset="unbinned"),
-        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/finished", dataset="genomes"),
-        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy/finished", dataset="unbinned"),
+        "metaeuk":                        expand("genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz", dataset="genomes"),
+        "metaeuk_unbinned":               expand("genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz", dataset="unbinned"),
+        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="genomes",  database_name=rules.mmseqs2_download.output.database),
+        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="unbinned", database_name=rules.mmseqs2_download.output.database),
     }
     annotations_requested = config["genome_annotations"]
 
@@ -255,10 +257,10 @@ rule gene_prediction:
 ## ---- ##
 def get_gene_annotations():
     annotation_file_names = {
-        "eggNOG":                       expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="genomes"),
-        "eggNOG_unbinned":              expand("genomes/annotations/{dataset}/genes/eggNOG.tsv.gz", dataset="unbinned"),
-        "mmseqs2_easy_search":          expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search/finished", dataset="genomes"),
-        "mmseqs2_easy_search_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search/finished", dataset="unbinned"),
+        "eggNOG":                       expand("genomes/annotations/{dataset}/genes/emapper.tsv.gz", dataset="genomes"),
+        "eggNOG_unbinned":              expand("genomes/annotations/{dataset}/genes/emapper.tsv.gz", dataset="unbinned"),
+        "mmseqs2_easy_search":          expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz", dataset="genomes",  database_name=rules.mmseqs2_download.output.database),
+        "mmseqs2_easy_search_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz", dataset="unbinned", database_name=rules.mmseqs2_download.output.database),
     }
     annotations_requested = config.get("gene_annotations", [])
 
@@ -294,7 +296,7 @@ rule strains:
 rule screen:
     input:
         "finished_QC",
-        "QC/screen/sketch_comparison.tsv.gz",
+        "genomes/screen/sketch_comparison.tsv.gz",
     output:
         temp(touch("finished_screen")),
 

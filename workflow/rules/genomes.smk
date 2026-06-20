@@ -481,6 +481,38 @@ rule build_bin_report:
         "{params.script}"
 
 
+rule run_cdhit:
+    input:
+        expand("samples/{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
+            sample=SAMPLES
+        ),
+    output:
+        "Binning/raw_unbinned/combined.cdhit_est",
+    log:
+        "logs/Binning/raw_unbinned/run_cdhit.log",
+    benchmark:
+        "benchmarks/Binning/raw_unbinned/run_cdhit.tsv",
+    threads: lambda wc: get_resource(wc, None, 1, "run_cdhit", "threads")
+    resources:
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "run_cdhit", "account"),
+    params:
+        combined="Binning/raw_unbinned/combined.fa",
+        prefix="Binning/raw_unbinned/combined.cdhit_est",
+        extra=config["unbinned_dereplication"]["cdhitest_params"],
+    container:
+        "docker://chrishah/cdhit:v4.8.1"
+    shell:
+        """
+        (
+        cat {input} > {params.combined}
+        cd-hit-est -i {params.combined} -o {params.prefix} {params.extra} -T {threads}
+        ) 1>{log} 2>&1
+        """
+
+
 
 
 
@@ -504,7 +536,8 @@ rule rename_genomes:
         genome_info="Binning/{lineage}.bin_info.tsv",
     output:
         dir=directory("tmp/genomes/{lineage}"),
-        mapfile_contigs="genomes/clustering/{lineage}.contig2genome.tsv",
+        mapfile_c2g="genomes/clustering/{lineage}.contig2genome.tsv",
+        mapfile_g2c="genomes/clustering/{lineage}.genome2contig.tsv",
         mapfile_old2mag="genomes/clustering/{lineage}.old2newID.tsv",
         mapfile_allbins2mag="genomes/clustering/{lineage}.allbins2genome.tsv",
         genome_info="tmp/genomes/MAG_{lineage}.genome_quality.tsv",
@@ -527,12 +560,15 @@ rule rename_genomes:
 
 rule rename_unbinned:
     input:
-        unbinned="samples/{sample}/binning/veba/3_viral/2_genomad/unbinned.fasta",
+        fa=rules.run_cdhit.output,
     output:
-        dir=directory("tmp/unbinned/{sample}"),
+        fa="tmp/unbinned/Unbinned.fa",
+        mapfile_c2g="genomes/clustering/unbinned.contig2genome.tsv",
+        mapfile_g2c="genomes/clustering/unbinned.genome2contig.tsv",
     params:
         rename_contigs=config["rename_mags_contigs"],
-        prefix="Unbinned_{sample}",
+        prefix="Unbinned",
+        outdir="tmp/unbinned",
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
@@ -542,12 +578,13 @@ rule rename_unbinned:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     log:
-        "logs/Binning/raw_bins/{sample}.rename_unbinned.log",
+        "logs/Binning/raw_bins/rename_unbinned.log",
     script:
         "../scripts/rename_unbinned.py"
 
 
-def get_binned_lineages():
+def get_binned_lineages(wildcards):
+    checkpoints.get_all.get(**wildcards)
     binned_lineages = []
     for lineage in ['prokaryotic', 'eukaryotic', 'viral', 'plasmid']:
         file_name = f"Binning/raw_bins/{lineage}.genome.paths.tsv"
@@ -555,9 +592,50 @@ def get_binned_lineages():
             binned_lineages.append(lineage)
     return binned_lineages
 
+
+def get_c2g(wildcards):
+    return(expand("genomes/clustering/{lineage}.contig2genome.tsv",
+                lineage=get_binned_lineages(wildcards)
+            )
+    )
+def get_g2c(wildcards):
+    return(expand("genomes/clustering/{lineage}.genome2contig.tsv",
+                lineage=get_binned_lineages(wildcards)
+            )
+    )
+
+rule combine_name_mappings:
+    input:
+        c2g_bins=get_c2g,
+	g2c_bins=get_g2c,
+        c2g_unbinned="genomes/clustering/unbinned.contig2genome.tsv",
+        g2c_unbinned="genomes/clustering/unbinned.genome2contig.tsv",
+    output:
+        c2g_all="genomes/clustering/all.contig2genome.tsv",
+        g2c_all="genomes/clustering/all.genome2contig.tsv",
+        c2g_MAGs="genomes/clustering/mags.contig2genome.tsv",
+        g2c_MAGs="genomes/clustering/mags.genome2contig.tsv",
+    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    log:
+        "logs/genomes/clustering/combine_name_mappings.log",
+    resources:
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+    shell:
+        """
+        cat {input.c2g_bins} {input.c2g_unbinned} > {output.c2g_all}
+        cat {input.g2c_bins} {input.g2c_unbinned} > {output.g2c_all}
+	# "cat"ing /dev/null prevents the rule from hanging if we dont have any MAGs. Will not affect output.
+        cat {input.c2g_bins} /dev/null > {output.c2g_MAGs}
+        cat {input.g2c_bins} /dev/null > {output.g2c_MAGs}
+        """
+
+
 def get_genome_to_move(wildcards):
     return(expand("tmp/genomes/{lineage}", 
-                lineage=get_binned_lineages()
+                lineage=get_binned_lineages(wildcards)
             )
     )
 
@@ -583,11 +661,10 @@ rule move_genomes:
 
 rule move_unbinned:
     input:
-        dirs=expand("tmp/unbinned/{sample}",
-            sample=SAMPLES
-        ),
+        fa=rules.rename_unbinned.output.fa,
     output:
         dir=directory("genomes/unbinned"),
+        fa="genomes/unbinned/Unbinned.fa",
     conda:
         "../envs/python.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")

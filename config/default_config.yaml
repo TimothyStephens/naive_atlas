@@ -93,8 +93,8 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   run_assembly:
-    base_mem_mb: 8000
-    scaling_factor: 5.0
+    base_mem_mb: 12000
+    scaling_factor: 6.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   mapping:
@@ -137,11 +137,35 @@ resources:
   #### binning.smk ####
   #####################
   binning:
-    base_mem_mb: 20000
+    base_mem_mb: 40000
     scaling_factor: 2.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
-  
+ 
+  #####################
+  #### genomes.smk ####
+  #####################
+  run_skani:
+    base_mem_mb: 20000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  skani_2_parquet:
+    base_mem_mb: 20000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  cluster_species:
+    base_mem_mb: 20000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  run_cdhit:
+    base_mem_mb: 20000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+   
   ######################
   #### download.smk ####
   ######################
@@ -369,6 +393,9 @@ genome_dereplication:
   ANI: 0.95 # Genome dreplication threshold 0.95 is more or less species
   overlap: 0.2 # See more on https://drep.readthedocs.io/en/latest/module_descriptions.html
 
+unbinned_dereplication:
+  cdhitest_params: "-c 0.95 -n 9 -aS 0.9 -d 0 -M 0"
+
 rename_mags_contigs: true #Rename contigs of representative MAGs (should be kept on - turning off may cause unexpected errors in renaming of MAGs after clustering)
 
 
@@ -399,6 +426,7 @@ mmseqs2_memory: 120 #GB of memory for mmseqs2 annotation of genes and genomes - 
 ## mmseqs2 easy-taxonomy
 # Gene annotation
 mmseqs2_opts: ""
+mmseqs2_format_output: "query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader"
 # Genome easy-taxonomy
 mmseqs2_easy_taxonomy: ""
 

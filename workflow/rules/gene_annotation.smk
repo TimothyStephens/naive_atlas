@@ -173,11 +173,12 @@ rule gene_mmseqs2_annotation:
         faa="genomes/genes/{dataset}/{genome}.faa",
         database=rules.mmseqs2_download.output.database,
     output:
-        results="genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4.gz",
+        results=temp("genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4.gz"),
         tmp=temp(directory("genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.tmp")),
     params:
         mmseqs2_opts=config["mmseqs2_opts"],
         results="genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4",
+        format_output=config["mmseqs2_format_output"],
     threads: lambda wc: get_resource(wc, None, 1, "gene_annot_mmseqs2_easy_search", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "mem_mb"),
@@ -198,7 +199,7 @@ rule gene_mmseqs2_annotation:
             --threads {threads} \\
             --split-memory-limit {resources.mem_gb}G \\
             --format-mode 4 \\
-            --format-output query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits,qlen,tlen,taxid,taxname,taxlineage,theader \\
+            --format-output {params.format_output} \\
             {params.mmseqs2_opts} \\
             {input.faa} \\
             {input.database} \\
@@ -245,18 +246,46 @@ def get_all_gene_mmseqs2_annotation(wildcards):
 
 
 localrules:
-    all_mmseqs2,
+    mmseqs2_combine,
 
-rule all_mmseqs2:
+rule mmseqs2_combine:
     input:
         get_all_gene_mmseqs2_annotation,
     output:
-        touch("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_finished"),
+        "genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz",
+    log:
+        "logs/genomes/annotations/{dataset}/genes/mmseqs2_combine_{database_name}.log",
+    params:
+        format_output=config["mmseqs2_format_output"],
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+    run:
+        try:
+            import pandas as pd
+
+            Tables = [
+                pd.read_csv(file, index_col=None, header=None, sep="\t")
+                for file in input
+            ]
+
+            combined = pd.concat(Tables, axis=0)
+
+            del Tables
+
+            combined.columns = params['format_output'].split(',')
+            combined = combined.astype(str)
+
+            combined.to_csv(output[0], sep='\t', index=False)
+        except Exception as e:
+            import traceback
+
+            with open(log[0], "w") as logfile:
+                traceback.print_exc(file=logfile)
+
+            raise e
 
 

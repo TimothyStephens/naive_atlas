@@ -80,7 +80,7 @@ rule mdmcleaner_download_db:
     benchmark:
         "benchmarks/download/mdmcleaner_database.tsv",
     container:
-        "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
+        "docker://timothystephens/mdmcleaner:0.8.7-TGSv4",
     shell:
         """
         (mdmcleaner makedb --outdir {output.dbdir}) 1>{log} 2>&1
@@ -101,12 +101,10 @@ rule busco_download_db:
     benchmark:
         "benchmarks/download/busco_lineages.tsv",
     container:
-        "docker://timothystephens/busco:6.0.0-TGSv1",
+        "docker://timothystephens/busco:6.1.0-TGSv1",
     shell:
         """
         (	
-        export PATH="$CONDA_PREFIX/bin:$PATH"
-        export PYTHONPATH="$CONDA_PREFIX/lib/python3.7/site-packages"
         busco -q --download_path {output} --download all
         ) 1>{log} 2>&1
         """

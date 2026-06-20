@@ -425,7 +425,7 @@ rule binning_prokaryotic_mdmcleaner:
     log:
         "logs/samples/{sample}/binning/veba/1_prokaryotic/6_mdmcleaner/{genome}.log",
     container:
-        "docker://timothystephens/mdmcleaner:0.8.7-TGSv3",
+        "docker://timothystephens/mdmcleaner:0.8.7-TGSv4",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),
@@ -713,7 +713,7 @@ rule binning_eukaryotic_busco:
     log:
         "logs/samples/{sample}/binning/veba/2_eukaryotic/3_busco/{genome}.log",
     container:
-        "docker://timothystephens/busco:6.0.0-TGSv1",
+        "docker://timothystephens/busco:6.1.0-TGSv1",
     threads: lambda wc: get_resource(wc, None, 1, "binning", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "binning", "mem_mb"),

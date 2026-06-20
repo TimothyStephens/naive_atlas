@@ -3,11 +3,11 @@ rule generate_sketch:
     input:
         unpack(get_input_fastq),
     output:
-        "Intermediate/screen/sketches/{sample}.sketch.gz",
+        "{sample}/screen/{sample}.sketch.gz",
     log:
-        "logs/screen/{sample}.make_sketch.log",
+        "logs/{sample}/screen/{sample}.make_sketch.log",
     benchmark:
-        "benchmarks/screen/{sample}.make_sketch.tsv",
+        "benchmarks/{sample}/screen/{sample}.make_sketch.tsv",
     conda:
         "../envs/required_packages.yaml"
     threads: lambda wc: get_resource(wc, None, 1, "initialize_qc", "threads")
@@ -40,7 +40,7 @@ rule compare_sketch:
     input:
         expand(rules.generate_sketch.output, sample=SAMPLES),
     output:
-        "QC/screen/sketch_comparison.tsv.gz",
+        "genomes/screen/sketch_comparison.tsv.gz",
     priority: 100
     log:
         "logs/screen/compare_sketch.log",
