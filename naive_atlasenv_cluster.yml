@@ -5,7 +5,7 @@ channels:
 dependencies:
   - python >=3.8, < 3.12
   - mamba
-  - snakemake-minimal
+  - snakemake-minimal=9.17.2
   - pygments
   - networkx
   - graphviz

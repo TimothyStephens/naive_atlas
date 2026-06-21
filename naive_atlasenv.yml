@@ -5,7 +5,7 @@ channels:
 dependencies:
   - python >=3.8, < 3.12
   - mamba
-  - snakemake-minimal=8.5.5
+  - snakemake-minimal=9.17.2
   - pygments
   - networkx
   - graphviz
@@ -15,3 +15,5 @@ dependencies:
   - ruamel.yaml >=0.17
   - cookiecutter
   - wget
+  - apptainer
+  - kingfisher
