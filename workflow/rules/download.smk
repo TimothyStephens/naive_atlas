@@ -147,7 +147,7 @@ rule genomad_download_db:
 rule download_eggNOG_files:
     output:
         files=[f"{DBDIR}/EggNOG/eggnog.db", f"{DBDIR}/EggNOG/eggnog_proteins.dmnd"],
-        dir=f"{DBDIR}/EggNOG",
+        dir=directory(f"{DBDIR}/EggNOG"),
     params:
         eggnog_dir=f"{DBDIR}/EggNOG",
     threads: lambda wc: get_resource(wc, None, 1, "download", "threads")
