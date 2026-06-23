@@ -258,6 +258,18 @@ def get_snakefile(file="workflow/Snakefile"):
     help="Arguments passed to singularity/apptainer.",
 )
 @click.option(
+    "--singularity-prefix",
+    default=os.path.join(cwd, ".snakemake", "singularity") if "SINGULARITY_CONTAINER" not in os.environ else os.path.join("/singularity"),
+    show_default=True,
+    help="Specify a directory in which apptainer/singularity images will be stored.",
+)
+@click.option(
+    "--tmpdir",
+    default=os.path.join(cwd, "tmp"),
+    show_default=True,
+    help="Program temp dir.",
+)
+@click.option(
     "--latency-wait",
     type=int,
     default=120,
@@ -302,6 +314,8 @@ def run_workflow(
     rerun_incomplete,
     sdm,
     singularity_args,
+    singularity_prefix,
+    tmpdir,
     latency_wait,
     retries,
     logger_debug,
@@ -403,10 +417,12 @@ def run_workflow(
         # Env setup
         " --software-deployment-method {sdm} "
         " --singularity-args '{sing_args}' "
+        " --singularity-prefix '{sing_prefix}'"
 
         # Resource limits
         " {core_str} "
         " {max_mem_string} "
+        " --default-resources tmpdir='{tmpdir}' --config tmpdir={tmpdir} "
 
         # Extra params & dryrun
         " {cluster_params} "
@@ -440,10 +456,12 @@ def run_workflow(
         # Env setup
         sdm=" ".join(sdm),
         sing_args=singularity_args,
+        sing_prefix=singularity_prefix,
 
         # Resource limits
         core_str=f"{core_str}",
         max_mem_string=handle_max_mem(max_mem, profile),
+        tmpdir=tmpdir,
 
         # Extra params & dryrun
         cluster_params=f"{cluster_params}",
