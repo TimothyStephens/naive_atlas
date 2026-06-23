@@ -85,7 +85,7 @@ def prepare_sample_table_for_atlas(
     "--assembler",
     type=str,
     show_default=True,
-    default="megahit",
+    default="spades",
     help="Assembler to use",
 )
 @click.option(
