@@ -9,9 +9,10 @@ from pathlib import Path
 # Minimum required snakemake version
 import logging
 from snakemake.utils import min_version, logger
-min_version("8.5")
+min_version("9.17")
 
 # Get package paths
+working_dir = os.getcwd()
 workflow_folder = workflow.basedir
 scripts_dir = os.path.join(workflow_folder, "scripts")
 package_dir = os.path.abspath(os.path.join(workflow_folder, "../"))
@@ -73,7 +74,7 @@ if True:
 # Add default config. Comand line adds user config
 configfile: os.path.join(package_dir, "config", "default_config.yaml")
 
-container: "docker:mambaorg/micromamba:2.5.0-cuda11.8.0-ubuntu22.04"
+container: "docker://mambaorg/micromamba:2.5.0-cuda11.8.0-ubuntu22.04"
 containerized: "docker://timothystephens/naive_atlas-envs:latest"
 
 wildcard_constraints:
