@@ -46,7 +46,6 @@ rule identify:
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "account"),
-        tmpdir=config["tmpdir"],
     conda:
         "../envs/gtdbtk.yaml"
     benchmark:
@@ -82,7 +81,6 @@ checkpoint align:
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "account"),
-        tmpdir=config["tmpdir"],
     conda:
         "../envs/gtdbtk.yaml"
     benchmark:
@@ -117,7 +115,6 @@ rule classify:
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk", "account"),
-        tmpdir=config["tmpdir"],
     conda:
         "../envs/gtdbtk.yaml"
     benchmark:
@@ -181,7 +178,6 @@ rule build_tree:
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_gtdbtk_tree", "account"),
-        tmpdir=config["tmpdir"],
     params:
         outdir=lambda wc, output: Path(output[0]).parent,
     conda:
