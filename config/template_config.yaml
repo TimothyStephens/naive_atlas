@@ -20,8 +20,6 @@
 database_dir: 
   /user/project/dir/databases
 
-tmpdir: 
-  /user/project/dir/tmp
 
 #contamination references can be added such that -- key: /path/to/fasta
 contaminant_references:

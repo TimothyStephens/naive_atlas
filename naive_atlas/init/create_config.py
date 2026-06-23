@@ -12,7 +12,6 @@ logger = logging.getLogger(__file__)
 
 def create_config(
     database_dir,
-    temp_dir,
     config="config.yaml",
 ):
     """
@@ -32,7 +31,6 @@ def create_config(
     with open(template_conf_file, "r") as template_config:
         conf_text = template_config.read()
     conf_text = conf_text.replace("/user/project/dir/databases", database_dir)
-    conf_text = conf_text.replace("/user/project/dir/tmp", temp_dir)
 
     if os.path.exists(config):
         logger.warning(

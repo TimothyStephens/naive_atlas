@@ -65,14 +65,6 @@ def prepare_sample_table_for_atlas(
     help="Location to store databases (need ~150GB)",
 )
 @click.option(
-    "-t",
-    "--temp-dir",
-    default=os.path.join(os.path.realpath("."), "tmp"),
-    type=click.Path(dir_okay=True, writable=True, resolve_path=True),
-    show_default=True,
-    help="Location to store temp files",
-)
-@click.option(
     "-w",
     "--working-dir",
     type=click.Path(dir_okay=True, writable=True, resolve_path=True),
@@ -97,7 +89,6 @@ def prepare_sample_table_for_atlas(
 def run_init(
     path_to_fastq,
     db_dir,
-    temp_dir,
     working_dir,
     assembler,
     logger_debug,
@@ -135,7 +126,6 @@ def run_init(
 
     create_config(
         db_dir,
-        temp_dir,
         os.path.join(working_dir, "config.yaml"),
     )
 
