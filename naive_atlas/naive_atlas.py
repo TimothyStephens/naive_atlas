@@ -109,6 +109,7 @@ def get_snakefile(file="workflow/Snakefile"):
             "quantify_genomes",
             "genome_annotation",
             "gene_prediction",
+            "quantify_genes",
             "gene_annotation",
             "strains",
             "screen",
@@ -333,6 +334,7 @@ def run_workflow(
     | qc -> assembly -> binning -> genomes -> quantify_genomes ---------------------------------------|-> strains
     |                                    +-> genome_annotation -------------------------------------->|
     |                                                        +-> gene_prediction -> gene_annotation ->|
+    |                                                                          +-> quantify_genes --->|
     +-----------------------------------------------all-----------------------------------------------+
     # Independent of other steps:
     screen

@@ -140,8 +140,10 @@ rule mapping_coverm_coverage:
         extra=config["coverm_params"],
         stats=config["coverm_stats"],
     log:
-        general="logs/coverage/{grouping}.coverage.log",
-        coverm="logs/coverage/{grouping}.coverm.log",
+        general="logs/genomes/coverage/{grouping}.coverage.log",
+        coverm="logs/genomes/coverage/{grouping}.coverm.log",
+    benchmark:
+        "benchmarks/genomes/coverage/{grouping}.coverm.tsv"
     threads: lambda wc: get_resource(wc, None, 1, "mapping_coverm_coverage", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "mapping_coverm_coverage", "mem_mb"),

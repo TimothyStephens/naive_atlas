@@ -451,11 +451,11 @@ checkpoint move_genome_predicted_genes:
 
 
 
-#################################
-####                         ####
-#### Predict Genes (Unbinned)####
-####                         ####
-#################################
+##################################
+####                          ####
+#### Predict Genes (Unbinned) ####
+####                          ####
+##################################
 
 rule gene_prediction_unbinned:
     input:

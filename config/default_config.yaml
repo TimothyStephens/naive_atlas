@@ -222,6 +222,15 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   
+  ############################
+  #### quantify_genes.smk ####
+  ############################
+  align_reads_to_cds:
+    base_mem_mb: 6000
+    scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+   
   ###########################################################################################
   #### All local rules ('touch' or combine rules - run on main node if using SLURM/etc.) ####
   ###########################################################################################
@@ -403,10 +412,13 @@ rename_mags_contigs: true #Rename contigs of representative MAGs (should be kept
 # Quantification
 ########################
 
+# Genome
 coverm_params: '--min-read-percent-identity 95 --min-covered-fraction 0 --min-read-aligned-percent 70'
 coverm_stats: 'relative_abundance mean trimmed_mean covered_bases variance length count reads_per_base rpkm tpm'
 
-
+# Genes
+mapping_salmon_index_params: '--keepDuplicates'
+mapping_salmon_quant_params: ''
 
 
 
