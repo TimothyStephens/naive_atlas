@@ -639,7 +639,7 @@ def get_genome_to_move(wildcards):
             )
     )
 
-rule move_genomes:
+checkpoint move_genomes:
     input:
         all_done="binning/raw_bins/all.done",
         dirs=get_genome_to_move,
@@ -659,7 +659,7 @@ rule move_genomes:
         "../scripts/move_genomes.sh"
 
 
-rule move_unbinned:
+checkpoint move_unbinned:
     input:
         fa=rules.rename_unbinned.output.fa,
     output:
