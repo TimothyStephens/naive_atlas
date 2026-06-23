@@ -144,9 +144,10 @@ rule test:
 
 
 ## ---- ##
+DBDIR = os.path.realpath(config["database_dir"])
 rule download:
     input:
-        os.path.join(os.path.realpath(config["database_dir"]), "finished"),
+        *get_databases_to_download(),
     output:
         touch("finished_download"),
 

@@ -10,32 +10,36 @@ GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_R232")
 
 
 
-localrules:
-    all_downloads,
+def get_databases_to_download():
+    databases = []
+    # Binning
+    databases.append(f"{DBDIR}/CheckM2")
+    databases.append(f"{DBDIR}/MDMcleaner")
+    databases.append(f"{DBDIR}/busco_lineages")
+    databases.append(f"{DBDIR}/geNomad")
+    # Annotation
+    if any([
+            x in config["genome_annotations"] or x in config["gene_annotations"] 
+            for x in ["eggNOG", "eggNOG_unbinned"]
+        ]):
+        databases.append(f"{DBDIR}/EggNOG")
+    if any([
+            x in config["genome_annotations"] or x in config["gene_annotations"]
+            for x in ["metaeuk", "metaeuk_unbinned", "mmseqs2_easy_taxonomy", "mmseqs2_easy_taxonomy_unbinned", "mmseqs2_easy_search", "mmseqs2_easy_search_unbinned"]
+        ]):
+        databases.append(os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]))
+    if any([
+            x in config["genome_annotations"] or x in config["gene_annotations"]
+            for x in ["gtdb_tree", "gtdb_taxonomy"]
+        ]):
+        databases.append(os.path.join(GTDBTK_DATA_PATH, "downloaded_success"))
+    # Gene Prediction
+    databases.append(f"{DBDIR}/MicroEuk")
+    databases.append(f"{DBDIR}/bakta/db")
 
-rule all_downloads:
-    input:
-        # Binning
-        f"{DBDIR}/CheckM2",
-        f"{DBDIR}/MDMcleaner",
-        f"{DBDIR}/busco_lineages",
-        f"{DBDIR}/geNomad",
-        # Annotation
-        f"{DBDIR}/EggNOG",
-        os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
-        os.path.join(GTDBTK_DATA_PATH, "downloaded_success"),
-        # Gene Prediction
-        f"{DBDIR}/MicroEuk",
-        f"{DBDIR}/bakta/db",
-    output:
-        touch(f"{DBDIR}/finished")
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
-    resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
-
+    logging.debug(f"get_databases_to_download: {databases}")
+        
+    return databases
 
 
 
