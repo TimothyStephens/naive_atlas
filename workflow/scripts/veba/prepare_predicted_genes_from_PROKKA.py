@@ -116,7 +116,7 @@ def main(args=None):
             
             features = { f.split('=')[0]:f.split('=')[1] for f in line_split[8].split(';') }
             
-            if line_split[2] == "CDS":
+            if line_split[2] == "gene" or line_split[2] == "mRNA" or line_split[2] == "CDS":
                 out_gff.write(f'{line}\n')
             
             elif line_split[2] == "rRNA":
