@@ -10,10 +10,10 @@ def get_input_fastq(wildcards):
     Get reads for QC by checking which files were provided.
     
     if sample has:
-        R1       -> SE
-        R1,R2    -> R1,R2
-        R1,R2,LR -> R1,R2 (assume LR are for scaffolding only)
-        LR       -> LR (assume LR is high quality or coverage for LR-only assembly)
+	R1       -> {reads:[R1]}
+        R1,R2    -> {reads:[R1, R2]}
+	R1,R2,LR -> {reads:[R1, R2], lr_reads:[LR]}
+        LR       -> {lr_reads:[LR]}
     """
     sampleTable_info = sampleTable.loc[wildcards.sample, ].dropna()
     

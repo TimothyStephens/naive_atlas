@@ -808,6 +808,13 @@ rule finalize_contigs:
         """
 
 
+def get_assembly(wildcards):
+    """
+    Returns Assembly file for a given sample.
+    """
+    return "samples/{sample}/assembly/{sample}.fasta".format(sample=wildcards.sample)
+
+
 rule calculate_contigs_stats:
     input:
         get_assembly,

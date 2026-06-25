@@ -1,6 +1,9 @@
 from naive_atlas.sample_table import load_sample_table, validate_bingroup_size
 
+# Global variables to store sample table and IDs
 sampleTable = load_sample_table()
+SAMPLES = sampleTable.index.values
+
 
 def io_params_for_tadpole(io, key="in"):
     """This function generates the input flag needed for bbwrap/tadpole for all cases
@@ -32,16 +35,6 @@ def io_params_for_tadpole(io, key="in"):
         )
         sys.exit(1)
     return flag
-
-
-def input_params_for_bbwrap(input):
-    if len(input) == 3:
-        return f"in1={input[0]},{input[2]} in2={input[1]},null"
-    else:
-        return io_params_for_tadpole(input)
-
-
-SAMPLES = sampleTable.index.values
 
 
 # GROUPS = sampleTable.Bin_group.unique()
@@ -107,53 +100,6 @@ def get_files_from_sampleTable(sample, Headers):
 
     return list(files)
 
-
-def get_quality_controlled_reads(wildcards, include_se=False):
-    """
-    Gets quality controlled reads.
-    R1 and R1 or se are returned as a dict.
-
-    if the files are not in the sample tible impute default path produced with atlas.
-    set
-
-    """
-
-    Fractions = MULTIFILE_FRACTIONS
-
-    if config.get("interleaved_fastqs", False) and SKIP_QC:
-        Fractions = ["se"]
-
-    elif not include_se:
-        # get only R1 and R2 or se
-        Fractions = Fractions[: min(len(Fractions), 2)]
-
-    try:
-        QC_Headers = ["Reads_QC_" + f for f in Fractions]
-        return get_files_from_sampleTable(wildcards.sample, QC_Headers)
-
-    except FileNotInSampleTableException:
-        # return files as named by atlas pipeline
-        return expand(
-            "QC/reads/{sample}_{fraction}.fastq.gz",
-            fraction=Fractions,
-            sample=wildcards.sample,
-        )
-
-
-def get_assembly(wildcards):
-    """
-    Returns Assembly file for a given sample.
-
-    """
-
-    Header = "Assembly"
-    try:
-        return get_files_from_sampleTable(wildcards.sample, Header)
-
-    except FileNotInSampleTableException:
-        # return files as named by atlas pipeline
-
-        return "samples/{sample}/assembly/{sample}.fasta".format(sample=wildcards.sample)
 
 # Print sample table
 with pd.option_context(
