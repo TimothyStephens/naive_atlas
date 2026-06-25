@@ -52,35 +52,19 @@ RUN mamba env create  \
     mamba clean -afy
 
 # Conda environment:
-#   source: workflow/envs/busco.yaml
-#   prefix: /conda-envs/43a1a2a96f2107f381edf1301001e5fa
-#   channels:
-#   - conda-forge
-#   - bioconda
-#   - defaults
-#   dependencies:
-#   - busco=6.0.0
-#   - biopython=1.79
-COPY workflow/envs/busco.yaml /conda-envs/43a1a2a96f2107f381edf1301001e5fa.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/43a1a2a96f2107f381edf1301001e5fa \
-      --file   /conda-envs/43a1a2a96f2107f381edf1301001e5fa.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
 #   source: workflow/envs/checkm2.yaml
-#   prefix: /conda-envs/9977202c567b6df513ae7951a4b617b8
+#   prefix: /conda-envs/5ff8026ecda070e6a13c8e6bf024fb78
 #   channels:
 #     - conda-forge
 #     - bioconda
 #     - defaults
 #   dependencies:
-#     - checkm2=1.0.2
-#     - biopython=1.79
-COPY workflow/envs/checkm2.yaml /conda-envs/9977202c567b6df513ae7951a4b617b8.yaml
+#     - checkm2=1.1.0=pyh7e72e81_1
+#     - biopython=1.87
+COPY workflow/envs/checkm2.yaml /conda-envs/5ff8026ecda070e6a13c8e6bf024fb78.yaml
 RUN mamba env create  \
-      --prefix /conda-envs/9977202c567b6df513ae7951a4b617b8 \
-      --file   /conda-envs/9977202c567b6df513ae7951a4b617b8.yaml -vvv && \
+      --prefix /conda-envs/5ff8026ecda070e6a13c8e6bf024fb78 \
+      --file   /conda-envs/5ff8026ecda070e6a13c8e6bf024fb78.yaml -vvv && \
     mamba clean -afy
 
 # Conda environment:
@@ -143,60 +127,6 @@ COPY workflow/envs/dastool.yaml /conda-envs/cdaccecb0d819c466e118c369559b513.yam
 RUN mamba env create  \
       --prefix /conda-envs/cdaccecb0d819c466e118c369559b513 \
       --file   /conda-envs/cdaccecb0d819c466e118c369559b513.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
-#   source: workflow/envs/dram.yaml
-#   prefix: /conda-envs/6f2dec118d6685713436faab5942606a
-#   channels:
-#     - conda-forge
-#     - bioconda
-#   dependencies:
-#     - python >=3.8
-#     - setuptools <82.0.0
-#     - altair >=4
-#     - networkx
-#     - numpy
-#     - openpyxl
-#     - pandas >=1.5, <2
-#     - scikit-bio >=0.5.8, <0.6
-#     - sqlalchemy
-#     - prodigal
-#     - scipy >=1.9
-#     - mmseqs2 >10.6d92c
-#     - hmmer
-#     - trnascan-se >=2
-#     - barrnap
-#     - ruby
-#     - parallel
-#     - wget
-#     - curl
-#     - pip
-#     - pip:
-#       - git+https://github.com/SilasK/DRAM.git
-COPY workflow/envs/dram.yaml /conda-envs/6f2dec118d6685713436faab5942606a.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/6f2dec118d6685713436faab5942606a \
-      --file   /conda-envs/6f2dec118d6685713436faab5942606a.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
-#   source: workflow/envs/eggNOG.yaml
-#   prefix: /conda-envs/1b58c0a8c1fdb8a1c216a818a24d8134
-#   channels:
-#       - conda-forge
-#       - bioconda
-#       - defaults
-#   dependencies:
-#       - eggnog-mapper=2.1.13
-#       - python=3.11
-#       - diamond =2.1
-#       - wget # to download_eggnog_data on macOS
-#       - pandas>=1.5,<2
-COPY workflow/envs/eggNOG.yaml /conda-envs/1b58c0a8c1fdb8a1c216a818a24d8134.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/1b58c0a8c1fdb8a1c216a818a24d8134 \
-      --file   /conda-envs/1b58c0a8c1fdb8a1c216a818a24d8134.yaml -vvv && \
     mamba clean -afy
 
 # Conda environment:
@@ -293,21 +223,6 @@ RUN mamba env create  \
 # NOTRUN: Seen md5sum previously
 
 # Conda environment:
-#   source: workflow/envs/genomad.yaml
-#   prefix: /conda-envs/9999a65bd6e217a51e897724fe66d532
-#   channels:
-#       - conda-forge
-#       - bioconda
-#       - defaults
-#   dependencies:
-#       - genomad=1.11.2
-COPY workflow/envs/genomad.yaml /conda-envs/9999a65bd6e217a51e897724fe66d532.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/9999a65bd6e217a51e897724fe66d532 \
-      --file   /conda-envs/9999a65bd6e217a51e897724fe66d532.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
 #   source: workflow/envs/gtdbtk.yaml
 #   prefix: /conda-envs/da3b0d8e18ab54e9de5d545680f60794
 #   channels:
@@ -352,39 +267,6 @@ COPY workflow/envs/instrain.yaml /conda-envs/702bbf3c6194bc68e4ab49e93128b050.ya
 RUN mamba env create  \
       --prefix /conda-envs/702bbf3c6194bc68e4ab49e93128b050 \
       --file   /conda-envs/702bbf3c6194bc68e4ab49e93128b050.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
-#   source: workflow/envs/maxbin2.yaml
-#   prefix: /conda-envs/bf8a3027fd33b3db7ab33f1778d137d2
-#   channels:
-#       - conda-forge
-#       - bioconda
-#       - defaults
-#   dependencies:
-#       - maxbin2=2.2.7
-#       - python=3.11.4
-#       - pandas=2.0.2
-#       - tqdm=4.65.0
-COPY workflow/envs/maxbin2.yaml /conda-envs/bf8a3027fd33b3db7ab33f1778d137d2.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/bf8a3027fd33b3db7ab33f1778d137d2 \
-      --file   /conda-envs/bf8a3027fd33b3db7ab33f1778d137d2.yaml -vvv && \
-    mamba clean -afy
-
-# Conda environment:
-#   source: workflow/envs/mdmcleaner.yaml
-#   prefix: /conda-envs/6bb6509d829d3f2521ae4ee640d4d39c
-#   channels:
-#       - conda-forge
-#       - bioconda
-#       - defaults
-#   dependencies:
-#       - mdmcleaner=0.8.7
-COPY workflow/envs/mdmcleaner.yaml /conda-envs/6bb6509d829d3f2521ae4ee640d4d39c.yaml
-RUN mamba env create  \
-      --prefix /conda-envs/6bb6509d829d3f2521ae4ee640d4d39c \
-      --file   /conda-envs/6bb6509d829d3f2521ae4ee640d4d39c.yaml -vvv && \
     mamba clean -afy
 
 # Conda environment:

@@ -102,5 +102,5 @@ ENV/
 # on mac
 .DS_Store
 example_data
-atlas/regex_formating.py
 docker_build.log
+naive_atlas-envs.tar

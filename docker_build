@@ -70,7 +70,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 ## Build dockerfile
-echo "## Writing $DOCKERFILE_ENV"
+echo "## Writing $DOCKERFILE_ENV.tmp"
 echo -e "# Dockerfile to containerize naiveATLAS conda envs
 FROM condaforge/mambaforge:latest
 
@@ -104,7 +104,7 @@ RUN apt-get update && \\
     && rm -rf /var/lib/apt/lists/*
 
 
-## (3/3) Install each workflow package" > "$DOCKERFILE_ENV"
+## (3/3) Install each workflow package" > "$DOCKERFILE_ENV.tmp"
 
 RUN=""
 tmp_seen=$(mktemp)
@@ -116,27 +116,27 @@ MD5SUM=$(md5sum "$YAML" | awk '{print $1}')
 # Check if we have seen this md5sum previously
 if ! grep -qFx "$MD5SUM" "$tmp_seen"; then
   # Not seen
-  echo "# Conda environment:" >> "$DOCKERFILE_ENV"
-  echo "#   source: $YAML" >> "$DOCKERFILE_ENV"
-  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE_ENV"
-  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE_ENV"
-  echo -e "COPY $YAML /conda-envs/$MD5SUM.yaml" >> "$DOCKERFILE_ENV"
-  echo -e "RUN mamba env create ${DEBUG} \\" >> "$DOCKERFILE_ENV"
-  echo -e "      --prefix /conda-envs/$MD5SUM \\" >> "$DOCKERFILE_ENV"
-  echo -e "      --file   /conda-envs/$MD5SUM.yaml -vvv && \\" >> "$DOCKERFILE_ENV"
-  echo -e "    mamba clean -afy" >> "$DOCKERFILE_ENV"
-  echo "" >> "$DOCKERFILE_ENV"
+  echo "# Conda environment:" >> "$DOCKERFILE_ENV.tmp"
+  echo "#   source: $YAML" >> "$DOCKERFILE_ENV.tmp"
+  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE_ENV.tmp"
+  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE_ENV.tmp"
+  echo -e "COPY $YAML /conda-envs/$MD5SUM.yaml" >> "$DOCKERFILE_ENV.tmp"
+  echo -e "RUN mamba env create ${DEBUG} \\" >> "$DOCKERFILE_ENV.tmp"
+  echo -e "      --prefix /conda-envs/$MD5SUM \\" >> "$DOCKERFILE_ENV.tmp"
+  echo -e "      --file   /conda-envs/$MD5SUM.yaml -vvv && \\" >> "$DOCKERFILE_ENV.tmp"
+  echo -e "    mamba clean -afy" >> "$DOCKERFILE_ENV.tmp"
+  echo "" >> "$DOCKERFILE_ENV.tmp"
   
   echo "$MD5SUM" >> "$tmp_seen"
   
 else
   # Seen
-  echo "# Conda environment:" >> "$DOCKERFILE_ENV"
-  echo "#   source: $YAML" >> "$DOCKERFILE_ENV"
-  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE_ENV"
-  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE_ENV"
-  echo -e "# NOTRUN: Seen md5sum previously" >> "$DOCKERFILE_ENV"
-  echo "" >> "$DOCKERFILE_ENV"
+  echo "# Conda environment:" >> "$DOCKERFILE_ENV.tmp"
+  echo "#   source: $YAML" >> "$DOCKERFILE_ENV.tmp"
+  echo "#   prefix: /conda-envs/$MD5SUM" >> "$DOCKERFILE_ENV.tmp"
+  awk '{print "#   "$0}' "$YAML"   >> "$DOCKERFILE_ENV.tmp"
+  echo -e "# NOTRUN: Seen md5sum previously" >> "$DOCKERFILE_ENV.tmp"
+  echo "" >> "$DOCKERFILE_ENV.tmp"
 
 fi
 
@@ -190,9 +190,28 @@ RUN mamba env create  \
       --prefix /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e \
       --file   /conda-envs/ecf1e3c321150b029c4ee6071ab30a6e.yaml -vvv && \
     mamba clean -afy
-" >> "$DOCKERFILE_ENV"
+" >> "$DOCKERFILE_ENV.tmp"
 
-echo "## Done writing $DOCKERFILE_ENV"
+echo "## Done writing $DOCKERFILE_ENV.tmp"
+
+if ! cmp -s "$DOCKERFILE_ENV.tmp" "$DOCKERFILE_ENV"; then
+  echo "## $DOCKERFILE_ENV.tmp is different from $DOCKERFILE_ENV, we will NEED to rebuild!"
+  mv "$DOCKERFILE_ENV.tmp" "$DOCKERFILE_ENV"
+  if [ $BUILD_ONLY -eq 1 ];
+  then
+    echo "## Skipping docker build!"
+  else
+    echo "## Building $DOCKERFILE_ENV"
+    $DOCKER build -t $USER/naive_atlas-envs:${VERSION} -t $USER/naive_atlas-envs:latest -f $DOCKERFILE_ENV .
+    echo "## Done building $DOCKERFILE_ENV"
+  fi
+else
+  echo "## $DOCKERFILE_ENV.tmp is the same as $DOCKERFILE_ENV, NO NEED to rebuild!"
+  rm "$DOCKERFILE_ENV.tmp"
+fi
+
+echo ""
+
 
 
 ## Build dockerfile
@@ -201,7 +220,7 @@ echo -e "# Dockerfile to containerize naiveATLAS workflow
 FROM condaforge/mambaforge:latest
 
 
-## (1/5) Set environment variables
+## (1/6) Set environment variables
 # So we dont have to interactivly configure tzdata
 RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
 ENV DEBIAN_FRONTEND=noninteractive
@@ -218,7 +237,7 @@ RUN apt-get update && \\
     rm -rf /var/lib/apt/lists/*
 
 
-## (2/5) Install Singulairty
+## (2/6) Install Singulairty
 RUN apt-get update && \\
     apt-get install -y --no-install-recommends \\
       software-properties-common \\
@@ -230,7 +249,7 @@ RUN apt-get update && \\
     && rm -rf /var/lib/apt/lists/*
 
 
-## (3/5) Create and set workflow working directory
+## (3/6) Create and set workflow working directory
 WORKDIR /app
 COPY . .
 RUN sed -e 's@timothystephens/naive_atlas-envs:latest@timothystephens/naive_atlas-envs:${VERSION}@' -i workflow/Snakefile
@@ -239,32 +258,44 @@ SHELL [\"conda\", \"run\", \"-p\", \"/conda-envs/naive_atlas\", \"/bin/bash\", \
 RUN /conda-envs/naive_atlas/bin/pip install --prefix /conda-envs/naive_atlas --editable .
 
 
-## (4/5) Verify the installation by checking the version
+## (4/6) Verify the installation by checking the version
 RUN naive_atlas --help
 
 
-## (5/5) Set the default command to show MaxBin2 help
+## (5/6) Set the default command to test naive_atlas
 CMD [\"naive_atlas\", \"--help\"]
-" > "$DOCKERFILE"
+
+## (6/6) Download containers" > "$DOCKERFILE"
+
+# Docker container
+echo "RUN mkdir -p /singulairty" >> "$DOCKERFILE"
+grep -A2 'container' workflow/Snakefile workflow/rules/*.smk \
+  | grep '://' \
+  | awk '{print $2}' \
+  | sed -e s'/",//' -e 's/"//g' \
+  | sort | uniq \
+  | grep -v 'naive_atlas-envs' \
+  | while read DOCKER;
+    do
+      MD5=$(echo -n "$DOCKER" | md5sum | awk '{print $1}')
+      echo "RUN apptainer pull --dir /singulairty ${MD5}.sif \"${DOCKER}\" && apptainer cache clean --force"
+    done >> "$DOCKERFILE"
+#echo "RUN apptainer pull --dir /singulairty b0cbfcaa12aed20fbe0a5297d12b5d21.sif \"docker-daemon://timothystephens/naive_atlas-envs:latest\" && apptainer cache clean --force" >> "$DOCKERFILE"
+echo "RUN apptainer pull --dir /singulairty b0cbfcaa12aed20fbe0a5297d12b5d21.sif \"docker-archive:///app/naive_atlas-envs.tar\" && apptainer cache clean --force" >> "$DOCKERFILE"
+echo "RUN rm -f /app/naive_atlas-envs.tar" >> "$DOCKERFILE"
+
 echo "## Done writing $DOCKERFILE"
-
-
-## Stop if we only want the 'dockerfile'
 if [ $BUILD_ONLY -eq 1 ];
 then
-  echo "## Skipping docker build. Script Done!"
-  exit 0
+  echo "## Skipping docker build!"
+else
+  echo "## Building $DOCKERFILE"
+  $DOCKER build -t $USER/naive_atlas:${VERSION} -t $USER/naive_atlas:latest -f $DOCKERFILE .
+  $DOCKER run $USER/naive_atlas:${VERSION} naive_atlas --help
+  rm -f naive_atlas-envs.tar
+  echo "## Done building $DOCKERFILE"
 fi
 
-
-## Build using docker
-echo "## Building $DOCKERFILE_ENV"
-$DOCKER build -t $USER/naive_atlas-envs:${VERSION} -t $USER/naive_atlas-envs:latest -f $DOCKERFILE_ENV .
-echo "## Done building $DOCKERFILE_ENV"
-echo "## Building $DOCKERFILE"
-$DOCKER build -t $USER/naive_atlas:${VERSION}      -t $USER/naive_atlas:latest      -f $DOCKERFILE .
-$DOCKER run $USER/naive_atlas:${VERSION} naive_atlas --help
-echo "## Done building $DOCKERFILE"
 
 
 ## Print commands to check the build
