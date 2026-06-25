@@ -1,9 +1,27 @@
 
+def generate_sketch_zcat_command(wildcards, input):
+    """
+    Get zcat command for any combination of read files.
+    """
+    cmd = "zcat"
+    if hasattr(input, "reads"):
+        cmd = f"{cmd} {input.reads[0]}"
+        if len(input.reads) == 2:
+            cmd = f"{cmd} {input.reads[1]}"
+    if hasattr(input, "lr_reads"):
+        cmd = f"{cmd} {input.lr_reads[0]}"
+    return(cmd)
+
+
 rule generate_sketch:
     input:
         unpack(get_input_fastq),
     output:
-        "{sample}/screen/{sample}.sketch.gz",
+        "samples/{sample}/screen/{sample}.sketch.gz",
+    params:
+        command = lambda wildcards, input: generate_sketch_zcat_command(
+            wildcards, input,
+        ),
     log:
         "logs/{sample}/screen/{sample}.make_sketch.log",
     benchmark:
@@ -20,20 +38,20 @@ rule generate_sketch:
     shell:
         """
         (
-        bbsketch.sh \\
-            in={input[0]} \\
-            samplerate=0.5 \\
-            minkeycount=2 \\
-            out={output} \\
-            blacklist=nt \\
-            ssu=f \\
-            name0={wildcards.sample} \\
-            depth=t \\
-            overwrite=t \\
-            -Xmx{resources.java_mem}M
+        {params.command} \\
+          | bbsketch.sh \\
+              in=stdin.fq \\
+              samplerate=0.5 \\
+              minkeycount=2 \\
+              out={output} \\
+              blacklist=nt \\
+              ssu=f \\
+              name0={wildcards.sample} \\
+              depth=t \\
+              overwrite=t \\
+              -Xmx{resources.java_mem}M
         ) 1>{log} 2>&1
         """
-        # take only one read
 
 
 rule compare_sketch:
