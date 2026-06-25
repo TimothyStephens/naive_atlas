@@ -230,6 +230,20 @@ resources:
     scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
+
+  #####################
+  #### strains.smk ####
+  #####################
+  instrain_profile:
+    base_mem_mb: 48000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  instrain_compare:
+    base_mem_mb: 48000
+    scaling_factor: 1.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
    
   ###########################################################################################
   #### All local rules ('touch' or combine rules - run on main node if using SLURM/etc.) ####
