@@ -71,7 +71,7 @@ if True:
 
 # Set 'TMPDIR' for all rules. Set in multiple ways to ensure it hits shell, run, and script, even when containerized.
 tmpdir = config.get("tmpdir", "/tmp")
-#os.environ["TMPDIR"] = tmpdir
+os.environ["TMPDIR"] = tmpdir
 envvars:
     "TMPDIR"
 #shell.prefix(f"export TMPDIR='{tmpdir}'; set -euo pipefail; ")
@@ -99,9 +99,6 @@ include: "rules/quantify_genes.smk"
 include: "rules/gene_annotation.smk"
 include: "rules/strains.smk"
 include: "rules/screen.smk"  # expects function get_input_fastq defined in qc
-
-
-CONDAENV = "envs"  # overwrite definition in download.smk
 
 
 localrules:

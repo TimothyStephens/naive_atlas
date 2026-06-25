@@ -87,7 +87,7 @@ rule mdmcleaner_download_db:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv4",
     shell:
         """
-        (mdmcleaner makedb --outdir {output.dbdir}) 1>{log} 2>&1
+        (export TMPDIR={resources.tmpdir}; mdmcleaner makedb --outdir {output.dbdir}) 1>{log} 2>&1
         """
 
 
