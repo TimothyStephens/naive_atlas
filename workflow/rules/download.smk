@@ -11,6 +11,11 @@ GTDBTK_DATA_PATH = os.path.join(DBDIR, "GTDB_R232")
 
 
 def get_databases_to_download():
+    annotations = []
+    annotations.extend( config.get("genome_annotations") or [] )
+    annotations.extend( config.get("gene_annotations")   or [] )
+    logging.debug(f"annotations: {annotations}")
+
     databases = []
     # Binning
     databases.append(f"{DBDIR}/CheckM2")
@@ -18,27 +23,21 @@ def get_databases_to_download():
     databases.append(f"{DBDIR}/busco_lineages")
     databases.append(f"{DBDIR}/geNomad")
     # Annotation
-    if any([
-            x in config["genome_annotations"] or x in config["gene_annotations"] 
-            for x in ["eggNOG", "eggNOG_unbinned"]
-        ]):
+    if any([x in annotations for x in ["eggNOG", "eggNOG_unbinned"]]):
         databases.append(f"{DBDIR}/EggNOG")
-    if any([
-            x in config["genome_annotations"] or x in config["gene_annotations"]
-            for x in ["metaeuk", "metaeuk_unbinned", "mmseqs2_easy_taxonomy", "mmseqs2_easy_taxonomy_unbinned", "mmseqs2_easy_search", "mmseqs2_easy_search_unbinned"]
-        ]):
+    if any([x in annotations for x in [
+              "metaeuk", "metaeuk_unbinned",
+              "mmseqs2_easy_taxonomy", "mmseqs2_easy_taxonomy_unbinned",
+              "mmseqs2_easy_search", "mmseqs2_easy_search_unbinned"
+          ]]):
         databases.append(os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]))
-    if any([
-            x in config["genome_annotations"] or x in config["gene_annotations"]
-            for x in ["gtdb_tree", "gtdb_taxonomy"]
-        ]):
+    if any([x in annotations for x in ["gtdb_tree", "gtdb_taxonomy"]]):
         databases.append(os.path.join(GTDBTK_DATA_PATH, "downloaded_success"))
     # Gene Prediction
     databases.append(f"{DBDIR}/MicroEuk")
     databases.append(f"{DBDIR}/bakta/db")
 
     logging.debug(f"get_databases_to_download: {databases}")
-        
     return databases
 
 
@@ -80,9 +79,9 @@ rule mdmcleaner_download_db:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
-        "logs/download/mdmcleaner_database.log",
+        "logs/download/mdmcleaner.log",
     benchmark:
-        "benchmarks/download/mdmcleaner_database.tsv",
+        "benchmarks/download/mdmcleaner.tsv",
     container:
         "docker://timothystephens/mdmcleaner:0.8.7-TGSv4",
     shell:
@@ -101,9 +100,9 @@ rule busco_download_db:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
-        "logs/download/busco_lineages.log",
+        "logs/download/busco.log",
     benchmark:
-        "benchmarks/download/busco_lineages.tsv",
+        "benchmarks/download/busco.tsv",
     container:
         "docker://timothystephens/busco:6.1.0-TGSv1",
     shell:
@@ -126,9 +125,9 @@ rule genomad_download_db:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
-        "logs/download/genomad_lineages.log",
+        "logs/download/genomad.log",
     benchmark:
-        "benchmarks/download/genomad_lineages.tsv",
+        "benchmarks/download/genomad.tsv",
     container:
         "docker://antoniopcamargo/genomad:1.11.0",
     shell:
@@ -148,7 +147,7 @@ rule genomad_download_db:
 ####                       ####
 ###############################
 
-rule download_eggNOG_files:
+rule emapper_download_db:
     output:
         files=[f"{DBDIR}/EggNOG/eggnog.db", f"{DBDIR}/EggNOG/eggnog_proteins.dmnd"],
         dir=directory(f"{DBDIR}/EggNOG"),
@@ -161,9 +160,9 @@ rule download_eggNOG_files:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
-        "logs/download/download_eggNOG_files.log",
+        "logs/download/emapper.log",
     benchmark:
-        "benchmarks/download/download_eggNOG_files.tsv",
+        "benchmarks/download/emapper.tsv",
     container:
         "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     shell:
@@ -218,7 +217,7 @@ rule gtdb_extract:
         """
 
 
-rule mmseqs2_download:
+rule mmseqs2_download_db:
     output:
         dbdir=directory(f"{DBDIR}/MMseqs2"),
         database=os.path.join(f"{DBDIR}/MMseqs2", config["mmseqs2_database_name"]),
@@ -231,16 +230,17 @@ rule mmseqs2_download:
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "partition"),
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "download", "account"),
     log:
-        "logs/download/download_MMseqs2_database.log",
+        "logs/download/MMseqs2.log",
     benchmark:
-        "benchmarks/download/download_MetaEuk_database.tsv",
+        "benchmarks/download/MMseqs2.tsv",
     container:
         # Need a specific version of mmseqs2 other wise easy-taxonomy fails.
         "docker://timothystephens/mmseqs2:113e3212c137d026e297c7540e1fcd039f6812b1_rev1"
     shell:
         """
         (
-        export TMPDIR='{output.dbdir}/tmp'; 
+        export TMPDIR='{output.dbdir}/tmp' 
+        mkdir -p {output.dbdir}/tmp
         mmseqs databases {params.mmseqs2_database} {output.database} {output.dbdir}/tmp \\
             --compressed 1 \\
             --threads {threads} \\

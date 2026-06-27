@@ -256,7 +256,7 @@ rule all_gtdb_trees:
 rule genome_metaeuk_annotation:
     input:
         fasta="genomes/{dataset}/{genome}.fa",
-        database=rules.mmseqs2_download.output.database,
+        database=rules.mmseqs2_download_db.output.database,
     output:
         codon=temp("genomes/annotations/{dataset}/{genome}.metaeuk.codon.fas.gz"),
         fas=temp("genomes/annotations/{dataset}/{genome}.metaeuk.fas.gz"),
@@ -265,11 +265,10 @@ rule genome_metaeuk_annotation:
         headerMap_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined.headersMap.tsv.gz"),
         contig_classification=temp("genomes/annotations/{dataset}/{genome}.metaeuk_contig_classification.tsv.gz"),
         mag_classification=temp("genomes/annotations/{dataset}/{genome}.metaeuk_mag_classification.tsv.gz"),
-        tax_per_contig=temp("genomes/annotations/{dataset}/{genome}.metaeuk_tax_per_contig.tsv"),
-        tax_per_pred=temp("genomes/annotations/{dataset}/{genome}.metaeuk_tax_per_pred.tsv"),
-        tax_per_contig_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined_tax_per_contig.tsv"),
-        tax_per_pred_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined_tax_per_pred.tsv"),
-        tmp=temp(directory("genomes/annotations/{dataset}/{genome}.tmp")),
+        tax_per_contig=temp("genomes/annotations/{dataset}/{genome}.metaeuk_tax_per_contig.tsv.gz"),
+        tax_per_pred=temp("genomes/annotations/{dataset}/{genome}.metaeuk_tax_per_pred.tsv.gz"),
+        tax_per_contig_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined_tax_per_contig.tsv.gz"),
+        tax_per_pred_combined=temp("genomes/annotations/{dataset}/{genome}.metaeuk_combined_tax_per_pred.tsv.gz"),
     params:
         codon="genomes/annotations/{dataset}/{genome}.metaeuk.codon.fas",
         fas="genomes/annotations/{dataset}/{genome}.metaeuk.fas",
@@ -290,6 +289,7 @@ rule genome_metaeuk_annotation:
         out="genomes/annotations/{dataset}/{genome}.metaeuk",
         out_combined="genomes/annotations/{dataset}/{genome}.metaeuk_combined",
         mag_id=lambda wc: wc.genome,
+        tmp="genomes/annotations/{dataset}/{genome}.tmp",
     threads: lambda wc: get_resource(wc, None, 1, "genome_annot_metaeuk", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_metaeuk", "mem_mb"),
@@ -305,26 +305,26 @@ rule genome_metaeuk_annotation:
     shell:
         """
         (
-        mkdir -p {output.tmp}
+        mkdir -p {params.tmp}
         /usr/local/bin/entrypoint createdb \\
-          {input.fasta} {output.tmp}/contigDB \\
+          {input.fasta} {params.tmp}/contigDB \\
           {params.metaeuk_createdb}
         /usr/local/bin/entrypoint predictexons \\
-          {output.tmp}/contigDB {input.database} {output.tmp}/callsResultDB {output.tmp}/tmp \\
+          {params.tmp}/contigDB {input.database} {params.tmp}/callsResultDB {params.tmp}/tmp \\
           --threads {threads} {params.metaeuk_predictexons}
         /usr/local/bin/entrypoint reduceredundancy \\
-          {output.tmp}/callsResultDB {output.tmp}/predsResultDB {output.tmp}/predGroupsDB \\
+          {params.tmp}/callsResultDB {params.tmp}/predsResultDB {params.tmp}/predGroupsDB \\
           --threads {threads} {params.metaeuk_reduceredundancy}
         /usr/local/bin/entrypoint unitesetstofasta \\
-          {output.tmp}/contigDB {input.database} {output.tmp}/predsResultDB {params.out} \\
+          {params.tmp}/contigDB {input.database} {params.tmp}/predsResultDB {params.out} \\
           --threads {threads} {params.metaeuk_unitesetstofasta}
         if [ $(grep -c '>' "{params.fas}") -gt 0 ]; then
             /usr/local/bin/entrypoint taxtocontig \\
-              {output.tmp}/contigDB {params.fas} {params.headerMap} {input.database} {params.out} {output.tmp}/tmp \\
+              {params.tmp}/contigDB {params.fas} {params.headerMap} {input.database} {params.out} {params.tmp}/tmp \\
               --threads {threads} {params.metaeuk_taxtocontig}
             awk '{{OFS=FS="\\t"}}{{$1=0; print}}' {params.headerMap} > {params.headerMap_combined}
             /usr/local/bin/entrypoint taxtocontig \\
-              {output.tmp}/contigDB {params.fas} {params.headerMap_combined} {input.database} {params.out_combined} {output.tmp}/tmp \\
+              {params.tmp}/contigDB {params.fas} {params.headerMap_combined} {input.database} {params.out_combined} {params.tmp}/tmp \\
               --threads {threads} {params.metaeuk_taxtocontig}
             # Format results
             awk 'BEGIN{{
@@ -360,6 +360,7 @@ rule genome_metaeuk_annotation:
             echo -e "{params.mag_id}\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA\\tNA" >> {params.mag_classification}
         fi
         gzip -9 {params.out}*
+        rm -fr {params.tmp}
         ) 1>{log} 2>&1
         """
 
@@ -426,17 +427,17 @@ rule combine_genome_metaeuk:
 rule genome_mmseqs2_easy_taxonomy:
     input:
         fasta="genomes/{dataset}/{genome}.fa",
-        database=rules.mmseqs2_download.output.database,
+        database=rules.mmseqs2_download_db.output.database,
     output:
         result_lca=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_lca.tsv.gz"),
         result_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_report.gz"),
         result_tophit_aln=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_aln.gz"),
         result_tophit_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_report.gz"),
-        tmp=temp(directory("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.tmp")),
     params:
         out="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result",
         opts=config["mmseqs2_easy_taxonomy_opts"],
         mag_id=lambda wc: wc.genome,
+        tmp="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.tmp",
     threads: lambda wc: get_resource(wc, None, 1, "genome_annot_mmseqs2_easy_taxonomy", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "mem_mb"),
@@ -453,14 +454,15 @@ rule genome_mmseqs2_easy_taxonomy:
     shell:
         """
         (
-        mkdir -p {output.tmp}
+        mkdir -p {params.tmp}
         /usr/local/bin/entrypoint easy-taxonomy \\
           {input.fasta} {input.database} \\
-          {params.out} {output.tmp} \\
+          {params.out} {params.tmp} \\
           {params.opts} \\
           --threads {threads} \\
           --split-memory-limit {resources.mem_gb}G \\
-        && gzip -9 {params.out}*
+        && gzip -9 {params.out}* \\
+        && rm -fr {params.tmp}
         ) 1>{log} 2>&1
         """
 

@@ -28,7 +28,7 @@ max_mem_mb: 1500000 # 1,500 GB
 account: "general"
 partition_ranges:
   main-redhat: 160000
-  mem: 1500000
+  mem-redhat: 1500000
 
 # Default resources for simple or low resource jobs (not requiring dynamic scaling)
 simple_job_mem_mb: 5000
@@ -202,7 +202,7 @@ resources:
   #### genome_annotation.smk ####
   ###############################
   genome_annot_gtdbtk:
-    base_mem_mb: 120000
+    base_mem_mb: 160000
     scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min

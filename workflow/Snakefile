@@ -225,10 +225,10 @@ def get_genome_annotations():
         "gtdb_taxonomy":                  "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
         "metaeuk":                        expand("genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz", dataset="genomes"),
         "metaeuk_unbinned":               expand("genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz", dataset="unbinned"),
-        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="genomes",  database_name=rules.mmseqs2_download.output.database),
-        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="unbinned", database_name=rules.mmseqs2_download.output.database),
+        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="genomes",  database_name=config["mmseqs2_database_name"]),
+        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="unbinned", database_name=config["mmseqs2_database_name"]),
     }
-    annotations_requested = config["genome_annotations"]
+    annotations_requested = config.get("genome_annotations") or []
 
     try:
         annotations_files = [
@@ -274,10 +274,10 @@ def get_gene_annotations():
     annotation_file_names = {
         "eggNOG":                       expand("genomes/annotations/{dataset}/genes/emapper.tsv.gz", dataset="genomes"),
         "eggNOG_unbinned":              expand("genomes/annotations/{dataset}/genes/emapper.tsv.gz", dataset="unbinned"),
-        "mmseqs2_easy_search":          expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz", dataset="genomes",  database_name=rules.mmseqs2_download.output.database),
-        "mmseqs2_easy_search_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz", dataset="unbinned", database_name=rules.mmseqs2_download.output.database),
+        "mmseqs2_easy_search":          expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz", dataset="genomes",  database_name=config["mmseqs2_database_name"]),
+        "mmseqs2_easy_search_unbinned": expand("genomes/annotations/{dataset}/genes/mmseqs2_easy_search_{database_name}.m4.gz", dataset="unbinned", database_name=config["mmseqs2_database_name"]),
     }
-    annotations_requested = config.get("gene_annotations", [])
+    annotations_requested = config.get("gene_annotations") or []
 
     try:
         annotations_files = [

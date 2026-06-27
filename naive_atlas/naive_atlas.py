@@ -136,12 +136,12 @@ def get_snakefile(file="workflow/Snakefile"):
     "--cluster-type",
     type=click.Choice(["slurm", "generic"]),
     default=None,
-    help="Type of cluster to use. If set, --profile, --local-cores, and --jobs are sent to Snakemake. Otherwise, --cores is used.",
+    help="Type of cluster to use. If set, --local-cores and --jobs are sent to Snakemake. Otherwise, --cores is used.",
 )
 @click.option(
     "--cluster-slurm-params",
     type=str,
-    default=f"--slurm-requeue --slurm-efficiency-report --slurm-efficiency-report-path {cwd}{os.sep}efficiency_reports --slurm-efficiency-threshold 1",
+    default=f"--executor slurm --slurm-requeue --slurm-efficiency-report --slurm-efficiency-report-path {cwd}{os.sep}efficiency_reports --slurm-efficiency-threshold 1",
     help="Params to use for SLURM cluster. Only used if --cluster-type IS set.",
 )
 @click.option(
@@ -358,8 +358,6 @@ def run_workflow(
 
     cluster_params = ""
     if cluster_type:
-        if profile is None:
-            profile = cluster_type + '_profile'
         core_str = " --local-cores {} --jobs {} ".format(
             local_cores, jobs
         )
@@ -389,6 +387,8 @@ def run_workflow(
     # Helper to generate presence-only flags
     def get_flag(val, name):
         return f" --{name} " if val else ""
+    def get_bool_flag(val, flag):
+        return val if flag else ""
 
     cmd = (
         "snakemake "
@@ -436,8 +436,8 @@ def run_workflow(
         snakefile=get_snakefile(),
         config_file=config_file,
         working_dir=working_dir,
-        profile="" if (profile is None) else "--profile {}".format(profile),
-        target_rule=workflow if workflow != "None" else "",
+        profile=get_flag(profile, "profile"),
+        target_rule=workflow,
 
         # Snakemake run behavior params
         rerun_triggers=rerun_triggers,
@@ -468,8 +468,8 @@ def run_workflow(
         # Extra params & dryrun
         cluster_params=f"{cluster_params}",
         args=" ".join(snakemake_args),
-        dryrun="--dryrun" if dryrun else "",
-        logger_debug=f"--config debug=true" if logger_debug else "",
+        dryrun=get_bool_flag("--dryrun", dryrun),
+        logger_debug=get_bool_flag("--config debug=true", logger_debug),
     )
     logger.info("Executing: %s" % cmd)
     try:

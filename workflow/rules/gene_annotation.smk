@@ -9,7 +9,7 @@ import os
 
 rule gene_eggNOG_mapper:
     input:
-        eggnog_db_files=rules.download_eggNOG_files.output.files,
+        eggnog_db_files=rules.emapper_download_db.output.files,
         faa="genomes/genes/{dataset}/{genome}.faa",
     output:
         seed=temp(
@@ -23,7 +23,7 @@ rule gene_eggNOG_mapper:
         ),
     params:
         data_dir=(
-            config["virtual_disk"] if config["eggNOG_use_virtual_disk"] else rules.download_eggNOG_files.output.dir
+            config["virtual_disk"] if config["eggNOG_use_virtual_disk"] else rules.emapper_download_db.output.dir
         ),
         prefix=lambda wc, output: output.annot.replace(".emapper.annotations", ""),
         copyto_shm="t" if config["eggNOG_use_virtual_disk"] else "f",
@@ -171,14 +171,14 @@ rule combine_gene_egg_nog_annotations:
 rule gene_mmseqs2_annotation:
     input:
         faa="genomes/genes/{dataset}/{genome}.faa",
-        database=rules.mmseqs2_download.output.database,
+        database=rules.mmseqs2_download_db.output.database,
     output:
         results=temp("genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4.gz"),
-        tmp=temp(directory("genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.tmp")),
     params:
         opts=config["mmseqs2_easy_search_opts"],
         results="genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.m4",
         format_output=config["mmseqs2_easy_search_format_output"],
+        tmp="genomes/annotations/{dataset}/genes/{genome}.faa.mmseqs2_easy_search_{database_name}.tmp",
     threads: lambda wc: get_resource(wc, None, 1, "gene_annot_mmseqs2_easy_search", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "gene_annot_mmseqs2_easy_search", "mem_mb"),
@@ -204,8 +204,9 @@ rule gene_mmseqs2_annotation:
             {input.faa} \\
             {input.database} \\
             {params.results} \\
-            {output.tmp} \\
-          && gzip -9 {params.results}
+            {params.tmp} \\
+          && gzip -9 {params.results} \\
+          && rm -fr {params.tmp}
         ) 1>{log} 2>&1
         """
 
