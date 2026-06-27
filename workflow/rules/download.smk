@@ -275,7 +275,7 @@ rule microeukaryotic_mmseqs2_db:
         "../envs/MicroEuk.yaml"
     shell:
         """
-        ({params.workflow_folder}/../scripts/veba/download_MicroEuk_databases.sh {output.dbdir}) 1>{log} 2>&1
+        (export TMPDIR={resources.tmpdir}; {params.workflow_folder}/../scripts/veba/download_MicroEuk_databases.sh {output.dbdir}) 1>{log} 2>&1
         """
 
 
