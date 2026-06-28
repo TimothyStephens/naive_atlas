@@ -59,14 +59,14 @@ rule gene_eggNOG_mapper:
         fi
         
         emapper.py \\
+            -i {input.faa} \\
+            -o {params.prefix} \\
+            --data_dir {params.data_dir} \\
             -m diamond \\
             --no_file_comments \\
-            --data_dir {params.data_dir} \\
             --dbmem \\
             --override \\
-            -o {params.prefix} \\
-            --cpu {threads} \\
-            --data_dir {params.data_dir}
+            --cpu {threads}
         ) 1>{log} 2>&1
         """
 
