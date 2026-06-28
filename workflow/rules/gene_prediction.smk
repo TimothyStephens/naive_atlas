@@ -146,8 +146,8 @@ rule gene_prediction_archaea:
         "benchmarks/predict_genes/genomes/archaea/{genome}.tsv",
     log:
         "logs/predict_genes/genomes/archaea/{genome}.log",
-    conda:
-        "../envs/gene_prediction_archaea.yaml"
+    container:
+        "docker://staphb/prokka:1.15.6"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
@@ -157,7 +157,6 @@ rule gene_prediction_archaea:
     shell:
         """
         (
-        export PERL5LIB="$CONDA_PREFIX/lib/perl5/site_perl"
         prokka \\
             --outdir {params.wd} --force \\
             --prefix {params.genome} \\
@@ -183,8 +182,8 @@ rule gene_prediction_virus:
         "benchmarks/predict_genes/genomes/virus/{genome}.tsv",
     log:
         "logs/predict_genes/genomes/virus/{genome}.log",
-    conda:
-        "../envs/gene_prediction_virus.yaml"
+    container:
+        "docker://staphb/prokka:1.15.6"
     threads: lambda wc: get_resource(wc, None, 1, "predict_genes", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "predict_genes", "mem_mb"),
@@ -194,7 +193,6 @@ rule gene_prediction_virus:
     shell:
         """
         (
-        export PERL5LIB="$CONDA_PREFIX/lib/perl5/site_perl"
         prokka \\
             --outdir {params.wd} --force \\
             --prefix {params.genome} \\
