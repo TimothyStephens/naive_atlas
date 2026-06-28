@@ -9,6 +9,7 @@ import os
 
 rule gene_eggNOG_mapper:
     input:
+        eggnog_db_dir=rules.emapper_download_db.output.dir,
         eggnog_db_files=rules.emapper_download_db.output.files,
         faa="genomes/genes/{dataset}/{genome}.faa",
     output:
@@ -42,16 +43,16 @@ rule gene_eggNOG_mapper:
     shell:
         """
         (
-        if [ {params.copyto_shm} == "t" ] ; then
+        if [ "{params.copyto_shm}" == "t" ] ; then
             # Check if the files exist before copying
             if [ ! -e "{params.data_dir}/eggnog.db" ]; then
-                cp {EGGNOG_DIR}/eggnog.db {params.data_dir}/eggnog.db
+                cp {input.eggnog_db_dir}/eggnog.db {params.data_dir}/eggnog.db
             else
                 echo "File {params.data_dir}/eggnog.db already exists. Skipping copy."
             fi
             
             if [ ! -e "{params.data_dir}/eggnog_proteins.dmnd" ]; then
-                cp {EGGNOG_DIR}/eggnog_proteins.dmnd {params.data_dir}/eggnog_proteins.dmnd
+                cp {input.eggnog_db_dir}/eggnog_proteins.dmnd {params.data_dir}/eggnog_proteins.dmnd
             else
                 echo "File {params.data_dir}/eggnog_proteins.dmnd already exists. Skipping copy."
             fi
