@@ -225,8 +225,8 @@ def get_genome_annotations():
         "gtdb_taxonomy":                  "genomes/annotations/genomes/taxonomy/gtdb_taxonomy.tsv",
         "metaeuk":                        expand("genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz", dataset="genomes"),
         "metaeuk_unbinned":               expand("genomes/annotations/{dataset}/metaeuk_mag_predictions.tsv.gz", dataset="unbinned"),
-        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="genomes",  database_name=config["mmseqs2_database_name"]),
-        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz", dataset="unbinned", database_name=config["mmseqs2_database_name"]),
+        "mmseqs2_easy_taxonomy":          expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.tsv.gz", dataset="genomes",  database_name=config["mmseqs2_database_name"]),
+        "mmseqs2_easy_taxonomy_unbinned": expand("genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.tsv.gz", dataset="unbinned", database_name=config["mmseqs2_database_name"]),
     }
     annotations_requested = config.get("genome_annotations") or []
 

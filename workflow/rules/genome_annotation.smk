@@ -305,7 +305,8 @@ rule genome_metaeuk_annotation:
     shell:
         """
         (
-        mkdir -p {params.tmp}
+        rm -fr "{params.tmp}"
+        mkdir -p "{params.tmp}"
         /usr/local/bin/entrypoint createdb \\
           {input.fasta} {params.tmp}/contigDB \\
           {params.metaeuk_createdb}
@@ -429,15 +430,15 @@ rule genome_mmseqs2_easy_taxonomy:
         fasta="genomes/{dataset}/{genome}.fa",
         database=rules.mmseqs2_download_db.output.database,
     output:
-        result_lca=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_lca.tsv.gz"),
-        result_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_report.gz"),
-        result_tophit_aln=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_aln.gz"),
-        result_tophit_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result_tophit_report.gz"),
+        result_lca=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}_result_lca.tsv.gz"),
+        result_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}_result_report.gz"),
+        result_tophit_aln=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}_result_tophit_aln.gz"),
+        result_tophit_report=temp("genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz"),
     params:
-        out="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_result",
+        out="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}_result",
         opts=config["mmseqs2_easy_taxonomy_opts"],
         mag_id=lambda wc: wc.genome,
-        tmp="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.tmp",
+        tmp="genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}.tmp",
     threads: lambda wc: get_resource(wc, None, 1, "genome_annot_mmseqs2_easy_taxonomy", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_mmseqs2_easy_taxonomy", "mem_mb"),
@@ -448,13 +449,14 @@ rule genome_mmseqs2_easy_taxonomy:
     container:
         "docker://ghcr.io/soedinglab/mmseqs2:18-8cc5c"
     log:
-        "logs/genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.log",
+        "logs/genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}.log",
     benchmark:
-        "logs/benchmarks/genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy.tsv",
+        "logs/benchmarks/genomes/annotations/{dataset}/{genome}.mmseqs2_easy_taxonomy_{database_name}.tsv",
     shell:
         """
         (
-        mkdir -p {params.tmp}
+        rm -fr "{params.tmp}"
+        mkdir -p "{params.tmp}"
         /usr/local/bin/entrypoint easy-taxonomy \\
           {input.fasta} {input.database} \\
           {params.out} {params.tmp} \\
@@ -467,54 +469,70 @@ rule genome_mmseqs2_easy_taxonomy:
         """
 
 
-
 def get_all_genome_mmseqs2_easy_taxonomy_results(wildcards):
     if wildcards.dataset == "genomes":
         all_genomes = get_all_genomes(wildcards)
     else:
         all_genomes = get_all_unbinned(wildcards)
     
-    return(expand(rules.genome_mmseqs2_easy_taxonomy.output.result_report, 
-                    dataset=wildcards.dataset, genome=all_genomes)
-    )
-
-
+    return {
+        "result_lca": expand(
+            rules.genome_mmseqs2_easy_taxonomy.output.result_lca,
+            dataset=wildcards.dataset, genome=all_genomes, database_name=wildcards.database_name
+        ),
+        "result_tophit_aln": expand(
+            rules.genome_mmseqs2_easy_taxonomy.output.result_tophit_aln,
+            dataset=wildcards.dataset, genome=all_genomes, database_name=wildcards.database_name
+        ),
+        "result_tophit_report": expand(
+            rules.genome_mmseqs2_easy_taxonomy.output.result_tophit_report,
+            dataset=wildcards.dataset, genome=all_genomes, database_name=wildcards.database_name
+        )
+    }
 
 localrules:
     all_genome_mmseqs2_easy_taxonomy,
 
 rule all_genome_mmseqs2_easy_taxonomy:
     input:
-        get_all_genome_mmseqs2_easy_taxonomy_results,
+        unpack(get_all_genome_mmseqs2_easy_taxonomy_results),
     output:
-        "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.gz",
+        result_lca = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_lca.tsv.gz",
+        result_tophit_aln = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_aln.tsv.gz",
+        result_tophit_report = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.tsv.gz"
     log:
-        "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_combine_{database_name}.log",
+        "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_combine_{database_name}.log"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
     resources:
         mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
         runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
         slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account")
     run:
         try:
-            import pandas as pd
-
-            Tables = [
-                pd.read_csv(file, index_col=0, header=None, sep="\t")
-                for file in input
-            ]
-
-            combined = pd.concat(Tables, axis=0)
-
-            del Tables
-
-            combined.to_csv(output[0], sep='\t', index=False)
-        except Exception as e:
             import traceback
-
+            import pandas as pd
+            
+            def combine_and_save(file_list, out_file, col_names):
+                tables = [
+                    pd.read_csv(f, sep="\t", header=None, names=col_names)
+                    for f in file_list
+                ]
+                combined = pd.concat(tables, axis=0, ignore_index=True)
+                combined.to_csv(out_file, sep='\t', index=False, header=True)
+            
+            combine_and_save(input.result_lca, output.result_lca,
+                ["query", "taxid", "rank", "name", "retained_taxa", "agreement", "evalue"]
+            )
+            combine_and_save(input.result_tophit_aln, output.result_tophit_aln,
+                ["query", "target", "pident", "alnlen", "mismatch", "gapopen", "qstart", "qend", "tstart", "tend", "evalue", "bitscore"]
+            )
+            combine_and_save(input.result_tophit_report, output.result_tophit_report,
+                ["percent_reads", "clade_reads", "taxon_reads", "rank", "taxid", "name"]
+            )
+        
+        except Exception as e:
             with open(log[0], "w") as logfile:
                 traceback.print_exc(file=logfile)
-
             raise e
 

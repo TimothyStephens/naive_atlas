@@ -78,6 +78,7 @@ def get_all_gene_eggnog(wildcards):
     """
     # Make sure we have finished moving the final gene prediction files.
     checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
+    checkpoint_output = checkpoints.move_unbinned_predicted_genes.get(**wildcards).output.outdir
     
     # Look for all *.faa files in the `genomes/genes` directory
     # Expect: genomes/genes/{dataset}/{genome}.faa
@@ -111,17 +112,17 @@ rule combine_gene_egg_nog_annotations:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     run:
         try:
+            import traceback
             import pandas as pd
-
+            
             Tables = [
                 pd.read_csv(file, index_col=None, header=0, sep="\t")
                 for file in input
             ]
-
+            
             combined = pd.concat(Tables, axis=0)
-
             del Tables
-
+            
             combined.columns = [
                 "Query",
                 "Seed",
@@ -151,12 +152,10 @@ rule combine_gene_egg_nog_annotations:
             
             combined.to_parquet(output["parquet"], index=False)
             combined.to_csv(output["tsv"], sep='\t', index=False)
+        
         except Exception as e:
-            import traceback
-
             with open(log[0], "w") as logfile:
                 traceback.print_exc(file=logfile)
-
             raise e
 
 
@@ -218,6 +217,7 @@ def get_all_gene_mmseqs2_annotation(wildcards):
     """
     # Make sure we have finished moving the final gene prediction files.
     checkpoint_output = checkpoints.move_genome_predicted_genes.get(**wildcards).output.outdir
+    checkpoint_output = checkpoints.move_unbinned_predicted_genes.get(**wildcards).output.outdir
     
     # Look for all *.faa files in the `genomes/genes` directory
     # Use an f-string to resolve 'wildcards.dataset' into 'unbinned' or 'genomes'
@@ -267,27 +267,24 @@ rule mmseqs2_combine:
         slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
     run:
         try:
+            import traceback
             import pandas as pd
-
+            
             Tables = [
                 pd.read_csv(file, index_col=None, header=None, sep="\t")
                 for file in input
             ]
-
+            
             combined = pd.concat(Tables, axis=0)
-
             del Tables
-
+            
             combined.columns = params['format_output'].split(',')
             combined = combined.astype(str)
-
             combined.to_csv(output[0], sep='\t', index=False)
+        
         except Exception as e:
-            import traceback
-
             with open(log[0], "w") as logfile:
                 traceback.print_exc(file=logfile)
-
             raise e
 
 
