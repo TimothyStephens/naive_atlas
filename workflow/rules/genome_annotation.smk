@@ -483,10 +483,6 @@ def get_all_genome_mmseqs2_easy_taxonomy_results(wildcards):
         "result_tophit_aln": expand(
             rules.genome_mmseqs2_easy_taxonomy.output.result_tophit_aln,
             dataset=wildcards.dataset, genome=all_genomes, database_name=wildcards.database_name
-        ),
-        "result_tophit_report": expand(
-            rules.genome_mmseqs2_easy_taxonomy.output.result_tophit_report,
-            dataset=wildcards.dataset, genome=all_genomes, database_name=wildcards.database_name
         )
     }
 
@@ -499,7 +495,6 @@ rule all_genome_mmseqs2_easy_taxonomy:
     output:
         result_lca = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_lca.tsv.gz",
         result_tophit_aln = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_aln.tsv.gz",
-        result_tophit_report = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_report.tsv.gz"
     log:
         "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_combine_{database_name}.log"
     threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
@@ -522,13 +517,10 @@ rule all_genome_mmseqs2_easy_taxonomy:
                 combined.to_csv(out_file, sep='\t', index=False, header=True)
             
             combine_and_save(input.result_lca, output.result_lca,
-                ["query", "taxid", "rank", "name", "retained_taxa", "agreement", "evalue"]
+                ["query", "taxid", "rank", "name", "target_seqs", "seqs_with_taxid", "seqs_agreeing", "agreement_fraction"]
             )
             combine_and_save(input.result_tophit_aln, output.result_tophit_aln,
                 ["query", "target", "pident", "alnlen", "mismatch", "gapopen", "qstart", "qend", "tstart", "tend", "evalue", "bitscore"]
-            )
-            combine_and_save(input.result_tophit_report, output.result_tophit_report,
-                ["percent_reads", "clade_reads", "taxon_reads", "rank", "taxid", "name"]
             )
         
         except Exception as e:
