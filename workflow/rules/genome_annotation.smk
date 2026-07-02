@@ -486,8 +486,6 @@ def get_all_genome_mmseqs2_easy_taxonomy_results(wildcards):
         )
     }
 
-localrules:
-    all_genome_mmseqs2_easy_taxonomy,
 
 rule all_genome_mmseqs2_easy_taxonomy:
     input:

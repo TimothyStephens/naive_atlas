@@ -247,9 +247,6 @@ def get_all_gene_mmseqs2_annotation(wildcards):
 
 
 
-localrules:
-    mmseqs2_combine,
-
 rule mmseqs2_combine:
     input:
         get_all_gene_mmseqs2_annotation,
