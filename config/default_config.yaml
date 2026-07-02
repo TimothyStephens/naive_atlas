@@ -197,6 +197,11 @@ resources:
     scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
+  genome_annot_combine_gene_mmseqs2_easy_search:
+    base_mem_mb: 60000
+    scaling_factor: 20.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
   
   ###############################
   #### genome_annotation.smk ####
@@ -216,9 +221,19 @@ resources:
     scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
+  genome_annot_combine_genome_metaeuk:
+    base_mem_mb: 60000
+    scaling_factor: 20.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
   genome_annot_mmseqs2_easy_taxonomy:
     base_mem_mb: 200000
     scaling_factor: 0.0
+    threads: *dynamic_default_threads
+    time_min: *dynamic_default_time_min
+  genome_annot_combine_genome_mmseqs2_easy_taxonomy:
+    base_mem_mb: 60000
+    scaling_factor: 20.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   

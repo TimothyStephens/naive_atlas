@@ -247,7 +247,7 @@ def get_all_gene_mmseqs2_annotation(wildcards):
 
 
 
-rule mmseqs2_combine:
+rule combine_gene_mmseqs2_easy_search:
     input:
         get_all_gene_mmseqs2_annotation,
     output:
@@ -256,12 +256,12 @@ rule mmseqs2_combine:
         "logs/genomes/annotations/{dataset}/genes/mmseqs2_combine_{database_name}.log",
     params:
         format_output=config["mmseqs2_easy_search_format_output"],
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_combine_gene_mmseqs2_easy_search", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_gene_mmseqs2_easy_search", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_gene_mmseqs2_easy_search", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_gene_mmseqs2_easy_search", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_gene_mmseqs2_easy_search", "account"),
     run:
         try:
             import traceback

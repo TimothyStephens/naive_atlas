@@ -404,12 +404,12 @@ rule combine_genome_metaeuk:
         genomes=get_all_genome_metaeuk,
     conda:
         "../envs/python.yaml"
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_combine_genome_metaeuk", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account"),
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_metaeuk", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_metaeuk", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_metaeuk", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_metaeuk", "account"),
     log:
         "logs/genomes/annotations/{dataset}/metaeuk_combine.log",
     script:
@@ -487,7 +487,7 @@ def get_all_genome_mmseqs2_easy_taxonomy_results(wildcards):
     }
 
 
-rule all_genome_mmseqs2_easy_taxonomy:
+rule combine_genome_mmseqs2_easy_taxonomy:
     input:
         unpack(get_all_genome_mmseqs2_easy_taxonomy_results),
     output:
@@ -495,12 +495,12 @@ rule all_genome_mmseqs2_easy_taxonomy:
         result_tophit_aln = "genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_{database_name}_result_tophit_aln.tsv.gz",
     log:
         "logs/genomes/annotations/{dataset}/mmseqs2_easy_taxonomy_combine_{database_name}.log"
-    threads: lambda wc: get_resource(wc, None, 1, "localrule", "threads")
+    threads: lambda wc: get_resource(wc, None, 1, "genome_annot_combine_genome_mmseqs2_easy_taxonomy", "threads")
     resources:
-        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "mem_mb"),
-        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "time_min"),
-        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "partition"),
-        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "localrule", "account")
+        mem_mb          = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_mmseqs2_easy_taxonomy", "mem_mb"),
+        runtime         = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_mmseqs2_easy_taxonomy", "time_min"),
+        slurm_partition = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_mmseqs2_easy_taxonomy", "partition"),
+        slurm_account   = lambda wc, input, attempt: get_resource(wc, input, attempt, "genome_annot_combine_genome_mmseqs2_easy_taxonomy", "account")
     run:
         try:
             import traceback
