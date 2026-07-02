@@ -107,8 +107,8 @@ rule mapping_coverm_coverage_cds:
         cov="genomes/genes/coverage/all_cds.coverage.tsv.gz",
         read_stats="genomes/genes/coverage/all_cds.read_stats.tsv",
     params:
-        extra=config["coverm_params"],
-        stats=config["coverm_stats"],
+        extra=config["coverm_gene_params"],
+        stats=config["coverm_gene_stats"],
     log:
         general="logs/genomes/genes/coverage/all_cds.coverage.log",
         coverm="logs/genomes/genes/coverage/all_cds.coverm.log",
