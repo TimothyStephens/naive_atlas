@@ -188,7 +188,7 @@ resources:
   #### gene_annotation.smk ####
   #############################
   gene_annot_eggnog:
-    base_mem_mb: 30000
+    base_mem_mb: 50000
     scaling_factor: 0.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
