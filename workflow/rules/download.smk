@@ -14,7 +14,7 @@ def get_databases_to_download():
     annotations = []
     annotations.extend( config.get("genome_annotations") or [] )
     annotations.extend( config.get("gene_annotations")   or [] )
-    logging.debug(f"annotations: {annotations}")
+    logger.debug(f"annotations: {annotations}")
 
     databases = []
     # Binning
@@ -37,7 +37,7 @@ def get_databases_to_download():
     databases.append(f"{DBDIR}/MicroEuk")
     databases.append(f"{DBDIR}/bakta/db")
 
-    logging.debug(f"get_databases_to_download: {databases}")
+    logger.debug(f"get_databases_to_download: {databases}")
     return databases
 
 

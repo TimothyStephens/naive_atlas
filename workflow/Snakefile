@@ -5,10 +5,9 @@ import tempfile
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from snakemake.utils import min_version
 
 # Minimum required snakemake version
-import logging
-from snakemake.utils import min_version, logger
 min_version("9.17")
 
 # Get package paths
@@ -21,53 +20,9 @@ for p in [package_dir, scripts_dir]:
         sys.path.append(p)
 import utils # From 'workflow/scripts'
 
-# Set logger level
-if True:
-    from naive_atlas.color_logger import ColorFormatter, logging_format, datefmt
-    
-    # Create clean console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
-    console_handler.setFormatter(ColorFormatter(logging_format, datefmt=datefmt))
-    
-    # Target every logging namespace Snakemake uses
-    # This destroys default text layout loops to halt duplicates
-    target_loggers = [
-        logging.getLogger(),                   # The system root logger
-        logging.getLogger("snakemake"),        # Base snakemake framework logger
-        logging.getLogger("snakemake.logging") # Core engine logging module
-    ]
-    
-    # If the imported wrapper object contains a nested logger, include it
-    if hasattr(logger, "logger") and logger.logger is not None:
-        target_loggers.append(logger.logger)
-    
-    for target in target_loggers:
-        # Remove all default handlers so they can't print raw text
-        for handler in list(target.handlers):
-            # Inject your color console handler exclusively
-            #target.removeHandler(handler)
-            #target.addHandler(console_handler)
-            target.propagate = False # Prevent messages bubbling up to double-print
-    
-    # This forces it to ignore DEBUG chatter even when global debug is active
-    logging.getLogger("asyncio").setLevel(logging.WARNING)
-    logging.getLogger("smart_open.smart_open_lib").setLevel(logging.WARNING)
-    logging.getLogger("py.warnings").setLevel(logging.WARNING)
-    
-    # Set appropriate logging thresholds based on your debug flag
-    is_debug = str(config.get("debug", "False")).lower() in ("true", "1", "yes")
-    
-    if is_debug:
-        for target in target_loggers:
-            target.setLevel(logging.DEBUG)
-        console_handler.setLevel(logging.DEBUG)
-        logger.stdout = True
-    else:
-        for target in target_loggers:
-            target.setLevel(logging.INFO)
-        console_handler.setLevel(logging.INFO)
-        logger.stdout = False
+# Import and execute the logger setup module
+from logger_setup import configure_snakemake_logger
+configure_snakemake_logger(config)
 
 # Set 'TMPDIR' for all rules. Set in multiple ways to ensure it hits shell, run, and script, even when containerized.
 tmpdir = config.get("tmpdir", "/tmp")
