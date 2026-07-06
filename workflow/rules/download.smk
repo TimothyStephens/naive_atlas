@@ -44,14 +44,14 @@ def get_databases_to_download():
 
 # Make sure DBDIR exists, or is set to a file systems that is writable.
 if os.path.exists(DBDIR):
-    logging.info(f"Database directory found at: {DBDIR}")
+    logger.info(f"Database directory found at: {DBDIR}")
 else:
     try:
         os.makedirs(DBDIR, exist_ok=True)
-        logging.info(f"Created new database directory at: {DBDIR}")
+        logger.info(f"Created new database directory at: {DBDIR}")
     except (OSError, PermissionError) as e:
-        logging.error(f"Cannot create database directory '{DBDIR}': {e.strerror}")
-        logging.error("The filesystem is read-only or permission was denied.")
+        logger.error(f"Cannot create database directory '{DBDIR}': {e.strerror}")
+        logger.error("The filesystem is read-only or permission was denied.")
         sys.exit(1)
 
 
