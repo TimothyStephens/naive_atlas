@@ -115,7 +115,6 @@ def get_snakefile(file="workflow/Snakefile"):
             "screen",
             "None",
             "all",
-            "test",
         ]
     )
 )
@@ -324,14 +323,14 @@ def run_workflow(
     
     \b
     # OPTIONS:
-    | qc -> assembly -> binning -> genomes -> quantify_genomes ---------------------------------------|-> strains
+    | qc -> assembly -> binning -> genomes -> quantify_genomes -> strains --------------------------->|
     |                                    +-> genome_annotation -------------------------------------->|
     |                                                        +-> gene_prediction -> gene_annotation ->|
     |                                                                          +-> quantify_genes --->|
     +-----------------------------------------------all-----------------------------------------------+
     # Independent of other steps:
     screen
-    download (download reference databases upfront instead of as each rule needs them (need ~920GB for all databases, ~1.5TB during download))
+    download (download reference databases upfront instead of as each rule needs them (need ~1.2TB for all databases, >1.5TB during download))
 
     """
 

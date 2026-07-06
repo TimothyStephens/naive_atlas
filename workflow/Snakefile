@@ -26,6 +26,7 @@ configure_snakemake_logger(config)
 
 # Set 'TMPDIR' for all rules. Set in multiple ways to ensure it hits shell, run, and script, even when containerized.
 tmpdir = config.get("tmpdir", "/tmp")
+os.makedirs(tmpdir, exist_ok=True)
 os.environ["TMPDIR"] = tmpdir
 envvars:
     "TMPDIR"
@@ -70,29 +71,14 @@ localrules:
     gene_annotation,
     strains,
     screen,
-    test,
 
 
 
 rule all:
     input:
-        "finished_download",
-        "finished_QC",
-        "finished_assembly",
-        "finished_binning",
-        "finished_genomes",
-        "finished_quantify_genomes",
+        "finished_strains",
         "finished_quantify_genes",
-        "finished_genome_annotation",
         "finished_gene_annotation",
-
-
-## ---- ##
-rule test:
-    input:
-        rules.busco_download_db.output.dbdir,
-    output:
-        touch("finished_test"),
 
 
 ## ---- ##
