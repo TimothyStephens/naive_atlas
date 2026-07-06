@@ -184,12 +184,6 @@ def get_snakefile(file="workflow/Snakefile"):
     help="Test execution.",
 )
 @click.option(
-    "--rerun-triggers",
-    default="mtime",
-    show_default=True,
-    help="Define what triggers the rerunning of a job. [{code,input,mtime,params,software-env} ...]",
-)
-@click.option(
     "--nolock/--lock",
     default=True,
     show_default=True,
@@ -303,7 +297,6 @@ def run_workflow(
     cluster_type,
     cluster_slurm_params,
     dryrun,
-    rerun_triggers,
     nolock,
     show_failed_logs,
     scheduler,
@@ -401,7 +394,6 @@ def run_workflow(
         " {target_rule} "
         
         # Snakemake run behavior params
-        " --rerun-triggers {rerun_triggers} "
         " {nolock} "
         " --scheduler {scheduler} "
         " {keep_going} "
@@ -440,7 +432,6 @@ def run_workflow(
         target_rule=workflow,
 
         # Snakemake run behavior params
-        rerun_triggers=rerun_triggers,
         nolock=get_flag(nolock, "nolock"),
         scheduler=scheduler,
         keep_going=get_flag(keep_going, "keep-going"),
