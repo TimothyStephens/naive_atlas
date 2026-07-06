@@ -39,7 +39,7 @@ def prepare_sample_table_for_atlas(
         )
         exit(1)
 
-    simplify_sample_names(sample_table)
+    #simplify_sample_names(sample_table) # Ignore for now, assume the user have named then correctly.
 
     sample_table["Bin_group"] = "all"
     sample_table["Assembler"] = assembler

@@ -50,9 +50,9 @@ https://metagenome-atlas.readthedocs.io/
 
 # Sample file
 
-The sample file used to tell the workflow about your samples has 4 required columns: "Reads_raw_R1", "Reads_raw_R2", "Assembler", "Bin_group"
- - `Reads_raw_R1`:    Path to first short read file (first mate of paired-end, single-end, or interleaved reads)
- - `Reads_raw_R2`:    Path to second short read file (second mate of paired-end, leave blank if single-end, or interleaved reads)
+The sample file used to tell the workflow about your samples has 4 required columns: "Reads_R1", "Reads_R2", "Assembler", "Bin_group"
+ - `Reads_R1`:    Path to first short read file (first mate of paired-end, single-end, or interleaved reads)
+ - `Reads_R2`:    Path to second short read file (second mate of paired-end, leave blank if single-end, or interleaved reads)
  - `Assembler`:       Assembler to us (see below)
  - `Bin_group`:       Groups to use when mapping read data for binning (all sample in a group will be mapped against each other, more samples helps binning, but massivly increases runtime)
 
@@ -80,7 +80,7 @@ The possible options for the `Assembler` column are:
 
 
 Optional extra columns:
- - `Reads_raw_Long`                     Path to long reads (PacBio or Nanopore)
+ - `Reads_Long`                     Path to long reads (PacBio or Nanopore)
  - `Interleaved`                        Is the R1 short read file interleaved?                                      Options: `True` or `False`; False by default
  - `DeDuplicate`                        Should the sample's reads have depuplication run on itbefore use?           Options: `True` or `False`; True by default
  - `Quality_filter`                     Should the sample's reads have quality filtering run on it before use?      Options: `True` or `False`; True by default

@@ -1,4 +1,5 @@
 import pandas as pd
+from .color_logger import logger
 
 
 def load_sample_table(sample_table="samples.tsv"):
@@ -9,7 +10,7 @@ def load_sample_table(sample_table="samples.tsv"):
 
 
 def validate_sample_table(sampleTable):
-    Expected_Headers = ["Reads_raw_R1", "Reads_raw_R2", "Assembler", "Bin_group"]
+    Expected_Headers = ["Reads_R1", "Reads_R2", "Assembler", "Bin_group"]
     for h in Expected_Headers:
         if not (h in sampleTable.columns):
             logger.error(f"expect '{h}' to be found in samples.tsv")
@@ -46,7 +47,7 @@ def validate_sample_table(sampleTable):
         )
         exit(1)
     
-    path_columns = ["Reads_raw_R1", "Reads_raw_R2", "Reads_raw_Long"]
+    path_columns = ["Reads_R1", "Reads_R2", "Reads_Long"]
     for col in path_columns:
         if col in sampleTable.columns:
             for idx, path in sampleTable[col].dropna().items():
@@ -55,8 +56,8 @@ def validate_sample_table(sampleTable):
                     exit(1)
     
     ### Add Long read column if missing
-    if 'Reads_raw_Long' not in sampleTable.columns:
-        sampleTable['Reads_raw_Long'] = pd.NA
+    if 'Reads_Long' not in sampleTable.columns:
+        sampleTable['Reads_Long'] = pd.NA
     
     ### Validate Bin_group
     if sampleTable.Bin_group.isnull().any():

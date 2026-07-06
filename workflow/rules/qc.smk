@@ -19,16 +19,16 @@ def get_input_fastq(wildcards):
     
     reads = {}
     headers = []
-    if 'Reads_raw_R1' in sampleTable_info:
-        headers.append('Reads_raw_R1')
-    if 'Reads_raw_R2' in sampleTable_info:
-        headers.append('Reads_raw_R2')
+    if 'Reads_R1' in sampleTable_info:
+        headers.append('Reads_R1')
+    if 'Reads_R2' in sampleTable_info:
+        headers.append('Reads_R2')
     if headers:
         reads["reads"] = get_files_from_sampleTable(wildcards.sample, headers)
     
-    if 'Reads_raw_Long' in sampleTable_info: # If only LR provided
-        headers.append('Reads_raw_Long')
-        reads["lr_reads"] = get_files_from_sampleTable(wildcards.sample, ['Reads_raw_Long'])
+    if 'Reads_Long' in sampleTable_info: # If only LR provided
+        headers.append('Reads_Long')
+        reads["lr_reads"] = get_files_from_sampleTable(wildcards.sample, ['Reads_Long'])
     
     if not headers:
         ValueError(f"No reads found for sample '{wildcards.sample}'.")
@@ -49,8 +49,8 @@ def check_interleaved(sample):
 
 def check_paired(sample):
     return(
-        len(sampleTable.loc[sample, ["Reads_raw_R1", "Reads_raw_R2"]].dropna()) == 2 or 
-        (len(sampleTable.loc[sample, ["Reads_raw_R1"]].dropna()) == 1 and sampleTable.loc[sample, "Interleaved"])
+        len(sampleTable.loc[sample, ["Reads_R1", "Reads_R2"]].dropna()) == 2 or 
+        (len(sampleTable.loc[sample, ["Reads_R1"]].dropna()) == 1 and sampleTable.loc[sample, "Interleaved"])
     )
 
 def check_bool(sample, column):
@@ -68,14 +68,14 @@ def get_fractions(sample):
     sampleTable_info = sampleTable.loc[sample, ].dropna()
     
     fractions = []
-    if 'Reads_raw_R1' in sampleTable_info and 'Reads_raw_R2' in sampleTable_info: 
+    if 'Reads_R1' in sampleTable_info and 'Reads_R2' in sampleTable_info: 
         fractions.extend(["R1", "R2"])
-    elif 'Reads_raw_R1' in sampleTable_info and not 'Reads_raw_R2' in sampleTable_info:
+    elif 'Reads_R1' in sampleTable_info and not 'Reads_R2' in sampleTable_info:
         if sampleTable.loc[sample, "Interleaved"]:
             fractions.extend(["R1", "R2"])
         else:
             fractions.extend(["SE"])
-    if 'Reads_raw_Long' in sampleTable_info:
+    if 'Reads_Long' in sampleTable_info:
         fractions.extend(["LR"])
     
     return(fractions)

@@ -16,17 +16,17 @@
 ########################
 # Paths to reference genomes and databases
 ########################
-# directory where databases are downloaded with 'atlas download'
+# Directory where databases are downloaded (or already stored)
 database_dir: 
   /user/project/dir/databases
 
 
-#contamination references can be added such that -- key: /path/to/fasta
-contaminant_references:
-  Host_A:
-    /user/project/host_refs/Host_A.fa
-  Host_B:
-    /user/project/host_refs/Host_B.fa
+# Contamination references. Uncomment and rename in the following format (key: /path/to/fasta).
+#contaminant_references:
+#  Host_A:
+#    /user/project/host_refs/Host_A.fa
+#  Host_B:
+#    /user/project/host_refs/Host_B.fa
 
 
 ########################

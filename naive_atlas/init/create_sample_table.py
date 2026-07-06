@@ -43,27 +43,23 @@ def add_sample_to_table(sample_dict, sample_id, header, fastq):
 
 ## global names
 split_character = "infer"
-is_paired = None
 
 def infer_split_character(base_name):
     "Infer if fastq filename uses '_R1' '_1' to seperate filenames"
 
-    global split_character, is_paired
+    global split_character
 
     # infer split character if necessary only the first time.
     if (split_character is not None) and (split_character == "infer"):
         if ("_R1" in base_name) or ("_R2" in base_name):
             split_character = "_R"
-            is_paired = True
         elif ("_1" in base_name) or ("_2" in base_name):
             split_character = "_"
-            is_paired = True
         else:
             logger.warning(
                 f"Could't find '_R1'/'_R2' or '_1'/'_2' in your filename {base_name}. Assume you have single-end reads."
             )
             split_character = None
-            is_paired = False
 
         if split_character is not None:
             logger.info(
@@ -79,28 +75,15 @@ def parse_file(full_path, sample_dict, sample_name=None):
     # infer split character if necessary only the first time.
     infer_split_character(base_name)
 
-    # pe reads
-    if is_paired:
-        if sample_name is None:
-            sample_name = base_name.split(split_character)[0]
-
-        if (split_character + "1") in base_name:
-            add_sample_to_table(sample_dict, sample_name, "Reads_raw_R1", full_path)
-        elif (split_character + "2") in base_name:
-            add_sample_to_table(sample_dict, sample_name, "Reads_raw_R2", full_path)
-        else:
-            logger.error(
-                f"Did't find '{split_character}1' or  "
-                f"'{split_character}2' in fastq {sample_name} : {full_path}"
-                "Ignore file."
-            )
-
-    # se reads
+    if sample_name is None:
+        sample_name = base_name.split(split_character)[0]
+    
+    if (split_character + "1") in base_name:
+        add_sample_to_table(sample_dict, sample_name, "Reads_R1", full_path)
+    elif (split_character + "2") in base_name:
+        add_sample_to_table(sample_dict, sample_name, "Reads_R2", full_path)
     else:
-        if sample_name is None:
-            sample_name = base_name
-
-        add_sample_to_table(sample_dict, sample_name, "Reads_raw_R1", full_path)
+        add_sample_to_table(sample_dict, sample_name, "Reads_R1", full_path)
 
 
 
@@ -158,7 +141,8 @@ def get_samples_from_fastq(path, fraction_split_character=split_character):
     # parse subfolder
     if len(subfolders) > 0:
         logger.info(
-            f"Found {len(subfolders)} subfolders. Check if I find fastq files inside. Use the subfolder as sample_names "
+            f"Found {len(subfolders)} subfolders. Check if I find fastq files inside. "
+            f"\n\n    WARNING: We will use the subfolder as sample_names, this may cause your script to fail if these are just extra files.\n"
         )
 
         for subf in subfolders:
@@ -166,8 +150,8 @@ def get_samples_from_fastq(path, fraction_split_character=split_character):
 
     # Create dataframe
     sample_df = pd.DataFrame(sample_dict).T.sort_index()
-    sample_df['Reads_raw_Long'] = pd.NA
-    sample_df = sample_df.reindex(columns=['Reads_raw_R1', 'Reads_raw_R2', 'Reads_raw_Long'])
+    sample_df['Reads_Long'] = pd.NA
+    sample_df = sample_df.reindex(columns=['Reads_R1', 'Reads_R2', 'Reads_Long'])
 
     if sample_df.shape[0] == 0:
         logger.error(
