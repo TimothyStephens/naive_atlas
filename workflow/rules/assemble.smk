@@ -372,12 +372,12 @@ def get_pre_processed_reads(wildcards, as_dict=False):
 #### Assembly
 ####
 
-def assembly_command(wildcards, input, output, threads, resources):
+def assembly_command(wildcards, input, output, threads, resources, outdir):
     """
     Builds the assembly command depending on the type of data we have.
     """
     assembler = sampleTable.loc[wildcards.sample, 'Assembler']
-    output_dir = f"{output.outdir}"
+    output_dir = f"{outdir}"
 
     #mem_gb = 1
     # To prevent lazy evaluation issues. Will be undefined or str during DAG construction, can only be calculated during rule execution.
@@ -430,6 +430,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --memory ${{MEM_GB}} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output.fasta}
+            
+            rm -fr "{output_dir}"
             """
         else:
             cmd = f"""
@@ -441,6 +443,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --memory ${{MEM_GB}} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{sequences}.fasta" > {output.fasta}
+            
+            rm -fr "{output_dir}"
             """
     
     
@@ -493,6 +497,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --memory ${{MEM_GB}}000000000 {preset} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output.fasta}
+            
+            rm -fr "{output_dir}"
             """
         else:
             cmd = f"""
@@ -503,6 +509,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --continue
             
             seqkit sort -l -r -w 0 "{output_dir}/{wildcards.sample}_prefilter.contigs.fa" > {output.fasta}
+            
+            rm -fr "{output_dir}"
             """
     
     
@@ -512,7 +520,7 @@ def assembly_command(wildcards, input, output, threads, resources):
         
         m = {"flye-pacbio-raw":   "--pacbio-raw", 
              "flye-pacbio-corr":  "--pacbio-corr",
-             "flye-pacbio-hq":    "--pacbio-hq",
+             "flye-pacbio-hq":    "--pacbio-hifi",
              "flye-nanopore-raw": "--nano-raw",
              "flye-nanopore-corr":"--nano-corr",
              "flye-nanopore-hq":  "--nano-hq"}
@@ -530,6 +538,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --threads {threads} {extra}
             
             seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output.fasta}
+            
+            rm -fr "{output_dir}"
             """
         else:
             cmd = f"""
@@ -541,6 +551,8 @@ def assembly_command(wildcards, input, output, threads, resources):
                 --resume
             
             seqkit sort -l -r -w 0 "{output_dir}/assembly.fasta" > {output.fasta}
+            
+            rm -fr "{output_dir}"
             """
     
     
@@ -554,6 +566,8 @@ def assembly_command(wildcards, input, output, threads, resources):
         
         # If metaMDBG has already run, it should resume automatically.
         cmd = f"""
+        rm -fr "{output_dir}"
+        
         metaMDBG asm \\
             {reads} \\
             --out-dir {output_dir} \\
@@ -561,6 +575,8 @@ def assembly_command(wildcards, input, output, threads, resources):
             --threads {threads} {extra}
         
         zcat "{output_dir}/contigs.fasta.gz" | sed -e 's/ .*circular=/_circular_/' | seqkit sort -l -r -w 0 > {output.fasta}
+        
+        rm -fr "{output_dir}"
         """
     
     
@@ -576,10 +592,9 @@ rule run_assembly:
         unpack(lambda wildcards: get_pre_processed_reads(wildcards, as_dict=True)),
     output:
         fasta="samples/{sample}/assembly/{sample}_raw_contigs.fasta",
-	outdir=temp(directory("samples/{sample}/assembly/assembly")),
     params:
         command = lambda wildcards, input, output, threads, resources: assembly_command(
-            wildcards, input, output, threads, resources
+            wildcards, input, output, threads, resources, f"samples/{wildcards.sample}/assembly/assembly"
         ),
     log:
         "logs/samples/{sample}/assembly/assembly.log",
