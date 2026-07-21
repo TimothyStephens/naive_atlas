@@ -503,7 +503,7 @@ rule run_cdhit:
         prefix="binning/raw_unbinned/combined.cdhit_est",
         extra=config["unbinned_dereplication"]["cdhitest_params"],
     container:
-        "docker://chrishah/cdhit:v4.8.1"
+        "docker://timothystephens/cdhit:4.8.1"
     shell:
         """
         (
