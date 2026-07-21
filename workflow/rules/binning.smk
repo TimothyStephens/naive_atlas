@@ -742,7 +742,8 @@ rule binning_eukaryotic_busco:
             --auto-lineage-euk \\
             -c {threads} \\
             --evalue 0.001 \\
-            --download_path {input.dbdir}
+            --download_path {input.dbdir} \\
+            --offline
         EXITSTATUS=$?
         
         if [[ "$EXITSTATUS" > 0 ]];
