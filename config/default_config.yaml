@@ -84,12 +84,12 @@ resources:
   ######################
   normalize_reads:
     base_mem_mb: 8000
-    scaling_factor: 6.0
+    scaling_factor: 12.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   error_correction:
-    base_mem_mb: 8000
-    scaling_factor: 14.0
+    base_mem_mb: 24000
+    scaling_factor: 30.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   run_assembly:
@@ -161,7 +161,7 @@ resources:
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
   run_cdhit:
-    base_mem_mb: 20000
+    base_mem_mb: 50000
     scaling_factor: 1.0
     threads: *dynamic_default_threads
     time_min: *dynamic_default_time_min
