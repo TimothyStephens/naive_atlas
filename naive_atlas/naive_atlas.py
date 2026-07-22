@@ -9,6 +9,7 @@ import click
 from .init.naive_atlas_init import run_init
 from .logo import print_logo
 from .__init__ import __version__
+import yaml
 
 ##
 
@@ -246,8 +247,7 @@ def get_snakefile(file="workflow/Snakefile"):
     help="Software deployment methods (e.g. apptainer, conda).",
 )
 @click.option(
-    "--singularity-args",
-    default=f"--no-home --containall --cleanenv --bind {script_dir.parent}:{script_dir.parent} --bind {cwd}:{cwd} ",
+    default="--no-home --containall --cleanenv",
     show_default=True,
     help="Arguments passed to singularity/apptainer.",
 )
@@ -376,6 +376,28 @@ def run_workflow(
         )
         exit(1)
 
+
+    # Extract database_dir from user config
+    with open(config_file) as f:
+        user_config = yaml.safe_load(f) or {}
+    database_dir = os.path.realpath(user_config.get("database_dir", os.path.join(working_dir, "databases")))
+
+    # Warn if database_dir doesn't exist yet
+    if not os.path.isdir(database_dir):
+        logger.warning(
+            f"Database directory '{database_dir}' does not exist yet. "
+            "It will be created; run 'download' target to populate it."
+        )
+
+    # Ensure tmpdir and database_dir exist for bind mounts
+    os.makedirs(tmpdir, exist_ok=True)
+    os.makedirs(database_dir, exist_ok=True)
+
+    # Build singularity args with bind mounts
+    pkg_root = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
+    singularity_binds = f" --bind {pkg_root}:{pkg_root} --bind {working_dir}:{working_dir}"
+    singularity_binds += f" --bind {database_dir}:{database_dir} --bind {tmpdir}:{tmpdir}"
+    singularity_args += singularity_binds
     # Helper to generate presence-only flags
     def get_flag(val, name):
         return f" --{name} " if val else ""

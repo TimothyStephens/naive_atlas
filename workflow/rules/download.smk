@@ -79,6 +79,7 @@ rule checkm2_download_db:
         "benchmarks/download/checkm2.tsv",
     shell:
         """
+        export TMPDIR='{resources.tmpdir}';
         (checkm2 database --download --path {output} --no_write_json_db) 1>{log} 2>&1
         """
 
@@ -121,7 +122,8 @@ rule busco_download_db:
         "docker://timothystephens/busco:6.1.0-TGSv1",
     shell:
         """
-        (	
+        export TMPDIR='{resources.tmpdir}';
+        (
         busco -q --download_path {output} --download all
         ) 1>{log} 2>&1
         """
@@ -146,6 +148,7 @@ rule genomad_download_db:
         "docker://antoniopcamargo/genomad:1.11.0",
     shell:
         """
+        export TMPDIR='{resources.tmpdir}';
         (
         export PATH="/opt/conda/bin:$PATH"
         mkdir -p {output.dbdir}
@@ -181,6 +184,7 @@ rule emapper_download_db:
         "docker://timothystephens/eggnog-mapper:2.1.13-TGSv1"
     shell:
         """
+        export TMPDIR='{resources.tmpdir}';
         (download_eggnog_data.py -yf --data_dir {params.eggnog_dir}) 1>{log} 2>&1
         """
 
@@ -312,6 +316,7 @@ rule bakta_download_db:
         "../envs/gene_prediction_bacteria.yaml"
     shell:
         """
+        export TMPDIR='{resources.tmpdir}';
         (
         mkdir -p {params.wd}; cd {params.wd}/
         export LC_ALL=C.UTF-8
