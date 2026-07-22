@@ -185,9 +185,9 @@ rule normalize_reads_LR:
 ####
 #### Error Correction
 ####
-def error_correction_command(inputs, outputs, outdir, pairs, run_step, 
-                            prefilter, minprob, tossdepth, tossjunk, lowdepthfraction, 
-                            aggressive, shave, threads, resources):
+def error_correction_command(inputs, outputs, outdir, pairs, run_step,
+                            prefilter, minprob, tossdepth, tossjunk, lowdepthfraction,
+                            aggressive, shave, kmer, threads, resources):
     if run_step == 't':
         cmd = f"""
             tadpole.sh \\
@@ -208,6 +208,7 @@ def error_correction_command(inputs, outputs, outdir, pairs, run_step,
                 unpigz=t \\
                 ecc=t \\
                 ecco=t \\
+                k={kmer} \\
                 -Xmx{resources.java_mem}M
         """
     else:
@@ -246,7 +247,8 @@ rule error_correction_PE:
             aggressive=config["error_correction_aggressive"],
             shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
             threads=threads,
-            resources=resources
+            resources=resources,
+            kmer=config["error_correction_kmer"],
         )
     log:
         "logs/samples/{sample}/assembly/reads/2_error_correction_PE.log",
@@ -289,7 +291,8 @@ rule error_correction_SE:
             aggressive=config["error_correction_aggressive"],
             shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
             threads=threads,
-            resources=resources
+            resources=resources,
+            kmer=config["error_correction_kmer"],
         )
     log:
         "logs/samples/{sample}/assembly/reads/2_error_correction_SE.log",
@@ -332,7 +335,8 @@ rule error_correction_LR:
             aggressive=config["error_correction_aggressive"],
             shave="f",  # Shave and rinse can produce substantially better assemblies for low-depth data, but they are very slow for large metagenomes.
             threads=threads,
-            resources=resources
+            resources=resources,
+            kmer=config["error_correction_kmer"],
         )
     log:
         "logs/samples/{sample}/assembly/reads/2_error_correction_LR.log",
