@@ -247,6 +247,7 @@ def get_snakefile(file="workflow/Snakefile"):
     help="Software deployment methods (e.g. apptainer, conda).",
 )
 @click.option(
+    '--singularity_args',
     default="--no-home --containall --cleanenv",
     show_default=True,
     help="Arguments passed to singularity/apptainer.",
