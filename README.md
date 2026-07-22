@@ -242,13 +242,13 @@ The following parameters are **not** in the template file but can be added to yo
 
 | Parameter | Default | Description |
 |---|---|---|
-| `deduplicate` | `true` | Deduplicate reads using Clumpify. Disable only if reads are already deduplicated. |
 | `preprocess_qtrim` | `"rl"` | Quality trimming mode (`"rl"` = trim both ends). |
 | `preprocess_adapters` | `"workflow/data/adapters.fa"` | Path to a custom adapter FASTA file. Override if your library uses non-standard adapters. |
-| `normalize_reads_before_assembly` | `false` | Normalize read coverage before assembly using BBNorm. Enable for highly uneven communities to reduce assembly memory usage. |
 | `minimum_contig_length` | `1000` | Minimum contig length (bp) to retain after assembly. Increase to filter out more assembly fragments. |
 | `preprocess_minimum_passing_read_length` | `51` | Minimum read length after quality trimming. Reads shorter than this are discarded. |
 | `preprocess_minimum_base_quality` | `10` | Minimum Phred quality score for base trimming. |
+
+> **Note:** Read deduplication and read normalization before assembly are controlled via the `DeDuplicate` and `Normalize_reads_before_assembly` columns in your `samples.tsv` file, not via `config.yaml`.
 
 ### Assembly Tuning
 
@@ -257,7 +257,7 @@ The following parameters are **not** in the template file but can be added to yo
 | `minimum_average_coverage` | `1` | Minimum average coverage for contigs to be retained. Increase to require stronger read support. |
 | `megahit_min_count` | `2` | Minimum k-mer count for MeGAHit. `2` for metagenomes, `3` for high-coverage genomes. |
 | `megahit_k_max` | `121` | Maximum k-mer size for MeGAHit. Larger values improve assembly but use more memory. |
-| `merge_pairs_before_assembly` | `true` | Join overlapping read pairs before assembly. Improves assembly continuity for short-insert libraries. |
+| `error_correction_kmer` | `31` | K-mer size for Tadpole error correction. Larger values (e.g., `62`) improve accuracy but use more memory. |
 
 ### Binning Thresholds
 

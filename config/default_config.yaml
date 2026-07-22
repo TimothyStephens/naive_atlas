@@ -289,8 +289,6 @@ database_dir:
 ########################
 importqc_params: "iupacToN=t touppercase=t qout=33 addslash=t trimreaddescription=t"
 
-# remove (PCR)-duplicated reads using clumpify
-deduplicate: true
 duplicates_only_optical: false
 duplicates_allow_substitutions: 2
 
@@ -311,8 +309,6 @@ preprocess_minimum_base_frequency: 0.05
 preprocess_adapter_min_k: 8
 preprocess_allowable_kmer_mismatches: 1
 preprocess_reference_kmer_match_length: 27
-# normalize reads
-normalize_reads_before_assembly: false
 normalization_kmer_length: 21
 normalization_target_depth: 1000
 normalization_minimum_kmer_depth: 3
@@ -347,9 +343,6 @@ error_correction_aggressive: false
 error_correction_minprob: 0.5
 error_correction_kmer: 31 # can be longer e.g. 62 but takes more memory
 
-# Merging of pairs
-# join R1 and R2 at overlap; unjoined reads are still utilized
-merge_pairs_before_assembly: true
 merging_k: 62
 
 # Megahit
@@ -369,7 +362,6 @@ megahit_extra: ''
 # Spades
 #------------
 spades_use_scaffolds: true # if false use contigs
-spades_skip_BayesHammer: true # Skip error correction in spades assembler
 #Comma-separated list of k-mer sizes to be used (all values must be odd, less than 128 and listed in ascending order).
 spades_k: auto
 spades_extra: ''
@@ -501,8 +493,3 @@ instrain_profile_extra: ""
 instrain_compare_extra: ""
 
 
-########################
-# Misc
-#######################
-## use just in time compilation for bbmap
-usejni: false
